@@ -33,6 +33,7 @@ verifier la condition de mort par max de pop ateinte, limite trop franche (pixel
 
 bp deactivation mort par max de pop ateint
 
+switch antialiasing
 
 
 
@@ -76,6 +77,13 @@ STOP: 133.28
 DIE: 1.2490002
 OLD AGE: 400
 
+presque stable a grande pop
+GROW: true 0.48109692
+SPROUT: true 717.9206
+STOP: true 1.2851914
+DIE: true 0.0015025112
+OLD AGE: 140
+
 */
 import controlP5.*; //la lib pour les menu
 
@@ -108,8 +116,8 @@ float DEVIATION = 8; //drifting (rotation posible en portion de pi (PI/drift))
 float L_MIN = 1; //longeur minimum de chaque section
 float L_MAX = 100; //longeur max de chaque section MODIFIABLE PAR MENU MOVE minimum 1 , limité dans l'update de sont bp
 
-int MAX_LINE_WIDTH = 2; //epaisseur max des ligne, diminuer par l'age
-int MIN_LINE_WIDTH = 1; //epaisseur min des ligne
+float MAX_LINE_WIDTH = 1.5; //epaisseur max des ligne, diminuer par l'age, un peut, se vois pas
+float MIN_LINE_WIDTH = 0.2; //epaisseur min des ligne
 
 // un switch les control dans le menu
 boolean ON_GROW = true; // active la pousse de nouveau grower au bout des grower actif
@@ -143,6 +151,7 @@ void setup() {//executé au demarage
   size(1600, 900);//taille de l'ecran
   setupInput();//voir onglet input
   noSmooth();//pas d'antialiasing
+  //smooth();//anti aliasing
   
   //for (String s : PFont.list()) println(s); // liste toute les police de text qui existe
 

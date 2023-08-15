@@ -42,7 +42,7 @@ class Base {
     age = 0;
     
     pos = _p;
-    grows = new PVector(L_MIN + crandom(5)*(L_MAX - L_MIN), 0);
+    grows = new PVector(L_MIN + crandom(3)*(L_MAX - L_MIN), 0);
     grows.rotate(_d.heading());
     grows.rotate(random(PI / DEVIATION) - ((PI / DEVIATION) / 2));
     dir = new PVector();
@@ -116,14 +116,16 @@ class Base {
     // aging color
     int ca = 255;
     if (age > OLD_AGE / 2) ca = (int)constrain(255 + int(OLD_AGE/2) - int(age/1.2), 90, 255);
-    if (!end && sprouts == 0) { stroke(255, 0, 0); strokeWeight(3); }// / cam_scale); }
-    else if (end) { stroke(0, ca, 0); strokeWeight(3); }// / cam_scale); }
-    else { stroke(ca, ca, ca); strokeWeight(((float)MIN_LINE_WIDTH + ((float)MAX_LINE_WIDTH * (float)ca / 255.0))); }// / cam_scale); }              
+    if (!end && sprouts == 0) { stroke(255, 0, 0); strokeWeight(MAX_LINE_WIDTH+1 / cam_scale); }
+    else if (end) { stroke(0, ca, 0); strokeWeight((MAX_LINE_WIDTH+1) / cam_scale); }
+    else { stroke(ca, ca, ca); strokeWeight(((float)MIN_LINE_WIDTH + ((float)MAX_LINE_WIDTH * (float)ca / 255.0)) / cam_scale); }              
     //fill(255);
     //ellipseMode(CENTER);
     //ellipse(pos.x, pos.y, 2, 2);
     
     line(pos.x,pos.y,grows.x,grows.y);
+    strokeWeight(MAX_LINE_WIDTH+1 / cam_scale);
+    //point(grows.x,grows.y);
     
     // PERSO    ----------------
   }
