@@ -108,6 +108,9 @@ float DEVIATION = 8; //drifting (rotation posible en portion de pi (PI/drift))
 float L_MIN = 1; //longeur minimum de chaque section
 float L_MAX = 100; //longeur max de chaque section MODIFIABLE PAR MENU MOVE minimum 1 , limité dans l'update de sont bp
 
+int MAX_LINE_WIDTH = 2; //epaisseur max des ligne, diminuer par l'age
+int MIN_LINE_WIDTH = 1; //epaisseur min des ligne
+
 // un switch les control dans le menu
 boolean ON_GROW = true; // active la pousse de nouveau grower au bout des grower actif
 boolean ON_SPROUT = true; // active le bourgeonnement de nouveau grower sur les branche
