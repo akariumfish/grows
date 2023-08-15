@@ -5,6 +5,8 @@
 int TEXT_SIZE = 18;
 int BTN_SIZE = 40;
 
+Textfield textfieldSeed;
+
 int maxctrlerByLine = 10;
 int utilctrlid = 1000;
 
@@ -77,8 +79,21 @@ void init_panel() {
     .setSwitch(true);
   if (SHOW_GRAPH) b.setOn();
   
-  build_line_factor("SPEED", repeat_runAll, 10, 720, 5);
-  build_line_incr("INIT", INIT_BASE, 10, 770, 6);
+  addText("title5", "Seed", 20, 705, TEXT_SIZE);
+  textfieldSeed = cp5.addTextfield("seed_input")
+     .setPosition(90,700)
+     .setSize(220,30)
+     .setCaptionLabel("")
+     .setValue("" + SEED)
+     .setFont(createFont("Arial",TEXT_SIZE))
+     .setColor(color(255))
+     .setGroup(cp5_g)
+     ;
+  addButton("readseed", "V", 320, 700, 30, 30, utilctrlid + 9, TEXT_SIZE);
+  addButton("rngseed", "R", 360, 700, 30, 30, utilctrlid + 10, TEXT_SIZE);
+  
+  build_line_factor("SPEED", repeat_runAll, 10, 740, 5);
+  build_line_incr("INIT", INIT_BASE, 10, 785, 6);
   
   b = addButton("running", "p", 25, 830, 50, 50, utilctrlid + 3, TEXT_SIZE * 1.5)
     .setSwitch(true);
@@ -90,7 +105,7 @@ void init_panel() {
 
 
 public void controlEvent(ControlEvent theEvent) {
-  int id = theEvent.getId();
+  int id = theEvent.getId(); //on va retrouver le controlleur corespondant par sont id
   
   // boutton reset
   if (id == utilctrlid + 1) {
@@ -129,6 +144,20 @@ public void controlEvent(ControlEvent theEvent) {
   if (id == utilctrlid + 8) {
     Button b = (Button)cp5.getController("GRAPH");
     SHOW_GRAPH = b.isOn();
+  }
+  //button seed
+  if (id == utilctrlid + 9) { //read
+    int val = int(textfieldSeed.getText());
+    if (val != 0) {
+      SEED = val;
+      textfieldSeed.setColor(color(255));
+    } else {
+      textfieldSeed.setColor(color(255, 0, 0));
+    }
+  }
+  if (id == utilctrlid + 10) { //rng
+    SEED = int(random(1000000000));
+    textfieldSeed.setValue("" + SEED);
   }
   //activation
   if (id == utilctrlid + 4) {

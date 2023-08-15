@@ -19,8 +19,6 @@ add sauvegarder un screenshot sur le bouton I du panel
     deux fichier identique sur deux run et l'ancien est supprimer
     faire un truc mieux, il faut juste trouver comment test l'existance d'un fichier facilement
 
-add choisir la seed pour l'aleatoire
-
 add graph pour les objets qui pousse en jaune (max afficher 60?)
   + switch pour l'afficher si bp graph est on
 
@@ -264,7 +262,7 @@ void draw() {//executé once by frame
     //  name = "shot" + shot_cnt + ".png";
     //  file = new File(sketchPath(name));
     //}
-    saveFrame("shot-########.png");
+    saveFrame("image/shot-########.png");
   }
   screenshot = false;
   
