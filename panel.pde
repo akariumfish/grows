@@ -1,4 +1,6 @@
 
+//ici on gere le menu
+
 
 int TEXT_SIZE = 18;
 int BTN_SIZE = 40;
@@ -85,18 +87,23 @@ void init_panel() {
   addButton("print", "I", 325, 830, 50, 50, utilctrlid + 2, TEXT_SIZE * 1.5);
 }
 
+
+
 public void controlEvent(ControlEvent theEvent) {
   int id = theEvent.getId();
   
   // boutton reset
   if (id == utilctrlid + 1) {
     deleteAll();
+    randomSeed(SEED);
     for (int i = 0; i < INIT_BASE; i++) {
       createFirstBase(random( 2 * PI));
     }
     //reset le graph
-    for (int i = 0; i < larg; i++) graph[i] = 0;
+    for (int i = 0; i < larg; i++) { graph[i] = 0; graph2[i] = 0; }
     gc = 0;
+    //reset le conter de tour
+    counter = 0;
     return;
   }
   

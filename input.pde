@@ -1,3 +1,9 @@
+
+
+//ici c'est super mal foutu
+
+//mais sa gere les boutton du clavier et de la sourie
+
 boolean[] keysButtons;
 boolean[] keysClick;
 boolean[] keysJClick;

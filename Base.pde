@@ -1,4 +1,7 @@
 
+//ici on definie les objet que l'on vas generer
+
+
 class Base {
   
   int id;
@@ -127,10 +130,7 @@ class Base {
 
 }
 
-Base createFirstBase() { return createBase(new PVector(DEF_POS.x, DEF_POS.y), new PVector(1, 0).rotate(DEF_DIR), 0); }
-Base createFirstBase(PVector p) { return createBase(p, new PVector(1, 0).rotate(DEF_DIR), 0); }
-Base createFirstBase(float r) { return createBase(new PVector(DEF_POS.x, DEF_POS.y), new PVector(1, 0).rotate(r), 0); }
-Base createFirstBase(PVector p, float r) { return createBase(p, new PVector(1, 0).rotate(r), 0); }
+Base createFirstBase(float r) { return createBase(new PVector(0, 0), new PVector(1, 0).rotate(r), 0); }
 
 Base createBase(PVector p, PVector d, int id) {
   for (int i = BaseList.length-1; i >= 0; i--) {
@@ -139,15 +139,6 @@ Base createBase(PVector p, PVector d, int id) {
       return BaseList[i];
     }
   }
-  
-  if (BaseList.length < MAX_LIST_SIZE) {
-    BaseList = (Base[]) expand(BaseList, BaseList.length + 1);
-    BaseList[BaseList.length - 1] = new Base();
-    BaseList[BaseList.length - 1].id = BaseList.length - 1;
-    BaseList[BaseList.length - 1].init(p, d, id);
-    return BaseList[BaseList.length - 1];
-  }
-  
   return null;
 }
 

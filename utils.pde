@@ -1,3 +1,5 @@
+// des truc utils en vrac
+
 PVector mouseDir(PVector center) {
   PVector dir = new PVector(0, 0); 
   dir.x = mouseX - center.x;
