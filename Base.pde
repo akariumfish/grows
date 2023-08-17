@@ -1,6 +1,56 @@
 
 //ici on definie les objet que l'on vas generer
+Base[] BaseList = new Base[0]; //contien les objet
+int MAX_LIST_SIZE = 5000; //longueur max de l'array d'objet
+int INIT_BASE = 30; //nombre de grower au debut puis apres un reset MODIFIABLE PAR MENU INIT
 
+float DEVIATION = 4; //drifting (rotation posible en portion de pi (PI/drift))
+float L_MIN = 1; //longeur minimum de chaque section
+float L_MAX = 100; //longeur max de chaque section MODIFIABLE PAR MENU MOVE minimum 1 , limité dans l'update de sont bp
+
+// un switch les control dans le menu
+boolean ON_GROW = true; // active la pousse de nouveau grower au bout des grower actif
+boolean ON_SPROUT = true; // active le bourgeonnement de nouveau grower sur les branche
+boolean ON_STOP = true; // active l'arret (devien vert)
+boolean ON_DIE = true; // active la mort
+
+//les dificulté sont appliqué a crandom, voir dans l'onglet utils elles on toute un control dans le menu
+float GROW_DIFFICULTY = 0.833;
+float SPROUT_DIFFICULTY = 2500.0;
+float STOP_DIFFICULTY = 5.0;
+float DIE_DIFFICULTY = 1.8;
+int OLD_AGE = 333;
+
+//diminue de autant la dificulté de la mort quand l'array est bientot plein
+//float DIE_DIFFICULTY_DIVIDER = 8.0; //when array close to full
+
+float MAX_LINE_WIDTH = 1.5; //epaisseur max des ligne, diminuer par l'age, un peut, se vois pas
+float MIN_LINE_WIDTH = 0.2; //epaisseur min des ligne
+
+
+void init_base() {
+  // redimensionement de l'array a ca taille max
+  BaseList = (Base[]) expand(BaseList, MAX_LIST_SIZE);
+  //initialisation de chaque element
+  for (int i = 0 ; i < MAX_LIST_SIZE ; i++) {
+    BaseList[i] = new Base();
+    BaseList[i].id = i;
+    //BaseList[i].init(new PVector(0, 0), new PVector(0, 0), i);
+  }
+  reset_base();
+  init_graphs();
+}
+
+void reset_base() {
+  //tout le monde sur off
+  deleteAll();
+  //reset du generateur de nombre aleatoire
+  randomSeed(SEED);
+  //creation des grower initiaux
+  for (int i = 0; i < INIT_BASE; i++) {
+    createFirstBase(random( 2 * PI));
+  }
+}
 
 class Base {
   
@@ -79,13 +129,17 @@ class Base {
     
     // grow
     if (ON_GROW && !end && sprouts == 0 && crandom(GROW_DIFFICULTY) > 0.5) {
-      createBase(grows, dir, id);
-      sprouts++;
+      if(createBase(grows, dir, id) != null) sprouts++;
     }
     
     // sprout
     if (ON_SPROUT && !end && crandom(SPROUT_DIFFICULTY) > 0.5) {
-      createBase(grows, dir, id);
+      PVector _p = new PVector(0, 0);
+      PVector _d = new PVector(0, 0);
+      _d.add(grows).sub(pos);
+      _d.setMag(random(1.0) * _d.mag());
+      _p.add(pos).add(_d);
+      createBase(_p, _d, id);
       sprouts++;
       //sprouts = (int[]) expand(sprouts, sprouts.length + 1);
       //sprouts[sprouts.length - 1] = temp_b.id;
@@ -100,9 +154,9 @@ class Base {
     
     // die
     float rng = crandom(DIE_DIFFICULTY);
-    if (ON_DIE && 
-         (rng > ( (float)OLD_AGE / (float)age ) ||
-          rng / DIE_DIFFICULTY_DIVIDER > ((float)MAX_LIST_SIZE - (float)baseNb()) / (float)MAX_LIST_SIZE
+    if (ON_DIE && !(!end && sprouts == 0) &&
+         (rng > ( (float)OLD_AGE / (float)age ) //||
+          //rng / DIE_DIFFICULTY_DIVIDER > ((float)MAX_LIST_SIZE - (float)baseNb()) / (float)MAX_LIST_SIZE
        )) {
       this.destroy();
     }
@@ -125,7 +179,7 @@ class Base {
     
     line(pos.x,pos.y,grows.x,grows.y);
     strokeWeight(MAX_LINE_WIDTH+1 / cam_scale);
-    //point(grows.x,grows.y);
+    point(grows.x,grows.y);
     
     // PERSO    ----------------
   }
