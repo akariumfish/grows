@@ -1,13 +1,14 @@
 PVector cam_pos = new PVector(0, 0); //position de la camera
 float cam_scale = 0.2; //facteur de grossicement
 float ZOOM_FACTOR = 1.1; //facteur de modification de cam_scale quand on utilise la roulette de la sourie
+boolean GRAB = true;
 
 boolean screenshot = false; //enregistre une image de la frame sans les menu si true puis se desactive
 //int shot_cnt = 0; //prevue pour la sauvegarde d'image avec des num coherent
 
 void cam_input_update() {
   //permet le cliquer glisser le l'ecran
-  if (mouseButtons[2]) {
+  if (mouseButtons[0] && GRAB) {
     cam_pos.x += mouseX - pmouseX;
     cam_pos.y += mouseY - pmouseY;
   }

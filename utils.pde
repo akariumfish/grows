@@ -1,3 +1,16 @@
+float distancePointToLine(float x, float y, float x1, float y1, float x2, float y2) {
+  float r =  ( ((x-x1)*(x2-x1)) + ((y-y1)*(y2-y1)) ) / pow(distancePointToPoint(x1, y1, x2, y2), 2);
+  if (r <= 0) {return distancePointToPoint(x1, y1, x, y);}
+  if (r >= 1) {return distancePointToPoint(x, y, x2, y2);}
+  float px = x1 + (r * (x2-x1));
+  float py = y1 + (r * (y2-y1));
+  return distancePointToPoint(x, y, px, py);
+}
+
+float distancePointToPoint(float xa, float ya, float xb, float yb) {
+  return sqrt( pow((xb-xa), 2) + pow((yb-ya), 2) );
+}
+
 float crandom(float d) {
   return pow(random(1.0), d) ;
 }

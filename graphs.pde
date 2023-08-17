@@ -1,7 +1,7 @@
 //permet l'enregistrement de donné pour le graphique
-int larg =             1200;
-int[] graph  = new int[1200];
-int[] graph2 = new int[1200];
+int larg =             1600;
+int[] graph  = new int[1600];
+int[] graph2 = new int[1600];
 int gc = 0;
 
 boolean SHOW_GRAPH = false;// affichage du graph a un bp

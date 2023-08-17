@@ -18,20 +18,42 @@ int utilctrlid = 1000;
 void init_panel() {
   cp5 = new ControlP5(this);
   
+  cp5.addTab("Menu")
+     .getCaptionLabel().setFont(createFont("Arial",16))
+     ;
+  cp5.addTab("Macros")
+     .getCaptionLabel().setFont(createFont("Arial",16))
+     ;
+     
+  cp5.getTab("default")
+    // .activateEvent(true)
+     .setLabel("Main")
+     .getCaptionLabel().setFont(createFont("Arial",16))
+     ;
+  cp5.getTab("Menu").bringToFront();
+  
+  init_panel_grower();
+  
+  world = new World();
+  p1 = new Player(world);
+  
   cp5.addButton("HIDE_MENUS")
-     .setPosition(10, height - 30)
+     .setPosition(35, height - 27)
      .setSize(20,20)
      .setId(utilctrlid + 11)
+     .setTab("Menu")
      .getCaptionLabel().setText("M").setFont(createFont("Arial",16))
      ;
   
   group_control = cp5.addGroup("group_control")
-             .setPosition(width - PANEL_WIDTH, height - 280)
+             .setPosition(width - (PANEL_WIDTH * 2), 10)
              .setSize(PANEL_WIDTH, 10)
              .setBackgroundHeight(270)
              .setBackgroundColor(color(60, 200))
              .disableCollapse()
+             .moveTo("Menu")
              ;
+  group_control.getCaptionLabel().setText("");
              
   addText(group_control, "ctrl_title1", "STRUCTURE GENERATOR", 5, 0, 30).setFont(createFont("Arial Bold",30));
   
@@ -55,7 +77,7 @@ void init_panel() {
   info_framerate = addText(group_control, "info_framerate", " ", 50, 130);
   info_turn = addText(group_control, "info_turn", " ", 250, 130);
   
-  build_line_factor(group_control, "SPEED", repeat_runAll, 10, 160, 5);
+  build_line_factor(group_control, "SPEED", " ", repeat_runAll, 10, 160, 5);
   
   Button b; //pointer
   
@@ -65,8 +87,6 @@ void init_panel() {
   addButton(group_control, "reset", "RESET", 100, 210, 95, 50, utilctrlid + 1, TEXT_SIZE * 1.2);
   addButton(group_control, "reset-rng", "RNG", 205, 210, 95, 50, utilctrlid + 15, TEXT_SIZE * 1.2);
   addButton(group_control, "print", "I", 325, 210, 50, 50, utilctrlid + 2, TEXT_SIZE * 1.5);
-  
-  init_panel_grower();
   
   //cp5.printControllerMap(); // print all ui element
 }
@@ -131,7 +151,7 @@ public void controlEvent(ControlEvent theEvent) {
     textfieldSeed.setValue("" + SEED);
   }
   
-  if (line == 5) { repeat_runAll *= modifier; update_textlabel("SPEED", repeat_runAll); }
+  if (line == 5) { repeat_runAll *= modifier; update_textlabel("SPEED", " ", repeat_runAll); }
   
 }
 
@@ -149,6 +169,10 @@ void update_all_menu() {
   if (group_control.isMouseOver() && mouseClick[0]) {
     mx = group_control.getPosition()[0] - mouseX;
     my = group_control.getPosition()[1] - mouseY;
+    GRAB = false;//deactive le deplacement camera
+  }
+  if (group_control.isMouseOver() && mouseUClick[0]) {
+    GRAB = true;
   }
   if (group_control.isMouseOver() && mouseButtons[0]) {
     group_control.setPosition(mouseX + mx,mouseY + my);

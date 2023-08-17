@@ -1,17 +1,22 @@
 /*
 
             -- GROWING STRUCTURES GENERATOR --
-
-projet version 2.0 : 
-  l'auto regulation des pop parametrable
+B44f5ThdXibVhes
+Les macro sont un outils de patch/programmation visuelle
+qui permettra une auto regulation des pop parametrable
   grow regulé par nb de pop
   sprout par nb de grower
   stop par nb de grower
   mort par :
     age (def age min)
     nb de pop
-    
 
+corriger les beug d'affichage des macro (irregularité en y sur les bp des i/o)
+
+
+bp pour faire passer juste un tour (+raccourcie clavier)
+
+affichage du framerate plus lisible : calcul du framerate moyen sur la derniere sec
 
 sauvegarder un screenshot
     attention! 
@@ -88,16 +93,20 @@ int SEED = 548651008; //seed pour l'aleatoire
 int slide = 0;
 int maxSlide = 1;
 
+World world;
+Player p1;
+
 void setup() {//executé au demarage
   size(1600, 900);//taille de l'ecran
   setupInput();//voir onglet input
   noSmooth();//pas d'antialiasing
   //smooth();//anti aliasing
+  frameRate(60);
   
   //for (String s : PFont.list()) println(s); // liste toute les police de text qui existe
+  
 
   init_panel(); //onglet panel : initialise le menu
-  
   init_base();
   
 }
@@ -140,6 +149,10 @@ void draw() {//executé once by frame
     //println( " " );
     //println( counter + " " + growsNb());
   }
+  
+  world.checkOrders();
+  world.update();
+  world.drawing();
   
   inputUpdate(); //voir l'onglet input
 }

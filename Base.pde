@@ -7,6 +7,7 @@ int INIT_BASE = 30; //nombre de grower au debut puis apres un reset MODIFIABLE P
 float DEVIATION = 4; //drifting (rotation posible en portion de pi (PI/drift))
 float L_MIN = 1; //longeur minimum de chaque section
 float L_MAX = 100; //longeur max de chaque section MODIFIABLE PAR MENU MOVE minimum 1 , limité dans l'update de sont bp
+float L_DIFFICULTY = 4;
 
 // un switch les control dans le menu
 boolean ON_GROW = true; // active la pousse de nouveau grower au bout des grower actif
@@ -92,7 +93,7 @@ class Base {
     age = 0;
     
     pos = _p;
-    grows = new PVector(L_MIN + crandom(3)*(L_MAX - L_MIN), 0);
+    grows = new PVector(L_MIN + crandom(L_DIFFICULTY)*(L_MAX - L_MIN), 0);
     grows.rotate(_d.heading());
     grows.rotate(random(PI / DEVIATION) - ((PI / DEVIATION) / 2));
     dir = new PVector();
@@ -178,8 +179,8 @@ class Base {
     //ellipse(pos.x, pos.y, 2, 2);
     
     line(pos.x,pos.y,grows.x,grows.y);
-    strokeWeight(MAX_LINE_WIDTH+1 / cam_scale);
-    point(grows.x,grows.y);
+    //strokeWeight(MAX_LINE_WIDTH+1 / cam_scale);
+    //point(grows.x,grows.y);
     
     // PERSO    ----------------
   }
