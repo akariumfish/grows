@@ -1,7 +1,7 @@
 /*
 
             -- GROWING STRUCTURES GENERATOR --
-B44f5ThdXibVhes
+
 Les macro sont un outils de patch/programmation visuelle
 qui permettra une auto regulation des pop parametrable
   grow regulé par nb de pop

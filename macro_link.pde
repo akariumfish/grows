@@ -267,10 +267,11 @@ class OutputB extends OutputA {
     x = int(g.getPosition()[0] + g.getWidth()); y = int(g.getPosition()[1] + 14 + (n*26));
     if (bang) {out.setOn();} else {out.setOff();}
   }
-  void linkTo(InputB in) {
+  OutputB linkTo(InputB in) {
     LinkB nl = macroList.linkList.createLinkB();
     nl.in = in; nl.out = this;
     in.l.add(nl); this.l.add(nl);
+    return this;
   }
 }
 
@@ -326,9 +327,10 @@ class OutputF extends OutputA {
     if (bang) {out.setOn(); textf.setFocus(true); textf.setText(str(value).trim()); textf.setFocus(false);} else {out.setOff();}
     //bang = false;
   }
-  void linkTo(InputF in) {
+  OutputF linkTo(InputF in) {
     LinkF nl = macroList.linkList.createLinkF();
     nl.in = in; nl.out = this;
     in.l.add(nl); this.l.add(nl);
+    return this;
   }
 }

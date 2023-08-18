@@ -12,7 +12,7 @@ void init_graphs() {
 }
 
 void draw_graphs() {
-  if (SHOW_GRAPH) {
+  if (SHOW_GRAPH && !cp5.getTab("default").isActive()) {
     strokeWeight(0.5);
     stroke(255);
     for (int i = 1; i < larg; i++) if (i != gc) {

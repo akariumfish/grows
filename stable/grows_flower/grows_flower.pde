@@ -31,7 +31,7 @@ boolean repeat = false;
 void setup() {
   size(1200, 900);
   setupInput();
-  randomSeed(420);
+  //randomSeed(420);
   
   // PERSO    ----------------
   for (int i = 0; i < INIT_BASE; i++) {

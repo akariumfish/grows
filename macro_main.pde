@@ -27,7 +27,7 @@ class World {
   void drawing() {
     fill(255);
     textSize(16);
-    text(int(frameRate),10,height - 10 );
+    if (!cp5.getTab("default").isActive()) text(int(frameRate),10,height - 10 );
     if (!cp5.getTab("Macros").isActive()) {
       //for (int i = 0; i < body.size(); i++) {
       //  body.get(i).show(20, 50 + (30 * i));
@@ -89,8 +89,8 @@ class Player {
   
   //Rotator mo;
   Keyboard keyb;
-  MacroVAL m1,m2;
-  MacroDELAY m3;
+  MacroVAL mv1,mv2,mv3,mv4,mv5,mv6;
+  MacroDELAY md1,md2;
   GrowingControl gc;
   GrowingWatcher gw;
   
@@ -102,20 +102,33 @@ class Player {
     gc = world.addGrowingControl();
     
     keyb = world.addKeyboard();
-    m1 = world.macroList.addMacroVAL(0.001);
-    m2 = world.macroList.addMacroVAL(0.833);
-    m3 = world.macroList.addMacroDELAY(3);
+    mv1 = world.macroList.addMacroVAL(0.16);
+    mv2 = world.macroList.addMacroVAL(0.833);
+    md1 = world.macroList.addMacroDELAY(1);
+    
+    mv3 = world.macroList.addMacroVAL(1);
+    mv4 = world.macroList.addMacroVAL(1);
+    mv5 = world.macroList.addMacroVAL(2500);
+    mv6 = world.macroList.addMacroVAL(5);
+    md2 = world.macroList.addMacroDELAY(5);
     
     gw = world.addGrowingWatcher();
 
-    keyb.wO.linkTo(m1.in);
-    keyb.wO.linkTo(m3.in);
-    m3.out.linkTo(m2.in);
+    keyb.wO.linkTo(mv1.in)
+           .linkTo(md1.in);
+    md1.out.linkTo(mv2.in);
+    mv1.out.linkTo(gc.growI);
+    mv2.out.linkTo(gc.growI);
     
-    m1.out.linkTo(gc.growI);
-    m2.out.linkTo(gc.growI);
-    
-    
+    keyb.cO.linkTo(mv3.in)
+           .linkTo(mv4.in)
+           .linkTo(md2.in);
+    md2.out.linkTo(mv5.in)
+           .linkTo(mv6.in);
+    mv3.out.linkTo(gc.sproutI);
+    mv4.out.linkTo(gc.stopI);
+    mv5.out.linkTo(gc.sproutI);
+    mv6.out.linkTo(gc.stopI);
   }
   
 }
