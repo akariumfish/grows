@@ -79,6 +79,28 @@ void reset_base() {
   }
 }
 
+void grower_to_strings() {
+  file.append("grower:");
+  file.append(str(MAX_LIST_SIZE));
+  file.append(str(INIT_BASE));
+  file.append(str(L_MIN));
+  file.append(str(L_MAX));
+  file.append(str(L_DIFFICULTY));
+  file.append(str(ON_GROW));
+  file.append(str(ON_SPROUT));
+  file.append(str(ON_STOP));
+  file.append(str(ON_DIE));
+  file.append(str(GROW_DIFFICULTY));
+  file.append(str(SPROUT_DIFFICULTY));
+  file.append(str(STOP_DIFFICULTY));
+  file.append(str(DIE_DIFFICULTY));
+  file.append(str(OLD_AGE));
+}
+void baselist_to_strings() {
+  file.append("baselist:");
+  for (Base b : BaseList) b.to_strings();
+}
+
 class Base {
   
   int id;
@@ -90,9 +112,9 @@ class Base {
   }
   
   // PERSO    ----------------
-  PVector pos;
-  PVector grows;
-  PVector dir;
+  PVector pos = new PVector();
+  PVector grows = new PVector();
+  PVector dir = new PVector();
   
   // data
   //int root_id = 0;
@@ -107,6 +129,21 @@ class Base {
   float age = 0.0;
   
   // PERSO    ----------------
+  
+  void to_strings() {
+    file.append("base:");
+    file.append(str(id));
+    file.append(str(exist));
+    file.append(str(pos.x));
+    file.append(str(pos.y));
+    file.append(str(grows.x));
+    file.append(str(grows.y));
+    file.append(str(dir.x));
+    file.append(str(dir.y));
+    file.append(str(end));
+    file.append(str(sprouts));
+    file.append(str(age));
+  }
   
   void init(PVector _p, PVector _d, int _root_id) {    //argument are passed through createBase
     exist = true;

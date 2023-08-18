@@ -32,6 +32,38 @@ class MacroList {
     NOTFI = createInputF(g,-1,"",1,0);
   }
   
+  void clear() {
+    g.remove();
+    for (Macro m : macroList) m.clear();
+    for (InputB i : inBList) i.clear();
+    for (InputF i : inFList) i.clear();
+    for (OutputB o : outBList) o.clear();
+    for (OutputF o : outFList) o.clear();
+    macroList.clear();
+    inBList.clear();
+    outBList.clear();
+    inFList.clear();
+    outFList.clear();
+    linkList.clear();
+  }
+  
+  void to_strings() {
+    file.append("macros:");
+    for (Macro m : macroList)
+      m.to_strings();
+    file.append("in/out:");
+    for (InputB m : inBList)
+      m.to_strings();
+    for (InputF m : inFList)
+      m.to_strings();
+    for (OutputB m : outBList)
+      m.to_strings();
+    for (OutputF m : outFList)
+      m.to_strings();
+    file.append("links:");
+    linkList.to_strings();
+  }
+  
   void drawing() {
     if (creatingLinkB) {
       stroke(255);
@@ -184,6 +216,17 @@ abstract class Macro {
                   ;
   g.getCaptionLabel().setFont(createFont("Arial",16));
   }
+  void clear() {
+    g.remove();
+  }
+  void to_strings() {
+    file.append("macro");
+    file.append(str(id));
+    file.append(str(x));
+    file.append(str(y));
+    file.append(str(inCount));
+    file.append(str(outCount));
+  }
   
   void update() {
     if (cp5.getTab("Macros").isActive()) {
@@ -264,6 +307,15 @@ class MacroVAL extends Macro {
        ;
     txtf.getValueLabel().setFont(createFont("Arial",18));
   }
+  void clear() {
+    txtf.remove();
+    super.clear();
+  }
+  void to_strings() {
+    super.to_strings();
+    file.append("macroVAL");
+    file.append(str(value));
+  }
 
   void update() {
     super.update();
@@ -303,7 +355,17 @@ class MacroDELAY extends Macro {
        ;
     txtf.getValueLabel().setFont(createFont("Arial",18));
   }
-
+  void clear() {
+    txtf.remove();
+    super.clear();
+  }
+  void to_strings() {
+    super.to_strings();
+    file.append("macroDELAY");
+    file.append(str(count));
+    file.append(str(actualCount));
+    file.append(str(on));
+  }
   void update() {
     super.update();
     count = int(txtf.getText());

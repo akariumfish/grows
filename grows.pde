@@ -2,6 +2,25 @@
 
             -- GROWING STRUCTURES GENERATOR --
 
+
+
+--corriger les beug d'affichage des macro (irregularité en y sur les bp des i/o) 
+--corriger numerotation des screenshots
+    la numerotation des fichier est baser sur le framecount
+    deux fichier identique sur deux run et l'ancien est supprimer
+    faire un truc mieux, il faut juste trouver comment test l'existance d'un fichier facilement
+
+
+sauvegarde !!
+  la traduction en StringList de macroworld est faite
+  la remise a zero de macroworld aussi
+  a faire :
+    --construction de macroworld a partir d'un stringlist
+    --selecteur de fichier source/cible
+    --menu group dedier
+    --sauvegarde sous different titre dans un fichier
+    --lecture
+    
 Les macro sont un outils de patch/programmation visuelle
 qui permettra une auto regulation des pop parametrable
   grow regulé par nb de pop
@@ -10,25 +29,32 @@ qui permettra une auto regulation des pop parametrable
   mort par :
     age (def age min)
     nb de pop
+ajouter:
+  --collapsing macros / controllers
+  --menu deroulant pour regler macro / controller
+  controller
+    --on/off growing behaviors
+    --switch pause
+    --change speed
+    trig chaque bp des menu en gros...
+  macro
+    --multi val one trig
+    --1 line delay
+    --and : 2 trig in , 1 trig out
+    --or : 2 trig in , 1 trig out
+    --> : 2 float in , 1 trig out
+    --< : 2 float in , 1 trig out
+    --= : 2 float in , 1 trig out
+    --environs = : 3 float in , 1 trig out
+    --trigger chain : 1 trig X float in , X trig out
 
-corriger les beug d'affichage des macro (irregularité en y sur les bp des i/o)
-
-
-bp pour faire passer juste un tour (+raccourcie clavier)
-
-affichage du framerate plus lisible : calcul du framerate moyen sur la derniere sec
-
-sauvegarder un screenshot
-    attention! 
-    la numerotation des fichier est baser sur le framecount
-    deux fichier identique sur deux run et l'ancien est supprimer
-    faire un truc mieux, il faut juste trouver comment test l'existance d'un fichier facilement
-
-add switch pour afficher graph des objets qui pousse si bp graph est on
-sur le graph, faire apparaitre d'une autre couleur les "echec" : pop au max ou pop a zero
+--ajouter des menu pour control taille baselist
+--bp pour faire passer juste un tour (+raccourcie clavier)
+--affichage du framerate plus lisible : calcul du framerate moyen sur la derniere sec
+--add switch pour afficher graph des objets qui pousse si bp graph est on
+--sur le graph, faire apparaitre d'une autre couleur les "echec" : pop au max ou pop a zero
 garder une image du graph ( le complet depuis le tour 0 de chaque run)
-
-switch antialiasing
+--switch antialiasing
 
 
 
@@ -84,7 +110,10 @@ void setup() {//executé au demarage
   
   //for (String s : PFont.list()) println(s); // liste toute les police de text qui existe
   
-  init();
+  init_panel(); //onglet panel : initialise le menu
+  init_base();
+  saving();
+  
 }
 
 void draw() {//executé once by frame
@@ -124,9 +153,15 @@ void draw() {//executé once by frame
   inputUpdate(); //voir l'onglet input
 }
 
-void init() {
-  init_panel(); //onglet panel : initialise le menu
-  init_base();
+void simcontrol_to_strings() {
+  file.append("simcontrol:");
+  file.append(str(counter));
+  file.append(str(pause));
+  file.append(str(repeat_runAll));
+  file.append(str(repeating_pile));
+  file.append(str(SEED));
+  file.append(str(slide));
+  file.append(str(maxSlide));
 }
 
 void run_speeded() {
@@ -481,6 +516,12 @@ void try_screenshot() {
 //##                         METHODES UTILES                           ##
 //#######################################################################
 
+
+String popStrLst(StringList sl) {
+  String s = sl.get(sl.size() - 1);
+  sl.remove(sl.size() - 1);
+  return s;
+}
 
 float distancePointToLine(float x, float y, float x1, float y1, float x2, float y2) {
   float r =  ( ((x-x1)*(x2-x1)) + ((y-y1)*(y2-y1)) ) / pow(distancePointToPoint(x1, y1, x2, y2), 2);

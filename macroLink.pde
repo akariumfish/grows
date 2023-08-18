@@ -7,6 +7,18 @@ class LinkList {
     macroList = m;
   }
   
+  void clear() {
+    linkBList.clear();
+    linkFList.clear();
+  }
+  
+  void to_strings() {
+    for (LinkB m : linkBList)
+      m.to_strings();
+    for (LinkF m : linkFList)
+      m.to_strings();
+  }
+  
   LinkB createLinkB() {
     LinkB l = new LinkB(macroList);
     linkBList.add(l);
@@ -26,6 +38,13 @@ class LinkB {
   OutputB out;
   LinkB(MacroList m) {
     macroList = m;
+  }
+  void to_strings() {
+    if (this != macroList.NOTB) {
+      file.append("linkB");
+      file.append(str(in.id));
+      file.append(str(out.id));
+    }
   }
   boolean collision(int x, int y) {
     if (this != macroList.NOTB && in != macroList.NOTBI && out != macroList.NOTBO) {
@@ -69,6 +88,13 @@ class LinkF {
   LinkF(MacroList m) {
     macroList = m;
   }
+  void to_strings() {
+    if (this != macroList.NOTF) {
+      file.append("linkF");
+      file.append(str(in.id));
+      file.append(str(out.id));
+    }
+  }
   boolean collision(int x, int y) {
     if (this != macroList.NOTF && in != macroList.NOTFI && out != macroList.NOTFO) {
       return distancePointToLine(x, y, in.x, in.y, out.x, out.y) < 3;
@@ -106,11 +132,13 @@ class LinkF {
 abstract class InputA {
   MacroList macroList;
   int x,y,n;
+  int id = 0;
   Group g;
   Button in;
   boolean bang = false;
-  InputA(MacroList m, String s_, int id, Group g_, int n_) {
+  InputA(MacroList m, String s_, int _id, Group g_, int n_) {
     macroList = m;
+    id = _id;
     g = g_;
     n = n_;
     in = cp5.addButton(s_ + str(id))
@@ -122,20 +150,39 @@ abstract class InputA {
        ;
     x = int(g.getPosition()[0]); y = int(g.getPosition()[1] + 12 + (n*26));
   }
+  void clear() {
+    in.remove();
+    g.remove();
+  }
+  void to_strings() {
+    file.append("input");
+    file.append(str(id));
+    file.append(str(x));
+    file.append(str(y));
+    file.append(str(n));
+  }
 }
 
 class InputB extends InputA {
   ArrayList<LinkB> l = new ArrayList<LinkB>(0);
-
+  Textlabel t;
   InputB(MacroList m, int id, Group g_, int i, String text, int n_) {
     super(m, "inB", id, g_, n_);
-    cp5.addTextlabel("Ctrl" + str(i) + "inBText" + str(n))
+    t = cp5.addTextlabel("Ctrl" + str(i) + "inBText" + str(n))
                     .setText(text)
                     .setPosition(28, 3 + (n*26))
                     .setColorValue(color(255))
                     .setFont(createFont("Arial",18))
                     .setGroup(g)
                     ;
+  }
+  void clear() {
+    t.remove();
+    super.clear();
+  }
+  void to_strings() {
+    super.to_strings();
+    file.append("B");
   }
   boolean getUpdate() {
     if (in.isMouseOver() && mouseClick[0] && macroList.creatingLinkB) {macroList.addLinkSelectInB(this);}
@@ -159,10 +206,11 @@ class InputF extends InputA {
   ArrayList<LinkF> l = new ArrayList<LinkF>(0);
   float value;
   Textfield textf;
+  Textlabel t;
   InputF(MacroList m, int id, Group g_, int i, String text, int n_, float d) {
     super(m, "inF", id, g_, n_);
     value = d;
-    cp5.addTextlabel("Ctrl" + str(id) + "inFText" + str(n))
+    t = cp5.addTextlabel("Ctrl" + str(id) + "inFText" + str(n))
                     .setText(text)
                     .setPosition(88, 3 + (n*26))
                     .setColorValue(color(255))
@@ -182,6 +230,11 @@ class InputF extends InputA {
        .setFocus(false);
        ;
     textf.getValueLabel().setFont(createFont("Arial",18));
+  }
+  void clear() {
+    textf.remove();
+    t.remove();
+    super.clear();
   }
   boolean getUpdate() {
     if (in.isMouseOver() && mouseClick[0] && macroList.creatingLinkF) {macroList.addLinkSelectInF(this);}
@@ -211,6 +264,11 @@ class InputF extends InputA {
     textf.setText(str(d));
     textf.setFocus(false);
   }
+  void to_strings() {
+    super.to_strings();
+    file.append("F");
+    file.append(str(value));
+  }
 }
 
 abstract class OutputA {
@@ -218,13 +276,15 @@ abstract class OutputA {
   boolean updated = false;
   int x = -100; int y = -100;
   int n = 0;
+  int id = 0;
   Group g;
   Button out;
   boolean bang = false;
 
-  OutputA(MacroList m, String s_, int id, Group g_, int n_) {
+  OutputA(MacroList m, String s_, int _id, Group g_, int n_) {
     g = g_;
     n = n_;
+    id = _id;
     macroList = m;
     out = cp5.addButton(s_ + str(id))
        .setSwitch(true)
@@ -235,19 +295,40 @@ abstract class OutputA {
        ;
     x = int(g.getPosition()[0] + g.getWidth()); y = int(g.getPosition()[1] + 14 + (n*26));
   }
+  
+  void clear() {
+    g.remove();
+    out.remove();
+  }
+  void to_strings() {
+    file.append("output");
+    file.append(str(id));
+    file.append(str(x));
+    file.append(str(y));
+    file.append(str(n));
+  }
 }
 
 class OutputB extends OutputA {
   ArrayList<LinkB> l = new ArrayList<LinkB>(0);
+  Textlabel t;
   OutputB(MacroList m, int id, Group g_, int i, String text, int n_) {
     super(m, "outB", id, g_, n_);
-    cp5.addTextlabel("Ctrl" + str(i) + "outBText" + str(n))
+    t = cp5.addTextlabel("Ctrl" + str(i) + "outBText" + str(n))
                     .setText(text)
                     .setPosition(g.getWidth() - 100, 3 + (n*26))
                     .setColorValue(color(255))
                     .setFont(createFont("Arial",18))
                     .setGroup(g)
                     ;
+  }
+  void clear() {
+    t.remove();
+    super.clear();
+  }
+  void to_strings() {
+    super.to_strings();
+    file.append("B");
   }
   void set(boolean v) {
     bang = v;
@@ -279,10 +360,11 @@ class OutputF extends OutputA {
   ArrayList<LinkF> l = new ArrayList<LinkF>(0);
   float value;
   Textfield textf;
+  Textlabel t;
   OutputF(MacroList m, int id, Group g_, int i, String text, int n_, float d) {
     super(m, "outF", id, g_, n_);
     value = d;
-    cp5.addTextlabel("Ctrl" + str(i) + "outFText" + str(n_))
+    t = cp5.addTextlabel("Ctrl" + str(i) + "outFText" + str(n_))
                     .setText(text)
                     .setPosition(g.getWidth() - 160, 3 + (n_*26))
                     .setColorValue(color(255))
@@ -302,6 +384,16 @@ class OutputF extends OutputA {
        .setFocus(false)
        ;
     textf.getValueLabel().setFont(createFont("Arial",18));
+  }
+  void clear() {
+    t.remove();
+    textf.remove();
+    super.clear();
+  }
+  void to_strings() {
+    super.to_strings();
+    file.append("F");
+    file.append(str(value));
   }
   void set(float v) {
     value = v;

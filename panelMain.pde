@@ -49,7 +49,7 @@ void init_panel() {
   group_control = cp5.addGroup("group_control")
              .setPosition(width - (PANEL_WIDTH * 2), 10)
              .setSize(PANEL_WIDTH, 10)
-             .setBackgroundHeight(270)
+             .setBackgroundHeight(330)
              .setBackgroundColor(color(60, 200))
              .disableCollapse()
              .moveTo("Menu")
@@ -89,6 +89,9 @@ void init_panel() {
   addButton(group_control, "reset-rng", "RNG", 205, 210, 95, 50, utilctrlid + 15, TEXT_SIZE * 1.2);
   addButton(group_control, "saveframe", "I", 325, 210, 50, 50, utilctrlid + 2, TEXT_SIZE * 1.5);
   
+  addButton(group_control, "save-param", "S", 100, 270, 95, 50, utilctrlid + 16, TEXT_SIZE * 1.5);
+  addButton(group_control, "load-param", "L", 205, 270, 95, 50, utilctrlid + 17, TEXT_SIZE * 1.5);
+  
   //cp5.printControllerMap(); // print all ui element
 }
 
@@ -110,6 +113,13 @@ public void controlEvent(ControlEvent theEvent) {
   
   event_panel_grower(id, line, modifier);
   
+  if (id == utilctrlid + 16) { // boutton save
+    save_parameters();
+  }
+  if (id == utilctrlid + 17) { // boutton load
+  
+    reset();
+  }
   if (id == utilctrlid + 13) { // boutton < slide
     slide = constrain(slide - 1, 0, maxSlide);
     info_slide.setText("SLIDE: " + (slide + 1));

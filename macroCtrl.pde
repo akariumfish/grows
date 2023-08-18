@@ -1,3 +1,5 @@
+
+
 abstract class Controller {
   MacroWorld mworld;
   int id = 0;
@@ -24,7 +26,17 @@ abstract class Controller {
                   ;
     g.getCaptionLabel().setFont(createFont("Arial",16));
   }
-
+  void clear() {
+    g.remove();
+  }
+  void to_strings() {
+    file.append("Controller");
+    file.append(str(id));
+    file.append(str(x));
+    file.append(str(y));
+    file.append(str(inCount));
+    file.append(str(outCount));
+  }
   InputB createInputB(String text) {
     InputB in = mworld.macroList.createInputB(g, id, text, inCount);
     if (inCount >= outCount) {
@@ -77,6 +89,7 @@ abstract class Controller {
       }
     }
   }
+  
   abstract void drawing(float x, float y);
 }
 
@@ -96,6 +109,17 @@ class GrowingControl extends Controller {
     stop = STOP_DIFFICULTY;
     dieI = createInputF("DIE", DIE_DIFFICULTY);
     die = DIE_DIFFICULTY;
+  }
+  void clear() {
+    super.clear();
+  }
+  void to_strings() {
+    super.to_strings();
+    file.append("GrowingControl");
+    file.append(str(grow));
+    file.append(str(sprout));
+    file.append(str(stop));
+    file.append(str(die));
   }
   
   void drawing(float x, float y) {}
@@ -145,6 +169,15 @@ class GrowingWatcher extends Controller {
     popO = createOutputF("      POP", 0);
     growO = createOutputF("  GROW", 0);
   }
+  void clear() {
+    super.clear();
+  }
+  void to_strings() {
+    super.to_strings();
+    file.append("GrowWatcher");
+    file.append(str(pop));
+    file.append(str(grow));
+  }
   
   void drawing(float x, float y) {}
   
@@ -170,6 +203,13 @@ class Keyboard extends Controller {
     wO = createOutputB("          W");
     pO = createOutputB("          P");
     cO = createOutputB("          C");
+  }
+  void clear() {
+    super.clear();
+  }
+  void to_strings() {
+    super.to_strings();
+    file.append("Keyboard");
   }
   
   void update() {

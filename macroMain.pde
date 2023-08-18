@@ -43,11 +43,28 @@ void init_macro() {
 
 class MacroWorld {
   ArrayList<Controller> control = new ArrayList<Controller>(0);
-  //ArrayList<Body> body = new ArrayList<Body>(0);
   MacroList macroList;
   
   MacroWorld() {
     macroList = new MacroList();
+  }
+  
+  void macroWorld_to_string() {
+    file.append("macroworld:");
+    file.append("controller:");
+    for (Controller c : control)
+      c.to_strings();
+    macroList.to_strings();
+  }
+  boolean build_from_string(StringList file) {
+    file.reverse();
+    return  popStrLst(file).equals("macroworld:") &&
+            popStrLst(file).equals("controller:") ;
+  }
+  void clear() {
+    control.clear();
+    for (Controller c : control) c.clear();
+    macroList.clear();
   }
   
   void update() {
