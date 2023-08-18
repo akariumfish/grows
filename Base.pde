@@ -1,5 +1,31 @@
 
 //ici on definie les objet que l'on vas generer
+
+/*
+
+quelque parametre valide :
+
+GROW: 1.0
+SPROUT: 5000.0
+STOP: 10.0
+DIE: 7.2
+OLD AGE: 400
+
+GROW: 2.4
+SPROUT: 20000.0
+STOP: 133.28
+DIE: 1.2490002
+OLD AGE: 400
+
+presque stable a grande pop
+GROW: true 0.48109692
+SPROUT: true 717.9206
+STOP: true 1.2851914
+DIE: true 0.0015025112
+OLD AGE: 140
+
+*/
+
 Base[] BaseList = new Base[0]; //contien les objet
 int MAX_LIST_SIZE = 5000; //longueur max de l'array d'objet
 int INIT_BASE = 30; //nombre de grower au debut puis apres un reset MODIFIABLE PAR MENU INIT
