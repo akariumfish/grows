@@ -1,35 +1,51 @@
 
+abstract class EventA {//modificateur d'entité
+  
+}
 
-
-class Event { //modificateur d'entité, conditionné par un objet try
-  void tryAction(Entity e, Parameters p) {
+class GrowingEvent extends EventA {
+  GrowingEventParam p = new GrowingEventParam();
+  void tryAction(Grower e) {
     //grow
-    if (p.ON && random(p.DIFFICULTY) > 0.5) {
-      Entity n = new_Entity(e.list, e.grows, e.dir);
-      if (n != null) {
-        n.pos = e.grows;
-        n.grows = new PVector(p.LENGTH, 0);
-        n.grows.rotate(e.grows.heading());
-        n.grows.rotate(random(PI / p.DEVIATION) - ((PI / p.DEVIATION) / 2));
-        n.dir = new PVector();
-        n.dir = n.grows;
-        n.grows = PVector.add(n.pos, n.grows);
-      }
+    Grower n = e.growCom.new_Grower();
+    if (n != null) {
+      n.pos = e.grows;
+      n.grows = new PVector(p.LENGTH, 0);
+      n.grows.rotate(e.grows.heading());
+      n.grows.rotate(random(PI / p.DEVIATION) - ((PI / p.DEVIATION) / 2));
+      n.dir = new PVector();
+      n.dir = n.grows;
+      n.grows = PVector.add(n.pos, n.grows);
     }
   }
 }
 
-class Try { //test de reussite, régulé par un/des parametre, pas de valeur fixe!
-  boolean get() {
-    return false;
+abstract class TryA { //test de reussite, régulé par un/des parametre, pas de valeur fixe!
+  abstract boolean trying();
+}
+
+class RandomTry extends TryA {
+  RandomTryParam p = new RandomTryParam();
+  boolean trying() {
+    return p.ON && random(p.DIFFICULTY) > 0.5;
   }
 }
 
-class Parameters {//agregateur de parametre,
+class ParametersA {//agregateur de parametre,
 //pourras etre passer au menu pour un automenu
+}
+
+class RandomTryParam extends ParametersA {
   float DIFFICULTY = 4;
   boolean ON = true;
-  //-----CUT IT IN TWO OBJECT HERE-------
+}
+
+class GrowingEventParam extends ParametersA {
   float LENGTH = 40;
   float DEVIATION = 1;
+}
+
+class CommunityParam extends ParametersA {
+  int MAX_ENT = 1000; //longueur max de l'array d'objet
+  int INIT_ENT = 2;
 }

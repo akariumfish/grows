@@ -12,6 +12,7 @@ boolean DEBUG = true; //utilisable dans draw pour print
 boolean DEBUG_SHOW_MENU = false;
 int counter = 0; //conteur de tour depuis le dernier reset ou le debut
 boolean pause = false; //permet d'interompre le defilement des tour
+int SEED = 548651008; //seed pour l'aleatoire
 float repeat_runAll = 1.0; //nombre de fois ou il faut executé runall par frame
 float repeating_pile = 0; //pile pour stocker les portion de repeat_runall quand il est < a 1
 int slide = 0;
@@ -31,7 +32,8 @@ void setup() {//executé au demarage
   //for (String s : PFont.list()) println(s); // liste toute les police de text qui existe
   
   if (DEBUG_SHOW_MENU) init_panel(); //onglet panel : initialise le menu
-  init_Entity_List(mainList);
+  growerComune.init_Entity_List();
+  growerComune.new_Entity();
   
 }
 
@@ -44,7 +46,7 @@ void draw() {//executé once by frame
     while (repeating_pile > 1) {
       
       //run_speeded
-      run_All_Entity(mainList);
+      growerComune.run_All_Entity();
       
       counter++;
       repeating_pile--;
@@ -72,7 +74,7 @@ void draw() {//executé once by frame
   cam_movement(); // matrice d'affichage pour la camera
   
   //draw_on_camera:
-  draw_All_Entity(mainList); //execution des draw de tout les objet actif dans baselist
+  growerComune.draw_All_Entity(); //execution des draw de tout les objet actif dans baselist
   
   popMatrix(); // fin de la matrice d'affichage
   if (DEBUG_SHOW_MENU) try_screenshot();
@@ -82,7 +84,7 @@ void draw() {//executé once by frame
     fill(255);
     textSize(16);
     text(int(frameRate),10,height - 26 );
-    text(counter + " " + inactive_Entity_Nb(mainList),10,height - 10 );
+    text(counter + " " + growerComune.inactive_Entity_Nb(),10,height - 10 );
   //}
   
   
@@ -98,7 +100,7 @@ void draw() {//executé once by frame
 }
 
 void reset() {
-  reset_Entity_List(mainList);
+  growerComune.reset_Entity_List();
   init_graphs();
 
   //reset le conter de tour

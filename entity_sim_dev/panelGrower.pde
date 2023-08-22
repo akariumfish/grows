@@ -33,7 +33,7 @@ void init_panel_grower() {
     .setSwitch(true);
   if (SHOW_GRAPH) b.setOn();
   
-  build_line_incr(group_grow, "INIT", " ", INIT_BASE, 10, 610, 6);
+  //build_line_incr(group_grow, "INIT", " ", INIT_BASE, 10, 610, 6);
   
   addButton(group_grow, "HIDE_GROW", "H", 370, 670, 20, 20, utilctrlid + 12, 16);
   
