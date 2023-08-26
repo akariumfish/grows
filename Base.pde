@@ -242,6 +242,7 @@ class Base {
     //ellipse(pos.x, pos.y, 2, 2);
     
     line(pos.x,pos.y,grows.x,grows.y);
+    
     //strokeWeight(MAX_LINE_WIDTH+1 / cam_scale);
     //point(grows.x,grows.y);
     

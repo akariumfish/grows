@@ -152,6 +152,11 @@ class MacroList {
     return new MacroVAL(this, v, id, 300, 100 + (id * 100));
   }
   
+  MacroCOMP addMacroCOMP() {
+    int id = macroList.size();
+    return new MacroCOMP(this, id, 300, 100 + (id * 100));
+  }
+  
   MacroDELAY addMacroDELAY(int v) {
     int id = macroList.size();
     return new MacroDELAY(this, v, id, 300, 100 + (id * 100));
@@ -280,7 +285,6 @@ abstract class Macro {
     outCount +=1;
     return out;
   }
-  
 }
 
 class MacroVAL extends Macro {
@@ -328,7 +332,6 @@ class MacroVAL extends Macro {
       updated = true;
     }
   }
-
 }
 
 class MacroDELAY extends Macro {
@@ -392,6 +395,47 @@ class MacroDELAY extends Macro {
   }
 
 }
+
+class MacroCOMP extends Macro {
+  OutputB out;
+  InputF in1,in2;
+  float v1,v2;
+  
+  MacroCOMP(MacroList ml, int i_, int x_, int y_) {
+    super(ml, i_, x_, y_);
+    g.setLabel("Comp>");
+    in1 =  createInputF("   IN",0);
+    in2 = createInputF("   IN",0);
+    out = createOutputB("    OUT");
+    v1 = 0; v2 = 0;
+  }
+  void clear() {
+    super.clear();
+  }
+  void to_strings() {
+    super.to_strings();
+    file.append("macroCOMP");
+  }
+
+  void update() {
+    super.update();
+    if (in1.getUpdate() && in2.getUpdate()) {
+      
+      if (in1.bang()) {v1 = in1.get();}
+      if (in2.bang()) {v2 = in2.get();}
+      
+      if (v1 > v2) {out.bang();} else {out.unBang();}
+
+      out.update();
+      updated = true;
+    }
+  }
+}
+
+
+
+
+
 
 //class MacroPileF extends Macro {
 //  OutputF out;

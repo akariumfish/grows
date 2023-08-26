@@ -339,6 +339,8 @@ class OutputB extends OutputA {
     }
     update();
   }
+  void bang() { set(true); }
+  void unBang() { set(false); }
   boolean get() {
     return bang;
   }
