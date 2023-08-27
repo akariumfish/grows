@@ -8,6 +8,10 @@ ici on definie les objet que l'on vas generer
 
 GrowerComunity growerComune = new GrowerComunity();
 
+//class ComunityList
+//  add growerComu(list size, init pos, init nb, ...) 
+//  add crystalComu
+//  slide = selection de comu qui seront run et draw
 
 
 abstract class CommunityA {
@@ -22,6 +26,10 @@ abstract class CommunityA {
   }
   abstract void init_list();
   abstract Entity new_Entity();
+  
+  //ajoute une methode qui lie les entité d'une comu, un event et un try
+  //peut etre parametrer par string
+  //meme string retourné par func du genre comu.tostrings()[i]
   
   void reset_Entity_List() { //set it ready to grow
     delete_All_Entity();
@@ -54,9 +62,9 @@ class GrowerComunity extends CommunityA {
     }
   }
   
-  Entity new_Entity() { for (Grower g : list) if (!g.active) return (Entity)g.reset(); return null; }
+  Entity new_Entity() { for (Grower g : list) if (!g.active) return g.reset(); return null; }
   Grower new_Grower() { for (Grower g : list) if (!g.active) { g.reset(); return g; } return null; }
-  void reset_Entity_List() { super.reset_Entity_List(); }//set it ready to grow
+  //void reset_Entity_List() { super.reset_Entity_List(); }//set it ready to grow
 }
 
 abstract class Entity { // l'objet, func draw run reset destroy ; Event.action test dans run

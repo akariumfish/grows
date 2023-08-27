@@ -12,17 +12,17 @@
 
 
 sauvegarde !!
-  la traduction en StringList de macroworld est faite
-  la remise a zero de macroworld aussi
+  la traduction en StringList de macroworld est faite <- a verif apres merge macro world et list
+  la remise a zero de macroworld aussi <- a verif apres merge macro world et list
   a faire :
-    --construction de macroworld a partir d'un stringlist
+    --construction de macrolist a partir d'un stringlist
     --selecteur de fichier source/cible
     --menu group dedier
     --sauvegarde sous different titre dans un fichier
     --lecture
     
 Les macro sont un outils de patch/programmation visuelle
-qui permettra une auto regulation des pop parametrable
+qui permettra par exemple une auto regulation des pop parametrable
   grow regulé par nb de pop
   sprout par nb de grower
   stop par nb de grower
@@ -30,8 +30,9 @@ qui permettra une auto regulation des pop parametrable
     age (def age min)
     nb de pop
 ajouter:
+  --ajout et suppression de macros
   --collapsing macros
-  macro
+  type de macro:
     --on/off growing behaviors
     --switch pause
     --change speed
@@ -107,32 +108,62 @@ void setup() {//executé au demarage
   init_base();
   //saving();
   
+  growerComune.init_Entity_List();
+  growerComune.new_Entity();
+  
 }
 
 void draw() {//executé once by frame
   background(0);//fond noir
   
-  //execute les fonction run de tout les objet actif dans baselist (a un ritme definie par repeat_runall)
   if (!pause) {
     repeating_pile += repeat_runAll;
     while (repeating_pile > 1) {
-      run_speeded();
+      
+      //run_speeded:  execute a un ritme definie par repeat_runall
+      growerComune.run_All_Entity();
+      runAll();
+      
       counter++;
       repeating_pile--;
     }
-    run_each_unpaused_frame();
+    
+    //run_each_unpaused_frame:
+    update_graph();
   }
   
-  run_each_frame();
+  //run_each_frame:
+  //raccourcie barre espace -> pause
+  if (keysClick[6]) {
+    Button b = (Button)cp5.getController("running");
+    if (b.isOn()) b.setOff(); else b.setOn();
+  }
+  update_all_menu();
+  mList.update();
 
   // affichage
-  draw_on_screen();
+  
+  //draw_on_screen:
+  draw_graphs(); // population et grower tracking graph
+  if (!cp5.getTab("default").isActive()) {// draw framerate
+    fill(255);
+    textSize(16);
+    text(int(frameRate),10,height - 10 );
+  }
+  
   pushMatrix();
   cam_movement(); // matrice d'affichage pour la camera
-  draw_on_camera(); //execution des draw de tout les objet actif dans baselist
+  
+  //draw_on_camera:
+  growerComune.draw_All_Entity();
+  
+  drawAll();
+  
   popMatrix(); // fin de la matrice d'affichage
   try_screenshot();
-  draw_after_screenshot();
+  
+  //draw_after_screenshot:
+  mList.drawing();
   
   
   //peut servir
@@ -157,108 +188,14 @@ void simcontrol_to_strings() {
   file.append(str(maxSlide));
 }
 
-void run_speeded() {
-  switch (slide) {
-    case 0: {
-      runAll();
-      break;
-    }
-    case 1: {
-      
-      break;
-    }
-  }
-}
-
-void run_each_unpaused_frame() {
-  switch (slide) {
-    case 0: {
-      update_graph();
-      break;
-    }
-    case 1: {
-      
-      break;
-    }
-  }
-}
-
-void run_each_frame() {
-  switch (slide) {
-    case 0: {
-      //raccourcie barre espace -> pause
-      if (keysClick[6]) {
-        Button b = (Button)cp5.getController("running");
-        if (b.isOn()) b.setOff(); else b.setOn();
-      }
-      update_all_menu();
-      mList.update();
-      break;
-    }
-    case 1: {
-      
-      break;
-    }
-  }
-}
-
-void draw_on_screen() {
-  switch (slide) {
-    case 0: {
-      draw_graphs(); // population et grower tracking graph
-      if (!cp5.getTab("default").isActive()) {// draw framerate
-        fill(255);
-        textSize(16);
-        text(int(frameRate),10,height - 10 );
-      }
-      break;
-    }
-    case 1: {
-      
-      break;
-    }
-  }
-}
-
-void draw_on_camera() {
-  switch (slide) {
-    case 0: {
-      drawAll();
-      break;
-    }
-    case 1: {
-      
-      break;
-    }
-  }
-}
-
-void draw_after_screenshot() {
-  switch (slide) {
-    case 0: {
-      mList.drawing();
-      break;
-    }
-    case 1: {
-      
-      break;
-    }
-  }
-}
-
 void reset() {
-  switch (slide) {
-    case 0: {
-      reset_base();
-      init_graphs();
-      break;
-    }
-    case 1: {
-      
-      break;
-    }
-  }
   
+  growerComune.reset_Entity_List();
+  growerComune.new_Entity();
+  
+  reset_base();
+  init_graphs();
+
   //reset le conter de tour
   counter = 0;
 }
@@ -468,14 +405,14 @@ void cam_input_update() {
   
   //permet le zoom
   if (mouseWheelUp || keysClick[2]) {
-    cam_scale *= ZOOM_FACTOR;
-    cam_pos.x *= ZOOM_FACTOR;
-    cam_pos.y *= ZOOM_FACTOR;
-  }
-  if (mouseWheelDown || keysClick[3]) {
     cam_scale /= ZOOM_FACTOR;
     cam_pos.x /= ZOOM_FACTOR;
     cam_pos.y /= ZOOM_FACTOR;
+  }
+  if (mouseWheelDown || keysClick[3]) {
+    cam_scale *= ZOOM_FACTOR;
+    cam_pos.x *= ZOOM_FACTOR;
+    cam_pos.y *= ZOOM_FACTOR;
   }
 }
 
