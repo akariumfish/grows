@@ -30,23 +30,16 @@ qui permettra une auto regulation des pop parametrable
     age (def age min)
     nb de pop
 ajouter:
-  --collapsing macros / controllers
-  --menu deroulant pour regler macro / controller
-  controller
+  --collapsing macros
+  macro
     --on/off growing behaviors
     --switch pause
     --change speed
     trig chaque bp des menu en gros...
-  macro
     --multi val one trig
     --1 line delay
-    --and : 2 trig in , 1 trig out
-    --or : 2 trig in , 1 trig out
-    --> : 2 float in , 1 trig out
-    --< : 2 float in , 1 trig out
-    --= : 2 float in , 1 trig out
     --environs = : 3 float in , 1 trig out
-    --trigger chain : 1 trig X float in , X trig out
+    --trigger chain : 1 trig X float in (times), X trig out
 
 --ajouter des menu pour control taille baselist
 --bp pour faire passer juste un tour (+raccourcie clavier)
@@ -112,7 +105,7 @@ void setup() {//executé au demarage
   
   init_panel(); //onglet panel : initialise le menu
   init_base();
-  saving();
+  //saving();
   
 }
 
@@ -199,7 +192,7 @@ void run_each_frame() {
         if (b.isOn()) b.setOff(); else b.setOn();
       }
       update_all_menu();
-      mworld.update();
+      mList.update();
       break;
     }
     case 1: {
@@ -243,7 +236,7 @@ void draw_on_camera() {
 void draw_after_screenshot() {
   switch (slide) {
     case 0: {
-      mworld.drawing();
+      mList.drawing();
       break;
     }
     case 1: {

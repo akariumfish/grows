@@ -1,114 +1,334 @@
 
-MacroWorld mworld;
+
+MacroList mList;
 
 Keyboard keyb;
-MacroVAL mv1,mv2,mv3,mv4,mv5,mv6;
-MacroDELAY md1,md2;
-MacroCOMP mc1;
 GrowingControl gcC;
 GrowingWatcher gwC;
 
-void init_macro() {
-  mworld = new MacroWorld();
-  gcC = mworld.addGrowingControl();
-    
-  //keyb = mworld.addKeyboard();
-  //mv1 = mworld.macroList.addMacroVAL(0.16);
-  //mv2 = mworld.macroList.addMacroVAL(0.833);
-  //md1 = mworld.macroList.addMacroDELAY(1);
-  
-  //mv3 = mworld.macroList.addMacroVAL(1);
-  //mv4 = mworld.macroList.addMacroVAL(1);
-  mv5 = mworld.macroList.addMacroVAL(2500);
-  //mv6 = mworld.macroList.addMacroVAL(5);
-  //md2 = mworld.macroList.addMacroDELAY(5);
-  
-  mc1 = mworld.macroList.addMacroCOMP();
-  
-  gwC = mworld.addGrowingWatcher();
+MacroVAL mv1,mv2;
+MacroCOMP mc1;
 
-  //keyb.wO.linkTo(mv1.in)
-  //       .linkTo(md1.in);
-  //md1.out.linkTo(mv2.in);
-  //mv1.out.linkTo(gcC.growI);
-  //mv2.out.linkTo(gcC.growI);
+void init_macro() {
+  mList = new MacroList();
+  gcC = mList.addGrowingControl(800, 50);
+  gwC = mList.addGrowingWatcher(50, 400);
+  keyb = mList.addKeyboard(50, 50);
   
-  //keyb.cO.linkTo(mv3.in)
-  //       .linkTo(mv4.in)
-  //       .linkTo(md2.in);
-  //md2.out.linkTo(mv5.in)
-  //       .linkTo(mv6.in);
-  //mv3.out.linkTo(gcC.sproutI);
-  //mv4.out.linkTo(gcC.stopI);
-  //mv5.out.linkTo(gcC.sproutI);
-  //mv6.out.linkTo(gcC.stopI);
+  mv1 = mList.addMacroVAL(300, 50, 0.16);
+  mv2 = mList.addMacroVAL(300, 200, 0.833);
+  mc1 = mList.addMacroCOMP(300, 400);
+  mList.addMacroBOOL(300, 600);
+  
+  keyb.wO.linkTo(mv1.in)
+         .linkTo(mv2.in);
 }
 
-class MacroWorld {
-  ArrayList<Controller> control = new ArrayList<Controller>(0);
-  MacroList macroList;
+class MacroList {
+  ArrayList<Macro> macroList = new ArrayList<Macro>(0);
+  ArrayList<InputB> inBList = new ArrayList<InputB>(0);
+  ArrayList<OutputB> outBList = new ArrayList<OutputB>(0);
+  ArrayList<InputF> inFList = new ArrayList<InputF>(0);
+  ArrayList<OutputF> outFList = new ArrayList<OutputF>(0);
   
-  MacroWorld() {
-    macroList = new MacroList();
+  LinkList linkList = new LinkList(this);
+  
+  Group g;
+  LinkB NOTB = linkList.createLinkB();
+  LinkF NOTF = linkList.createLinkF();
+  InputB NOTBI;
+  InputF NOTFI;
+  OutputB NOTBO;
+  OutputF NOTFO;
+  
+  boolean creatingLinkB = false;
+  OutputB selectOutB;
+  boolean creatingLinkF = false;
+  OutputF selectOutF;
+  
+  MacroList() {
+    g = cp5.addGroup("Main")
+                  .setVisible(false)
+                  .setPosition(-200,-200)
+                  .moveTo("Macros")
+                  ;
+    NOTBO = createOutputB(g, -1,"",0);
+    NOTFO = createOutputF(g,-1,"",1,0);
+    NOTBI = createInputB(g,-1,"",0);
+    NOTFI = createInputF(g,-1,"",1,0);
   }
   
-  void macroWorld_to_string() {
-    file.append("macroworld:");
-    file.append("controller:");
-    for (Controller c : control)
-      c.to_strings();
-    macroList.to_strings();
-  }
-  boolean build_from_string(StringList file) {
-    file.reverse();
-    return  popStrLst(file).equals("macroworld:") &&
-            popStrLst(file).equals("controller:") ;
-  }
   void clear() {
-    control.clear();
-    for (Controller c : control) c.clear();
+    g.remove();
+    for (Macro m : macroList) m.clear();
+    for (InputB i : inBList) i.clear();
+    for (InputF i : inFList) i.clear();
+    for (OutputB o : outBList) o.clear();
+    for (OutputF o : outFList) o.clear();
     macroList.clear();
+    inBList.clear();
+    outBList.clear();
+    inFList.clear();
+    outFList.clear();
+    linkList.clear();
+  }
+  
+  void to_strings() {
+    file.append("macros:");
+    for (Macro m : macroList)
+      m.to_strings();
+    file.append("in/out:");
+    for (InputB m : inBList)
+      m.to_strings();
+    for (InputF m : inFList)
+      m.to_strings();
+    for (OutputB m : outBList)
+      m.to_strings();
+    for (OutputF m : outFList)
+      m.to_strings();
+    file.append("links:");
+    linkList.to_strings();
+  }
+  
+  void drawing() {
+    if (creatingLinkB) {
+      stroke(255);
+      fill(255);
+      strokeWeight(3);
+      line(mouseX,mouseY,selectOutB.x,selectOutB.y);
+      ellipseMode(RADIUS);
+      noStroke();
+      ellipse(mouseX,mouseY,6,6);
+      ellipse(selectOutB.x,selectOutB.y,6,6);
+    } else if (creatingLinkF) {
+      stroke(255);
+      fill(255);
+      strokeWeight(3);
+      line(mouseX,mouseY,selectOutF.x,selectOutF.y);
+      ellipseMode(RADIUS);
+      noStroke();
+      ellipse(mouseX,mouseY,6,6);
+      ellipse(selectOutF.x,selectOutF.y,6,6);
+    }
+    for (LinkB l : linkList.linkBList) {
+      l.drawing();
+    }
+    for (LinkF l : linkList.linkFList) {
+      l.drawing();
+    }
   }
   
   void update() {
-    for (Controller p : control)  p.update();
-    macroList.update();
+    int counter = 0;
+    while (counter < macroList.size()) {
+      for (Macro m : macroList) {
+        if (!m.updated) {
+          m.update();
+          if (m.updated) {counter += 1;}
+        }
+      }
+    }
+    for (Macro m : macroList) {
+      m.updated = false;
+    }
+    if (mouseClick[1]) {
+      creatingLinkB = false;
+      creatingLinkF = false;
+      for (int i = linkList.linkBList.size() - 1; i >= 0; i--) {
+        LinkB l = linkList.linkBList.get(i);
+        if (l.collision(mouseX, mouseY)) {
+          l.in.l.remove(l);
+          l.out.l.remove(l);
+          linkList.linkBList.remove(l);
+        }
+      }
+      for (int i = linkList.linkFList.size() - 1; i >= 0; i--) {
+        LinkF l = linkList.linkFList.get(i);
+        if (l.collision(mouseX, mouseY)) {
+          l.in.l.remove(l);
+          l.out.l.remove(l);
+          linkList.linkFList.remove(l);
+        }
+      }
+    }
   }
   
-  //drawing
-  void drawing() {
-    //if (!cp5.getTab("Macros").isActive()) {
-    //  for (int i = 0; i < control.size(); i++) {
-    //    control.get(i).drawing(20, 150 + (30 * i));
-    //  }
-    //}
-    macroList.drawing();
+  void addLinkSelectOutB(OutputB out) {
+    creatingLinkB = true;
+    selectOutB = out;
+  }
+  
+  void addLinkSelectInB(InputB in) {
+    creatingLinkB = false;
+    selectOutB.linkTo(in);
+  }
+  
+  void addLinkSelectOutF(OutputF out) {
+    creatingLinkF = true;
+    selectOutF = out;
+  }
+  
+  void addLinkSelectInF(InputF in) {
+    creatingLinkF = false;
+    selectOutF.linkTo(in);
+  }
+  
+  Keyboard addKeyboard(int _x, int _y) {
+    int id = macroList.size();
+    return new Keyboard(this, id, _x, _y);
+  }
+  
+  GrowingControl addGrowingControl(int _x, int _y) {
+    int id = macroList.size();
+    return new GrowingControl(this, id, _x, _y);
+  }
+  
+  GrowingWatcher addGrowingWatcher(int _x, int _y) {
+    int id = macroList.size();
+    return new GrowingWatcher(this, id, _x, _y);
+  }
+  
+  MacroVAL addMacroVAL(int _x, int _y, float v) {
+    int id = macroList.size();
+    return new MacroVAL(this, v, id, _x, _y);
+  }
+  
+  MacroCOMP addMacroCOMP(int _x, int _y) {
+    int id = macroList.size();
+    return new MacroCOMP(this, id, _x, _y);
+  }
+  
+  MacroBOOL addMacroBOOL(int _x, int _y) {
+    int id = macroList.size();
+    return new MacroBOOL(this, id, _x, _y);
+  }
+  
+  MacroDELAY addMacroDELAY(int _x, int _y, int v) {
+    int id = macroList.size();
+    return new MacroDELAY(this, v, id, _x, _y);
+  }
+  
+  Macro addMacro(Macro m) {
+    macroList.add(m);
+    return m;
+  }
+  
+  InputB createInputB(Group g, int i, String text, int n) {
+    int id = inBList.size();
+    InputB o = new InputB(this, id, g, i, text, n);
+    inBList.add(o);
+    return o;
   }
 
-  Controller addController(Controller p) {
-    control.add(p);
-    return p;
+  InputF createInputF(Group g, int i, String text, int n, float d) {
+    int id = inFList.size();
+    InputF o = new InputF(this, id, g, i, text, n, d);
+    inFList.add(o);
+    return o;
   }
   
-  Keyboard addKeyboard() {
-    int id = control.size();
-    return (Keyboard) addController(new Keyboard(this, id, 30, 100 + (110 * id)));
+  OutputB createOutputB(Group g, int i, String text, int n) {
+    int id = outBList.size();
+    OutputB o = new OutputB(this, id, g, i, text, n);
+    outBList.add(o);
+    return o;
   }
   
-  GrowingControl addGrowingControl() {
-    int id = control.size();
-    return (GrowingControl) addController(
-      new GrowingControl(this, id, 800, 100 + (100 * id)) );
+  OutputF createOutputF(Group g, int i, String text, int n, float d_) {
+    int id = outFList.size();
+    OutputF o = new OutputF(this, id, g, i, text, n, d_);
+    outFList.add(o);
+    return o;
   }
   
-  GrowingWatcher addGrowingWatcher() {
-    int id = control.size();
-    return (GrowingWatcher) addController(
-      new GrowingWatcher(this, id, 30, 100 + (130 * id)) );
+}
+
+abstract class Macro {
+  MacroList macroList;
+  boolean updated = false;
+  Group g;
+  int id; int x,y; float mx = 0; float my = 0;
+  int inCount = 0;
+  int outCount = 0;
+  
+  Macro(MacroList ml, int i_, int x_, int y_) {
+    ml.addMacro(this);
+    macroList = ml;
+    id = i_;
+    x = x_; y = y_;
+    g = cp5.addGroup("Macro" + str(id))
+                  .activateEvent(true)
+                  .setPosition(x,y)
+                  .setSize(320,22)
+                  .setBackgroundColor(color(60, 200))
+                  .disableCollapse()
+                  .moveTo("Macros")
+                  .setHeight(22)
+                  ;
+  g.getCaptionLabel().setFont(createFont("Arial",16));
+  }
+  void clear() {
+    g.remove();
+  }
+  void to_strings() {
+    file.append("macro");
+    file.append(str(id));
+    file.append(str(x));
+    file.append(str(y));
+    file.append(str(inCount));
+    file.append(str(outCount));
   }
   
-  void removeControl(Controller p) {
-    control.remove(p);
+  void update() {
+    if (cp5.getTab("Macros").isActive()) {
+      if (g.isMouseOver() && mouseClick[0]) {
+        mx = g.getPosition()[0] - mouseX;
+        my = g.getPosition()[1] - mouseY;
+        GRAB = false; //deactive le deplacement camera
+      }
+      if (g.isMouseOver() && mouseUClick[0]) {
+        GRAB = true;
+      }
+      if (g.isMouseOver() && mouseButtons[0]) {
+        x = int(mouseX + mx); y = int(mouseY + my);
+        g.setPosition(mouseX + mx,mouseY + my);
+      }
+    }
   }
   
+  InputB createInputB(String text) {
+    InputB in = macroList.createInputB(g, id, text, inCount);
+    if (inCount >= outCount) {
+      g.setSize(g.getWidth(), 28 + (inCount*28));
+    }
+    inCount +=1;
+    return in;
+  }
+
+  InputF createInputF(String text, float d) {
+    InputF in = macroList.createInputF(g, id, text, inCount, d);
+    if (inCount >= outCount) {
+      g.setSize(g.getWidth(), 28 + (inCount*28));
+    }
+    inCount +=1;
+    return in;
+  }
+  
+  OutputB createOutputB(String text) {
+    OutputB out = macroList.createOutputB(g, id, text, outCount);
+    if (outCount >= inCount) {
+      g.setSize(g.getWidth(), 28 + (outCount*28));
+    }
+    outCount +=1;
+    return out;
+  }
+
+  OutputF createOutputF(String text, float d) {
+    OutputF out = macroList.createOutputF(g, id, text, outCount, d);
+    if (outCount >= inCount) {
+      g.setSize(g.getWidth(), 28 + (outCount*28));
+    }
+    outCount +=1;
+    return out;
+  }
 }

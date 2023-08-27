@@ -33,7 +33,7 @@ void init_panel() {
      .setLabel("Main")
      .getCaptionLabel().setFont(createFont("Arial",16))
      ;
-  cp5.getTab("Menu").bringToFront();
+  cp5.getTab("Macros").bringToFront();
   
   init_panel_grower();
   init_macro();
