@@ -91,8 +91,6 @@ int SEED = 548651008; //seed pour l'aleatoire
 int slide = 0;
 int maxSlide = 1;
 
-ComunityList gcomu;
-
 //ici on as les fonctions principale de processing, 
 //elles geres l'arrengement des differente features
 //plus bas ya des methodes utile qui vont nul par ailleur
@@ -111,10 +109,6 @@ void setup() {//executé au demarage
   
   //saving();
   
-  // new comunity systeme
-  //gcomu = new ComunityList();
-  //gcomu.init();
-  
 }
 
 void draw() {//executé once by frame
@@ -127,9 +121,6 @@ void draw() {//executé once by frame
       //run_speeded:  execute a un ritme definie par repeat_runall
       
       runAll();
-      
-      // new comunity systeme
-      //gcomu.run();
       
       counter++;
       repeating_pile--;
@@ -162,9 +153,6 @@ void draw() {//executé once by frame
   cam_movement(); // matrice d'affichage pour la camera
   
   //draw_on_camera:
-  
-  //comunity systeme
-  //gcomu.draw();
   
   drawAll();
   
