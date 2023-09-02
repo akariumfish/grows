@@ -6,9 +6,9 @@ abstract class ParametersA {//agregateur de parametre,
 }
 
 class CommunityParam extends ParametersA {
-  int MAX_ENT = 1000; //longueur max de l'array d'objet
-  int INIT_ENT = 2;
-  int SEED = 420;
+  int MAX_ENT = 5000; //longueur max de l'array d'objet
+  int INIT_ENT = 30;
+  int SEED = 548651008;
   CommunityParam() {}
   CommunityParam(int m, int i, int s) { MAX_ENT = m; INIT_ENT = i; SEED = s; }
 }

@@ -107,13 +107,12 @@ void setup() {//executé au demarage
   //for (String s : PFont.list()) println(s); // liste toute les police de text qui existe
   
   init_panel(); //onglet panel : initialise le menu
-  init_base();
+  //init_base();
   
   //saving();
   
   // new comunity systeme
-  //gcomu = new ComunityList();
-  //gcomu.init();
+  gcomu = new ComunityList();
   
 }
 
@@ -126,10 +125,10 @@ void draw() {//executé once by frame
       
       //run_speeded:  execute a un ritme definie par repeat_runall
       
-      runAll();
+      //runAll();
       
       // new comunity systeme
-      //gcomu.run();
+      gcomu.run();
       
       counter++;
       repeating_pile--;
@@ -164,9 +163,9 @@ void draw() {//executé once by frame
   //draw_on_camera:
   
   //comunity systeme
-  //gcomu.draw();
+  gcomu.draw();
   
-  drawAll();
+  //drawAll();
   
   popMatrix(); // fin de la matrice d'affichage
   try_screenshot();
@@ -199,9 +198,9 @@ void simcontrol_to_strings() {
 
 void reset() {
   
+  gcomu.reset();
   
-  
-  reset_base();
+  //reset_base();
   init_graphs();
 
   //reset le conter de tour
@@ -454,6 +453,20 @@ void try_screenshot() {
 //##                         METHODES UTILES                           ##
 //#######################################################################
 
+
+ArrayList<Callable> callables = new ArrayList<Callable>();
+void callChannel(int chan, float val) {
+  for (Callable c : callables) for (int i : c.chan) 
+    if (i == chan) c.answer(chan, val); }
+void callChannel(int chan) { callChannel(chan, 0); }
+abstract class Callable {
+  int[] chan = new int[0];
+  Callable() { callables.add(this); }
+  int[] getChannel() { return chan; }
+  void setChannel(int[] c) { chan = c; }
+  void addChannel(int c) { chan = append(chan, c); }
+  void clearChannel() { chan = new int[0]; }
+  abstract void answer(int channel, float value); }
 
 String popStrLst(StringList sl) {
   String s = sl.get(sl.size() - 1);

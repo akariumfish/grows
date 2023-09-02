@@ -8,65 +8,77 @@ ici on definie les objet que l'on vas generer
 
 
 class ComunityList {
-  ArrayList<Community> comList = new ArrayList<Community>();
+  ArrayList<Community> list = new ArrayList<Community>();
   int active_comu = -1;
   
   ComunityList() {
-    
-  }
-  
-  Community new_comu() {
-    Community c = new Community(comList.size());
-    comList.add(c);
-    return c;
+    init();
   }
   
   void init() {
     // - TEMP - TEMP - TEMP - TEMP - TEMP
-    Community c = init_As_Grower(new_comu());
+    GrowerComu c = new GrowerComu(this);
     active_comu = c.id;
   }
   
   void run() {
-    if (comList.get(active_comu) != null)
-      comList.get(active_comu).run_All();
+    if (list.get(active_comu) != null)
+      list.get(active_comu).run_All();
   }
   
   void draw() {
-    if (comList.get(active_comu) != null)
-      comList.get(active_comu).draw_All();
+    if (list.get(active_comu) != null)
+      list.get(active_comu).draw_All();
   }
   
-  // from reset :
-  //growerComune.reset_Entity_List();
-  //growerComune.new_Entity();
-  
-  //growerComune.run_All_Entity();
-  //growerComune.draw_All_Entity();
+  void reset() {
+    if (list.get(active_comu) != null)
+      list.get(active_comu).reset();
+  }
   
 //  slide = selection de comu qui seront run et draw
-//  add event
-//  add try
-//  get param
-  //ajoute une methode qui lie les entité d'une comu, un event et un try
-  //peut etre parametrer par string
-  //meme string retourné par func du genre comu.tostrings()[i]
+
+/*
+run_speeded
+run_each_unpaused_frame
+run_each_frame
+draw_on_screen
+draw_on_camera
+draw_after_screenshot
+menuEvent
+init //run at setup
+reset //starting state
+hide //dont draw
+show //draw
+activate //run
+deactivate //dont run
+*/
+
 }
 
-class Community {
+abstract class Community {
   ArrayList<Entity> list = new ArrayList<Entity>(); //contien les objet
   CommunityParam p;
   int id; //index dans comu list
+  ComunityList comList;
   
-  Community(int i) { id = i; p = new CommunityParam(); }
-  Community(int i, CommunityParam _p) { id = i; p = _p; }
+  Community(ComunityList _c) { comList = _c; p = new CommunityParam(); }
+    
+  void init() {
+    id = comList.list.size();
+    comList.list.add(this);
+    list.clear();
+    for (int i = 0; i < p.MAX_ENT ; i++)
+      list.add(build());
+    reset();
+  }
   
   Entity new_Entity() { for (Entity g : list) if (!g.active) return g.reset(); return null; }
   
   void reset() { //deactivate all then create starting situation from parameters
     this.kill_All();
     randomSeed(p.SEED);
-    for (int i = 0 ; i < p.INIT_ENT ; i++) this.new_Entity();
+    for (int i = 0 ; i < p.INIT_ENT ; i++) this.new_Entity().randomize();
   }
   
   void run_All() {
@@ -79,20 +91,22 @@ class Community {
   void kill_All() {    //just deactivate
     for (Entity e : list) e.kill(); }
   
-  int inactive_Entity_Nb() {
+  int active_Entity_Nb() {
     int n = 0;
     for (Entity e : list) if (e.active) n++;
     return n;
   }
+  
+  abstract Entity build();
 }
 
 abstract class Entity { // l'objet, func draw run reset destroy ; Event.action test dans run
   Community com;
   int id;
   boolean active;
-  Entity(Community c, int i) {
+  Entity(Community c) {
     active = false;
-    id = i;
+    id = c.list.size();
     com = c;
   }
   Entity reset() {
@@ -106,5 +120,6 @@ abstract class Entity { // l'objet, func draw run reset destroy ; Event.action t
   abstract Entity drawing();
   abstract Entity init();
   abstract Entity clear();
+  abstract Entity randomize();
   
 }

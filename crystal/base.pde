@@ -12,11 +12,11 @@ int INIT_BASE = 1; //nombre de grower au debut puis apres un reset MODIFIABLE PA
 
 int INIT_SIZE = 400;
 
-float DIFICULTY = 2;
+float DIFICULTY = 2.77;
 boolean ON = true;
 
 float MIN_SIZE = 10;
-float SPACING = 0;
+float SPACING = 2;
 float LINE_SIZE = 1;
 
 void init_base() {
@@ -54,17 +54,16 @@ class Base {
   }
   
   boolean contact(Base b) {
-    if ( pos.x + sz.x >= b.pos.x && 
-         pos.x        <= b.pos.x + b.sz.x && 
-         pos.y + sz.y >= b.pos.y && 
-         pos.y        <= b.pos.y + b.sz.y ) return true;
-    return false; }
+    return pos.x + sz.x >= b.pos.x - 1 && 
+           pos.x        <= b.pos.x + b.sz.x + 1 && 
+           pos.y + sz.y >= b.pos.y - 1 && 
+           pos.y        <= b.pos.y + b.sz.y + 1 ; }
   
   boolean contact(float x, float y) {
-    return (x >= pos.x &&
-            x <= pos.x + sz.x &&
-            y >= pos.y &&
-            y <= pos.y + sz.y); }
+    return (x >= pos.x - 1 &&
+            x <= pos.x + sz.x + 1 &&
+            y >= pos.y - 1 &&
+            y <= pos.y + sz.y + 1); }
   
   void init(int i) {    //argument are passed through createBase
     exist = true;
@@ -108,7 +107,7 @@ class Base {
     c.y += sz.y / 2;
     
     if (c.mag() > INIT_SIZE / 2.0) {
-      //destroy();
+      destroy();
     }
     
     if (contact(mouse_pos.x, mouse_pos.y)) {
@@ -146,7 +145,10 @@ class Base {
   void drawing() {
     noFill();
     stroke(255);
-    if (contact(mouse_pos.x, mouse_pos.y)) stroke(255, 0, 0);
+    for (Base b : BaseList) {
+      if (b.id != this.id && !this.contact(b) && b.contact(mouse_pos.x, mouse_pos.y)) stroke(255, 0, 0);
+    }
+    //if (contact(mouse_pos.x, mouse_pos.y)) stroke(255, 0, 0);
     strokeWeight(LINE_SIZE);
     //rectMode(CENTER);
     rect(pos.x, pos.y, sz.x - SPACING - (LINE_SIZE / 2), sz.y - SPACING - (LINE_SIZE / 2));

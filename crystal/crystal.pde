@@ -122,6 +122,7 @@ void reset() {
 
   //reset le conter de tour
   counter = 0;
+  pause = false;
 }
 
 
@@ -134,7 +135,7 @@ void reset() {
 
 
 PVector cam_pos = new PVector(0, 0); //position de la camera
-float cam_scale = 1.0; //facteur de grossicement
+float cam_scale = 2.0; //facteur de grossicement
 float ZOOM_FACTOR = 1.1; //facteur de modification de cam_scale quand on utilise la roulette de la sourie
 boolean GRAB = true;
 PVector mouse_pos = new PVector(0, 0); //position de la camera
