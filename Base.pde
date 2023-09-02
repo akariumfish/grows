@@ -48,6 +48,11 @@ float STOP_DIFFICULTY = 5.0;
 float DIE_DIFFICULTY = 1.8;
 int OLD_AGE = 333;
 
+
+int TEEN_AGE = OLD_AGE / 10;
+
+
+
 //diminue de autant la dificulté de la mort quand l'array est bientot plein
 //float DIE_DIFFICULTY_DIVIDER = 8.0; //when array close to full
 
@@ -127,6 +132,7 @@ class Base {
   boolean end = false;
   int sprouts = 0;
   float age = 0.0;
+  float start = 0.0;
   
   // PERSO    ----------------
   
@@ -154,6 +160,7 @@ class Base {
     end = false;
     sprouts = 0;
     age = 0;
+    start = 0.0;
     
     pos = _p;
     grows = new PVector(L_MIN + crandom(L_DIFFICULTY)*(L_MAX - L_MIN), 0);
@@ -191,13 +198,17 @@ class Base {
     
     age++;
     
+    if (age < TEEN_AGE) {
+      start = (float)age / (float)TEEN_AGE;
+    } else start = 1;
+    
     // grow
-    if (ON_GROW && !end && sprouts == 0 && crandom(GROW_DIFFICULTY) > 0.5) {
+    if (ON_GROW && start == 1 && !end && sprouts == 0 && crandom(GROW_DIFFICULTY) > 0.5) {
       if(createBase(grows, dir, id) != null) sprouts++;
     }
     
     // sprout
-    if (ON_SPROUT && !end && crandom(SPROUT_DIFFICULTY) > 0.5) {
+    if (ON_SPROUT && start == 1 && !end && crandom(SPROUT_DIFFICULTY) > 0.5) {
       PVector _p = new PVector(0, 0);
       PVector _d = new PVector(0, 0);
       _d.add(grows).sub(pos);
@@ -212,13 +223,13 @@ class Base {
     }
     
     // stop growing
-    if (ON_STOP && !end && sprouts == 0 && crandom(STOP_DIFFICULTY) > 0.5) {
+    if (ON_STOP && start == 1 && !end && sprouts == 0 && crandom(STOP_DIFFICULTY) > 0.5) {
       end = true;
     }
     
     // die
     float rng = crandom(DIE_DIFFICULTY);
-    if (ON_DIE && !(!end && sprouts == 0) &&
+    if (ON_DIE && start == 1 && !(!end && sprouts == 0) &&
          (rng > ( (float)OLD_AGE / (float)age ) //||
           //rng / DIE_DIFFICULTY_DIVIDER > ((float)MAX_LIST_SIZE - (float)baseNb()) / (float)MAX_LIST_SIZE
        )) {
@@ -234,14 +245,17 @@ class Base {
     // aging color
     int ca = 255;
     if (age > OLD_AGE / 2) ca = (int)constrain(255 + int(OLD_AGE/2) - int(age/1.2), 90, 255);
-    if (!end && sprouts == 0) { stroke(255, 0, 0); strokeWeight(MAX_LINE_WIDTH+1 / cam_scale); }
+    if (!end && sprouts == 0) { stroke(255); strokeWeight(MAX_LINE_WIDTH / cam_scale); }
     else if (end) { stroke(0, ca, 0); strokeWeight((MAX_LINE_WIDTH+1) / cam_scale); }
     else { stroke(ca, ca, ca); strokeWeight(((float)MIN_LINE_WIDTH + ((float)MAX_LINE_WIDTH * (float)ca / 255.0)) / cam_scale); }              
     //fill(255);
     //ellipseMode(CENTER);
     //ellipse(pos.x, pos.y, 2, 2);
     
-    line(pos.x,pos.y,grows.x,grows.y);
+    PVector e = new PVector(dir.x, dir.y);
+    if (start < 1) e = e.setMag(e.mag() * start);
+    e = e.add(pos);
+    line(pos.x,pos.y,e.x,e.y);
     
     //strokeWeight(MAX_LINE_WIDTH+1 / cam_scale);
     //point(grows.x,grows.y);

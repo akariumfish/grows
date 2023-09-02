@@ -107,12 +107,12 @@ void setup() {//executé au demarage
   //for (String s : PFont.list()) println(s); // liste toute les police de text qui existe
   
   init_panel(); //onglet panel : initialise le menu
-  //init_base();
+  init_base();
   
   //saving();
   
   // new comunity systeme
-  gcomu = new ComunityList();
+  //gcomu = new ComunityList();
   
 }
 
@@ -125,10 +125,10 @@ void draw() {//executé once by frame
       
       //run_speeded:  execute a un ritme definie par repeat_runall
       
-      //runAll();
+      runAll();
       
       // new comunity systeme
-      gcomu.run();
+      //gcomu.run();
       
       counter++;
       repeating_pile--;
@@ -163,9 +163,9 @@ void draw() {//executé once by frame
   //draw_on_camera:
   
   //comunity systeme
-  gcomu.draw();
+  //gcomu.draw();
   
-  //drawAll();
+  drawAll();
   
   popMatrix(); // fin de la matrice d'affichage
   try_screenshot();
@@ -198,9 +198,9 @@ void simcontrol_to_strings() {
 
 void reset() {
   
-  gcomu.reset();
+  //gcomu.reset();
   
-  //reset_base();
+  reset_base();
   init_graphs();
 
   //reset le conter de tour
