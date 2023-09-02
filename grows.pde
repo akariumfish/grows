@@ -85,9 +85,9 @@ cree un soft dans lequel on entre les 12 valeur et qui genere l'image correspond
 boolean DEBUG = true; //utilisable dans draw pour print
 int counter = 0; //conteur de tour depuis le dernier reset ou le debut
 boolean pause = false; //permet d'interompre le defilement des tour
-float repeat_runAll = 1; //nombre de fois ou il faut executé runall par frame
+float repeat_runAll = 2; //nombre de fois ou il faut executé runall par frame
 float repeating_pile = 0; //pile pour stocker les portion de repeat_runall quand il est < a 1
-int SEED = 548651008; //seed pour l'aleatoire
+int SEED = 760956480; //seed pour l'aleatoire
 int slide = 0;
 int maxSlide = 1;
 
@@ -396,7 +396,7 @@ void mouseMoved() { mouseMove = true; }
 
 
 PVector cam_pos = new PVector(0, 0); //position de la camera
-float cam_scale = 0.2; //facteur de grossicement
+float cam_scale = 8.0; //facteur de grossicement
 float ZOOM_FACTOR = 1.1; //facteur de modification de cam_scale quand on utilise la roulette de la sourie
 boolean GRAB = true;
 
@@ -459,6 +459,7 @@ void callChannel(int chan, float val) {
   for (Callable c : callables) for (int i : c.chan) 
     if (i == chan) c.answer(chan, val); }
 void callChannel(int chan) { callChannel(chan, 0); }
+
 abstract class Callable {
   int[] chan = new int[0];
   Callable() { callables.add(this); }

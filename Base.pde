@@ -30,10 +30,10 @@ Base[] BaseList = new Base[0]; //contien les objet
 int MAX_LIST_SIZE = 5000; //longueur max de l'array d'objet
 int INIT_BASE = 30; //nombre de grower au debut puis apres un reset MODIFIABLE PAR MENU INIT
 
-float DEVIATION = 4; //drifting (rotation posible en portion de pi (PI/drift))
-float L_MIN = 1; //longeur minimum de chaque section
-float L_MAX = 100; //longeur max de chaque section MODIFIABLE PAR MENU MOVE minimum 1 , limité dans l'update de sont bp
-float L_DIFFICULTY = 4;
+float DEVIATION = 8; //drifting (rotation posible en portion de pi (PI/drift))
+float L_MIN = 2; //longeur minimum de chaque section
+float L_MAX = 35; //longeur max de chaque section MODIFIABLE PAR MENU MOVE minimum 1 , limité dans l'update de sont bp
+float L_DIFFICULTY = 180;
 
 // un switch les control dans le menu
 boolean ON_GROW = true; // active la pousse de nouveau grower au bout des grower actif
@@ -42,14 +42,14 @@ boolean ON_STOP = true; // active l'arret (devien vert)
 boolean ON_DIE = true; // active la mort
 
 //les dificulté sont appliqué a crandom, voir dans l'onglet utils elles on toute un control dans le menu
-float GROW_DIFFICULTY = 0.833;
-float SPROUT_DIFFICULTY = 2500.0;
-float STOP_DIFFICULTY = 5.0;
-float DIE_DIFFICULTY = 1.8;
-int OLD_AGE = 333;
+float GROW_DIFFICULTY = 0.5;
+float SPROUT_DIFFICULTY = 2080.0;
+float STOP_DIFFICULTY = 1.25;
+float DIE_DIFFICULTY = 3.6;
+int OLD_AGE = 666;
 
 
-int TEEN_AGE = OLD_AGE / 10;
+int TEEN_AGE = OLD_AGE / 20;
 
 
 
