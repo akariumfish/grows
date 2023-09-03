@@ -1,12 +1,13 @@
 
 Group group_grow; // la grande tab 
 Textlabel info3, info4; // les texte d'info, declarer pour pouvoir les modif
+Button bGrow,bSprout,bStop,bDie;
 
 void init_panel_grower() {
   group_grow = cp5.addGroup("group_grow")
-             .setPosition(width - PANEL_WIDTH, 10)
+             .setPosition(width - PANEL_WIDTH, 330)
              .setSize(PANEL_WIDTH, 10)
-             .setBackgroundHeight(700)
+             .setBackgroundHeight(750)
              .setBackgroundColor(color(60, 200))
              .disableCollapse()
              .moveTo("Menu")
@@ -24,18 +25,18 @@ void init_panel_grower() {
   
   Button b; //pointer
   
-  b = addButton(group_grow, "ON_GROW", "", 110+5, 70+5, BTN_SIZE-10, BTN_SIZE-10, utilctrlid + 4, TEXT_SIZE)
+  bGrow = addButton(group_grow, "ON_GROW", "", 110+5, 70+5, BTN_SIZE-10, BTN_SIZE-10, utilctrlid + 4, TEXT_SIZE)
     .setSwitch(true);
-  if (ON_GROW) b.setOn();
-  b = addButton(group_grow, "ON_SPROUT", "", 110+5, 120+5, BTN_SIZE-10, BTN_SIZE-10, utilctrlid + 5, TEXT_SIZE)
+  if (ON_GROW) bGrow.setOn();
+  bSprout = addButton(group_grow, "ON_SPROUT", "", 110+5, 120+5, BTN_SIZE-10, BTN_SIZE-10, utilctrlid + 5, TEXT_SIZE)
     .setSwitch(true);
-  if (ON_SPROUT) b.setOn();
-  b = addButton(group_grow, "ON_STOP", "", 110+5, 170+5, BTN_SIZE-10, BTN_SIZE-10, utilctrlid + 6, TEXT_SIZE)
+  if (ON_SPROUT) bSprout.setOn();
+  bStop = addButton(group_grow, "ON_STOP", "", 110+5, 170+5, BTN_SIZE-10, BTN_SIZE-10, utilctrlid + 6, TEXT_SIZE)
     .setSwitch(true);
-  if (ON_STOP) b.setOn();
-  b = addButton(group_grow, "ON_DIE", "", 110+5, 220+5, BTN_SIZE-10, BTN_SIZE-10, utilctrlid + 7, TEXT_SIZE)
+  if (ON_STOP) bStop.setOn();
+  bDie = addButton(group_grow, "ON_DIE", "", 110+5, 220+5, BTN_SIZE-10, BTN_SIZE-10, utilctrlid + 7, TEXT_SIZE)
     .setSwitch(true);
-  if (ON_DIE) b.setOn();
+  if (ON_DIE) bDie.setOn();
   
   addText(group_grow, "title3", "Movement", 140, 320, 24);
   build_line_factor(group_grow, "DRIFT", " = PI/", DEVIATION, 10, 350, 7);
@@ -47,13 +48,23 @@ void init_panel_grower() {
   info3 = addText(group_grow, "info3", " ", 50, 580);
   info4 = addText(group_grow, "info4", " ", 200, 580);
   
-  b = addButton(group_grow, "GRAPH", "graphic", 150, 660, 100, 30, utilctrlid + 8, TEXT_SIZE)
+  b = addButton(group_grow, "GRAPH", "graphic", 150, 710, 100, 30, utilctrlid + 8, TEXT_SIZE)
     .setSwitch(true);
   if (SHOW_GRAPH) b.setOn();
   
   build_line_incr(group_grow, "INIT", " ", INIT_BASE, 10, 610, 6);
+  build_line_incr(group_grow, "STEP", " ", adding_step, 10, 660, 11);
   
-  addButton(group_grow, "HIDE_GROW", "H", 370, 670, 20, 20, utilctrlid + 12, 16);
+  addButton(group_grow, "HIDE_GROW", "H", 370, 720, 20, 20, utilctrlid + 12, 16);
+  
+  
+  b = addButton(group_grow, "REGSTR", "R", 110, 615, BTN_SIZE-10, BTN_SIZE-10, utilctrlid + 22, TEXT_SIZE)
+    .setSwitch(true);
+  if (REGULAR_START) b.setOn();
+  
+  b = addButton(group_grow, "addstep", "", 110, 665, BTN_SIZE-10, BTN_SIZE-10, utilctrlid + 23, TEXT_SIZE)
+    .setSwitch(true);
+  if (adding_type) b.setOn();
   
 }
 
@@ -61,6 +72,10 @@ void event_panel_grower(int id, int line, float modifier) {
   if (id == utilctrlid + 8) { //button graph
     SHOW_GRAPH = ((Button)cp5.getController("GRAPH")).isOn(); }
   if (id == utilctrlid + 12) { group_grow.hide(); } // boutton hide
+  if (id == utilctrlid + 22) {
+    REGULAR_START = ((Button)cp5.getController("REGSTR")).isOn(); }
+  if (id == utilctrlid + 23) {
+    adding_type = ((Button)cp5.getController("addstep")).isOn(); }
   
   //activation
   if (id == utilctrlid + 4) {
@@ -83,6 +98,7 @@ void event_panel_grower(int id, int line, float modifier) {
   if (line == 9) { L_MIN *= modifier;  update_textlabel("LMIN", " = ", L_MIN);}
   if (line == 10) { L_MAX *= modifier;  update_textlabel("LMAX", " = ", L_MAX);}
   if (line == 6) { INIT_BASE += modifier; update_textlabel("INIT", " ", INIT_BASE); }
+  if (line == 11) { adding_step += modifier; update_textlabel("STEP", " ", adding_step); }
 }
 
 void update_panel_grower() {

@@ -29,11 +29,12 @@ OLD AGE: 140
 Base[] BaseList = new Base[0]; //contien les objet
 int MAX_LIST_SIZE = 5000; //longueur max de l'array d'objet
 int INIT_BASE = 30; //nombre de grower au debut puis apres un reset MODIFIABLE PAR MENU INIT
+boolean REGULAR_START = false;
 
 float DEVIATION = 8; //drifting (rotation posible en portion de pi (PI/drift))
 float L_MIN = 2; //longeur minimum de chaque section
-float L_MAX = 35; //longeur max de chaque section MODIFIABLE PAR MENU MOVE minimum 1 , limité dans l'update de sont bp
-float L_DIFFICULTY = 180;
+float L_MAX = 15; //longeur max de chaque section MODIFIABLE PAR MENU MOVE minimum 1 , limité dans l'update de sont bp
+float L_DIFFICULTY = 90;
 
 // un switch les control dans le menu
 boolean ON_GROW = true; // active la pousse de nouveau grower au bout des grower actif
@@ -70,16 +71,28 @@ void init_base() {
   init_graphs();
 }
 
+float reset_angle = 0;
+float reset_angle_incr = 0;
+
 void reset_base() {
   //tout le monde sur off
   deleteAll();
   //reset du generateur de nombre aleatoire
   randomSeed(SEED);
   //creation des grower initiaux
-  for (int i = 0; i < INIT_BASE; i++) {
-    createFirstBase(random( 2 * PI));
-  }
+  reset_angle = random( 2 * PI);
+  reset_angle_incr = 2 * PI / INIT_BASE;
+  if (!adding_type) for (int i = 0; i < INIT_BASE; i++) create_init_base();
+  else adding_pile = INIT_BASE;
 }
+
+void create_init_base() {
+  if (REGULAR_START) {
+    createFirstBase(reset_angle);
+    reset_angle += reset_angle_incr; }
+  else createFirstBase(random( 2 * PI));
+}
+
 
 void grower_to_strings() {
   file.append("grower:");
@@ -220,7 +233,7 @@ class Base {
     }
     
     // stop growing
-    if (ON_STOP && start == 1 && !end && sprouts == 0 && crandom(STOP_DIFFICULTY) > 0.5) {
+    if (ON_STOP && start >= 1 && !end && sprouts == 0 && crandom(STOP_DIFFICULTY) > 0.5) {
       end = true;
     }
     

@@ -10,18 +10,41 @@ MacroVAL mv1,mv2;
 
 void init_macro() {
   mList = new MacroList();
-  gcC = mList.addGrowingControl(800, 50);
-  gwC = mList.addGrowingWatcher(50, 400);
-  keyb = mList.addKeyboard(50, 50);
+  mList.addGrowingParam(1400, 50);
+  mList.addGrowingActive(1400, 230);
+  mList.addGrowingControl(1400, 500);
+  mList.addGrowingWatcher(50, 250);
+  mList.addKeyboard(50, 50);
+  mList.addSimControl(60, 400);
   
-  mv1 = mList.addMacroVAL(300, 50, 0.16);
-  mv2 = mList.addMacroVAL(300, 200, 0.833);
+  mList.addMacroVAL(20, height - 80, 0);
+  mList.addMacroVAL(360, height - 80, 0);
+  mList.addMacroVAL(700, height - 80, 0);
+  mList.addMacroVAL(1040, height - 80, 0);
+  mList.addMacroVAL(1380, height - 80, 0);
+  mList.addMacroVAL(20, height - 180, 0);
+  mList.addMacroVAL(360, height - 180, 0);
+  mList.addMacroVAL(700, height - 180, 0);
+  mList.addMacroCALC(1040, height - 180);
+  mList.addMacroCALC(1380, height - 180);
+  mList.addMacroCOMP(20, height - 280);
+  mList.addMacroCOMP(360, height - 280);
+  mList.addMacroBOOL(700, height - 280);
+  mList.addMacroBOOL(1040, height - 280);
+  mList.addMacroDELAY(1380, height - 280, 10);
   
-  keyb.wO.linkTo(mv1.in);
-  keyb.aO.linkTo(mv2.in);
+  //gcC = mList.addGrowingControl(800, 50);
+  //gwC = mList.addGrowingWatcher(50, 400);
+  //keyb = mList.addKeyboard(50, 50);
   
-  mv1.out.linkTo(gcC.growI);
-  mv2.out.linkTo(gcC.growI);
+  //mv1 = mList.addMacroVAL(300, 50, 0.16);
+  //mv2 = mList.addMacroVAL(300, 200, 0.833);
+  
+  //keyb.wO.linkTo(mv1.in);
+  //keyb.aO.linkTo(mv2.in);
+  
+  //mv1.out.linkTo(gcC.growI);
+  //mv2.out.linkTo(gcC.growI);
 }
 
 class MacroList {
@@ -178,9 +201,24 @@ class MacroList {
     return new Keyboard(this, id, _x, _y);
   }
   
+  SimControl addSimControl(int _x, int _y) {
+    int id = macroList.size();
+    return new SimControl(this, id, _x, _y);
+  }
+  
+  GrowingParam addGrowingParam(int _x, int _y) {
+    int id = macroList.size();
+    return new GrowingParam(this, id, _x, _y);
+  }
+  
   GrowingControl addGrowingControl(int _x, int _y) {
     int id = macroList.size();
     return new GrowingControl(this, id, _x, _y);
+  }
+  
+  GrowingActive addGrowingActive(int _x, int _y) {
+    int id = macroList.size();
+    return new GrowingActive(this, id, _x, _y);
   }
   
   GrowingWatcher addGrowingWatcher(int _x, int _y) {
@@ -201,6 +239,11 @@ class MacroList {
   MacroBOOL addMacroBOOL(int _x, int _y) {
     int id = macroList.size();
     return new MacroBOOL(this, id, _x, _y);
+  }
+  
+  MacroCALC addMacroCALC(int _x, int _y) {
+    int id = macroList.size();
+    return new MacroCALC(this, id, _x, _y);
   }
   
   MacroDELAY addMacroDELAY(int _x, int _y, int v) {

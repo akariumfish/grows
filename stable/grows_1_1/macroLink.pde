@@ -223,11 +223,17 @@ class InputF extends InputA {
        .setSize(60,22)
        .setAutoClear(false)
        .setDecimalPrecision(3)
-       .lock()
+       //.lock()
+       .setInputFilter(cp5.FLOAT)
        .setGroup(g)
        .setFocus(true)
        .setText(str(value))
-       .setFocus(false);
+       .setFocus(false)
+       .addCallback(new CallbackListener() {
+          public void controlEvent(final CallbackEvent ev) {  
+            value = float(textf.getText());
+          }
+        }) 
        ;
     textf.getValueLabel().setFont(createFont("Arial",18));
   }

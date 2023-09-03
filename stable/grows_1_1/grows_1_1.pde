@@ -85,21 +85,27 @@ cree un soft dans lequel on entre les 12 valeur et qui genere l'image correspond
 boolean DEBUG = true; //utilisable dans draw pour print
 int counter = 0; //conteur de tour depuis le dernier reset ou le debut
 boolean pause = false; //permet d'interompre le defilement des tour
-float repeat_runAll = 2; //nombre de fois ou il faut executé runall par frame
+float repeat_runAll = 4; //nombre de fois ou il faut executé runall par frame
 float repeating_pile = 0; //pile pour stocker les portion de repeat_runall quand il est < a 1
 int SEED = 548651008; //seed pour l'aleatoire
 int slide = 0;
 int maxSlide = 1;
-int repeat_turn = 600;
+int repeat_turn = 2000;
 boolean auto_repeat = true;
 boolean repeat_random = true;
+
+boolean adding_type = true;
+int adding_pile = 0;
+float adding_step = 30; // add one new object each adding_step turn
+float adding_counter = 0;
 
 //ici on as les fonctions principale de processing, 
 //elles geres l'arrengement des differente features
 //plus bas ya des methodes utile qui vont nul par ailleur
 
 void setup() {//executé au demarage
-  //size(1600, 900);//taille de l'ecran
+  //size(1720, 900);//taille de l'ecran
+  
   fullScreen();
   setupInput();//voir onglet input
   noSmooth();//pas d'antialiasing
@@ -123,6 +129,15 @@ void draw() {//executé once by frame
     while (repeating_pile > 1) {
       
       //run_speeded:  execute a un ritme definie par repeat_runall
+      
+      if (adding_type && adding_pile >= 1) {
+        adding_counter++;
+        if (adding_counter >= adding_step) {
+          adding_counter = 0;
+          create_init_base();
+          adding_pile--;
+        }
+      }
       
       runAll();
       
