@@ -56,6 +56,14 @@ deactivate //dont run
 
 }
 
+class CommunityParam {
+  int MAX_ENT = 5000; //longueur max de l'array d'objet
+  int INIT_ENT = 30;
+  int SEED = 548651008;
+  CommunityParam() {}
+  CommunityParam(int m, int i, int s) { MAX_ENT = m; INIT_ENT = i; SEED = s; }
+}
+
 abstract class Community {
   ArrayList<Entity> list = new ArrayList<Entity>(); //contien les objet
   CommunityParam p;

@@ -7,7 +7,7 @@ import controlP5.*; //la lib pour les menu
 ControlP5 cp5; //l'objet main pour les menu
 
 Group group_control; // la grande tab
-Textlabel info_slide, info_framerate, info_turn;
+Textlabel info_slide, info_framerate, info_turn, info_repeat;
 Textfield textfieldSeed;
 
 float mx = 0; float my = 0; //pour bouger les fenetres
@@ -49,22 +49,22 @@ void init_panel() {
   group_control = cp5.addGroup("group_control")
              .setPosition(width - (PANEL_WIDTH * 2), 10)
              .setSize(PANEL_WIDTH, 10)
-             .setBackgroundHeight(330)
+             .setBackgroundHeight(310)
              .setBackgroundColor(color(60, 200))
              .disableCollapse()
              .moveTo("Menu")
              ;
   group_control.getCaptionLabel().setText("");
              
-  addText(group_control, "ctrl_title1", "STRUCTURE GENERATOR", 5, 0, 30).setFont(createFont("Arial Bold",30));
+  addText(group_control, "ctrl_title1", "STRUCTURE GENERATOR", 5, 7, 30).setFont(createFont("Arial Bold",30));
   
   //addButton(group_control, "prev_slide", "<", 10, 40, 90, 40, utilctrlid + 13, TEXT_SIZE * 2);
   //addButton(group_control, "next_slide", ">", 300, 40, 90, 40, utilctrlid + 14, TEXT_SIZE * 2);
   //info_slide = addText(group_control, "info_slide", "SLIDE: 1", 160, 50).setFont(createFont("Arial Bold",20));
   
-  addText(group_control, "title_seed", "Seed", 20, 95, TEXT_SIZE);
+  addText(group_control, "title_seed", "Seed", 20, 55, TEXT_SIZE);
   textfieldSeed = cp5.addTextfield("seed_input")
-     .setPosition(90,90)
+     .setPosition(90,50)
      .setSize(220,30)
      .setCaptionLabel("")
      .setValue("" + SEED)
@@ -72,25 +72,36 @@ void init_panel() {
      .setColor(color(255))
      .setGroup(group_control)
      ;
-  addButton(group_control, "readseed", "V", 320, 90, 30, 30, utilctrlid + 9, TEXT_SIZE);
-  addButton(group_control, "rngseed", "R", 360, 90, 30, 30, utilctrlid + 10, TEXT_SIZE);
+  addButton(group_control, "readseed", "V", 320, 50, 30, 30, utilctrlid + 9, TEXT_SIZE);
+  addButton(group_control, "rngseed", "R", 360, 50, 30, 30, utilctrlid + 10, TEXT_SIZE);
   
-  info_framerate = addText(group_control, "info_framerate", " ", 50, 130);
-  info_turn = addText(group_control, "info_turn", " ", 250, 130);
+  info_framerate = addText(group_control, "info_framerate", " ", 50, 90);
+  info_turn = addText(group_control, "info_turn", " ", 250, 90);
   
-  build_line_factor(group_control, "SPEED", " ", repeat_runAll, 10, 160, 5);
+  build_line_factor(group_control, "SPEED", " ", repeat_runAll, 10, 120, 5);
   
   Button b; //pointer
   
-  b = addButton(group_control, "running", "p", 25, 210, 50, 50, utilctrlid + 3, TEXT_SIZE * 1.5)
+  b = addButton(group_control, "running", "p", 25, 170, 50, 50, utilctrlid + 3, TEXT_SIZE * 1.5)
     .setSwitch(true);
   if (pause) b.setOn();
-  addButton(group_control, "reset", "RESET", 100, 210, 95, 50, utilctrlid + 1, TEXT_SIZE * 1.2);
-  addButton(group_control, "reset-rng", "RNG", 205, 210, 95, 50, utilctrlid + 15, TEXT_SIZE * 1.2);
-  addButton(group_control, "saveframe", "I", 325, 210, 50, 50, utilctrlid + 2, TEXT_SIZE * 1.5);
+  addButton(group_control, "reset", "RESET", 100, 170, 95, 50, utilctrlid + 1, TEXT_SIZE * 1.2);
+  addButton(group_control, "reset-rng", "RNG", 205, 170, 95, 50, utilctrlid + 15, TEXT_SIZE * 1.2);
+  addButton(group_control, "saveframe", "I", 325, 170, 50, 50, utilctrlid + 2, TEXT_SIZE * 1.5);
   
-  addButton(group_control, "save-param", "S", 100, 270, 95, 50, utilctrlid + 16, TEXT_SIZE * 1.5);
-  addButton(group_control, "load-param", "L", 205, 270, 95, 50, utilctrlid + 17, TEXT_SIZE * 1.5);
+  //addButton(group_control, "save-param", "S", 100, 270, 95, 50, utilctrlid + 16, TEXT_SIZE * 1.5);
+  //addButton(group_control, "load-param", "L", 205, 270, 95, 50, utilctrlid + 17, TEXT_SIZE * 1.5);
+  
+  b = addButton(group_control, "repeat", "RP", 10, 230, 40, 20, utilctrlid + 18, TEXT_SIZE)
+    .setSwitch(true);
+  if (auto_repeat) b.setOn();
+  b = addButton(group_control, "repeatrng", "RNG", 10, 250, 40, 20, utilctrlid + 21, TEXT_SIZE)
+    .setSwitch(true);
+  if (repeat_random) b.setOn();
+  addButton(group_control, "repeat-100", "-100", 70, 230, 60, 40, utilctrlid + 20, TEXT_SIZE * 1.2);
+  addButton(group_control, "repeat+100", "+100", 330, 230, 60, 40, utilctrlid + 19, TEXT_SIZE * 1.2);
+  info_repeat = addText(group_control, "info_repeat", "repeat after " + repeat_turn + " turn", 140, 240);
+  addText(group_control, "info_fullscreen", "H to hide  ;  clic then ESC to quit", 70, 280);
   
   //cp5.printControllerMap(); // print all ui element
 }
@@ -113,6 +124,21 @@ public void controlEvent(ControlEvent theEvent) {
   
   event_panel_grower(id, line, modifier);
   
+  
+  if (id == utilctrlid + 18) { // boutton repeat
+    auto_repeat = ((Button)cp5.getController("repeat")).isOn();
+  }
+  if (id == utilctrlid + 21) { // boutton repeat
+    repeat_random = ((Button)cp5.getController("repeatrng")).isOn();
+  }
+  if (id == utilctrlid + 19) { // boutton +100
+    repeat_turn += 100;
+    info_repeat.setText("repeat after " + repeat_turn + " turn");
+  }
+  if (id == utilctrlid + 20) { // boutton -100
+    repeat_turn -= 100;
+    info_repeat.setText("repeat after " + repeat_turn + " turn");
+  }
   if (id == utilctrlid + 16) { // boutton save
     save_parameters();
   }
@@ -171,9 +197,15 @@ void update_all_menu() {
   if (keysClick[9]) {
     if (!group_control.isVisible() && !group_grow.isVisible()) {
       group_control.show(); group_grow.show();
+      cp5.getTab("Macros").show();
+      cp5.getTab("Menu").show();
+      cp5.getTab("default").show();
     } else {
       if (group_control.isVisible()) group_control.hide();
       if (group_grow.isVisible()) group_grow.hide();
+      cp5.getTab("Macros").hide();
+      cp5.getTab("Menu").hide();
+      cp5.getTab("default").hide();
     }
   }
   //moving control panel

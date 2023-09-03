@@ -88,8 +88,9 @@ boolean pause = false; //permet d'interompre le defilement des tour
 float repeat_runAll = 2; //nombre de fois ou il faut executé runall par frame
 float repeating_pile = 0; //pile pour stocker les portion de repeat_runall quand il est < a 1
 int SEED = 760956480; //seed pour l'aleatoire
-int slide = 0;
-int maxSlide = 1;
+int repeat_turn = 600;
+boolean auto_repeat = true;
+boolean repeat_random = true;
 
 ComunityList gcomu;
 
@@ -106,13 +107,14 @@ void setup() {//executé au demarage
   
   //for (String s : PFont.list()) println(s); // liste toute les police de text qui existe
   
-  init_panel(); //onglet panel : initialise le menu
-  init_base();
+  //init_panel(); //onglet panel : initialise le menu
+  //init_macro();
+  //init_base();
   
   //saving();
   
   // new comunity systeme
-  //gcomu = new ComunityList();
+  gcomu = new ComunityList();
   
 }
 
@@ -125,17 +127,24 @@ void draw() {//executé once by frame
       
       //run_speeded:  execute a un ritme definie par repeat_runall
       
-      runAll();
+      //runAll();
       
       // new comunity systeme
-      //gcomu.run();
+      gcomu.run();
       
       counter++;
       repeating_pile--;
+      if (auto_repeat && repeat_turn <= counter) {
+        if (repeat_random) {
+          SEED = int(random(1000000000));
+          //textfieldSeed.setValue("" + SEED);
+        }
+        reset();
+      }
     }
     
     //run_each_unpaused_frame:
-    update_graph();
+    //update_graph();
   }
   
   //run_each_frame:
@@ -144,18 +153,18 @@ void draw() {//executé once by frame
     Button b = (Button)cp5.getController("running");
     if (b.isOn()) b.setOff(); else b.setOn();
   }
-  update_all_menu();
-  mList.update();
+  //update_all_menu();
+  //mList.update();
 
   // affichage
   
   //draw_on_screen:
-  draw_graphs(); // population et grower tracking graph
-  if (!cp5.getTab("default").isActive()) {// draw framerate
-    fill(255);
-    textSize(16);
-    text(int(frameRate),10,height - 10 );
-  }
+  //draw_graphs(); // population et grower tracking graph
+  //if (!cp5.getTab("default").isActive()) {// draw framerate
+  //  fill(255);
+  //  textSize(16);
+  //  text(int(frameRate),10,height - 10 );
+  //}
   
   pushMatrix();
   cam_movement(); // matrice d'affichage pour la camera
@@ -163,15 +172,15 @@ void draw() {//executé once by frame
   //draw_on_camera:
   
   //comunity systeme
-  //gcomu.draw();
+  gcomu.draw();
   
-  drawAll();
+  //drawAll();
   
   popMatrix(); // fin de la matrice d'affichage
   try_screenshot();
   
   //draw_after_screenshot:
-  mList.drawing();
+  //mList.drawing();
   
   
   //peut servir
@@ -192,16 +201,16 @@ void simcontrol_to_strings() {
   file.append(str(repeat_runAll));
   file.append(str(repeating_pile));
   file.append(str(SEED));
-  file.append(str(slide));
-  file.append(str(maxSlide));
+  //file.append(str(slide));
+  //file.append(str(maxSlide));
 }
 
 void reset() {
   
-  //gcomu.reset();
+  gcomu.reset();
   
-  reset_base();
-  init_graphs();
+  //reset_base();
+  //init_graphs();
 
   //reset le conter de tour
   counter = 0;
@@ -424,7 +433,7 @@ void cam_input_update() {
 }
 
 void cam_movement() {
-  translate((width - PANEL_WIDTH) / 2, height / 2);
+  translate(width / 2.5, height / 2);
   scale(cam_scale);
   translate((cam_pos.x / cam_scale), (cam_pos.y / cam_scale));
 }
@@ -454,26 +463,11 @@ void try_screenshot() {
 //#######################################################################
 
 
-ArrayList<Callable> callables = new ArrayList<Callable>();
-void callChannel(int chan, float val) {
-  for (Callable c : callables) for (int i : c.chan) 
-    if (i == chan) c.answer(chan, val); }
-void callChannel(int chan) { callChannel(chan, 0); }
-
-abstract class Callable {
-  int[] chan = new int[0];
-  Callable() { callables.add(this); }
-  int[] getChannel() { return chan; }
-  void setChannel(int[] c) { chan = c; }
-  void addChannel(int c) { chan = append(chan, c); }
-  void clearChannel() { chan = new int[0]; }
-  abstract void answer(int channel, float value); }
-
-String popStrLst(StringList sl) {
-  String s = sl.get(sl.size() - 1);
-  sl.remove(sl.size() - 1);
-  return s;
-}
+//String popStrLst(StringList sl) {
+//  String s = sl.get(sl.size() - 1);
+//  sl.remove(sl.size() - 1);
+//  return s;
+//}
 
 float distancePointToLine(float x, float y, float x1, float y1, float x2, float y2) {
   float r =  ( ((x-x1)*(x2-x1)) + ((y-y1)*(y2-y1)) ) / pow(distancePointToPoint(x1, y1, x2, y2), 2);

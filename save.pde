@@ -6,7 +6,7 @@ StringList file = new StringList(0);
 void saving() {
   file.append("start");
   simcontrol_to_strings();
-  grower_to_strings();
+  //grower_to_strings();
   //baselist_to_strings(); //ok mais lour, illisible
   //mworld.macroWorld_to_string();
   String[] sl = new String[file.size()];
@@ -26,7 +26,7 @@ void save_parameters() {
     file.append(sl[i]);
   file.append("Parameters:");
   simcontrol_to_strings();
-  grower_to_strings();
+  //grower_to_strings();
   sl = new String[file.size()];
   for (int i = 0 ; i < file.size() ; i++)
     sl[i] = file.get(i);

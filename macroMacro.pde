@@ -1,102 +1,5 @@
 
 
-class GrowingControl extends Macro {
-  InputF growI,sproutI,stopI,dieI;
-  float grow,sprout,stop,die;
-  
-  GrowingControl(MacroList l_, int i_, int x_, int y_) {
-    super(l_, i_, x_, y_);
-    g.setLabel("GROW");
-    g.setWidth(200);
-    growI = createInputF("GROW", GROW_DIFFICULTY);
-    grow = GROW_DIFFICULTY;
-    sproutI = createInputF("SPROUT", SPROUT_DIFFICULTY);
-    sprout = SPROUT_DIFFICULTY;
-    stopI = createInputF("STOP", STOP_DIFFICULTY);
-    stop = STOP_DIFFICULTY;
-    dieI = createInputF("DIE", DIE_DIFFICULTY);
-    die = DIE_DIFFICULTY;
-  }
-  void clear() {
-    super.clear();
-  }
-  void to_strings() {
-    super.to_strings();
-    file.append("GrowingControl");
-    file.append(str(grow));
-    file.append(str(sprout));
-    file.append(str(stop));
-    file.append(str(die));
-  }
-  
-  void drawing(float x, float y) {}
-  
-  void update() {
-    float g = growI.get();
-    float sp = sproutI.get();
-    float st = stopI.get();
-    float d = dieI.get();
-    
-    if (g != grow) {
-      grow = g; GROW_DIFFICULTY = grow;
-      update_textlabel("GROW", " = r^", GROW_DIFFICULTY); }
-    else if (g != GROW_DIFFICULTY) {
-      grow = GROW_DIFFICULTY; growI.set(grow); }
-    
-    if (sp != sprout) {
-      sprout = sp; SPROUT_DIFFICULTY = sprout;
-      update_textlabel("BLOOM", " = r^", SPROUT_DIFFICULTY); }
-    else if (sp != SPROUT_DIFFICULTY) {
-      sprout = SPROUT_DIFFICULTY; sproutI.set(sprout); }
-    
-    if (st != stop) {
-      stop = st; STOP_DIFFICULTY = stop;
-      update_textlabel("STOP", " = r^", STOP_DIFFICULTY); }
-    else if (st != STOP_DIFFICULTY) {
-      stop = STOP_DIFFICULTY; stopI.set(stop); }
-    
-    if (d != die) {
-      die = d; DIE_DIFFICULTY = die;
-      update_textlabel("DIE", " = r^", DIE_DIFFICULTY); }
-    else if (d != DIE_DIFFICULTY) {
-      die = DIE_DIFFICULTY; dieI.set(die); }
-    
-    super.update();
-    updated = true;
-  }
-}
-
-class GrowingWatcher extends Macro {
-  OutputF popO,growO;
-  float pop,grow;
-  
-  GrowingWatcher(MacroList l_, int i_, int x_, int y_) {
-    super(l_, i_, x_, y_);
-    g.setLabel("Watcher");
-    g.setWidth(150);
-    popO = createOutputF("      POP", 0);
-    growO = createOutputF("  GROW", 0);
-  }
-  void clear() {
-    super.clear();
-  }
-  void to_strings() {
-    super.to_strings();
-    file.append("GrowWatcher");
-    file.append(str(pop));
-    file.append(str(grow));
-  }
-  
-  void drawing(float x, float y) {}
-  
-  void update() {
-    pop = baseNb(); grow = growsNb();
-    popO.setBang(pop);
-    growO.setBang(grow);
-    super.update();
-    updated = true;
-  }
-}
 
 class Keyboard extends Macro {
   boolean w,c,a,p;
@@ -357,3 +260,102 @@ class MacroBOOL extends Macro {
     }
   }
 }
+
+
+//class GrowingControl extends Macro {
+//  InputF growI,sproutI,stopI,dieI;
+//  float grow,sprout,stop,die;
+  
+//  GrowingControl(MacroList l_, int i_, int x_, int y_) {
+//    super(l_, i_, x_, y_);
+//    g.setLabel("GROW");
+//    g.setWidth(200);
+//    growI = createInputF("GROW", GROW_DIFFICULTY);
+//    grow = GROW_DIFFICULTY;
+//    sproutI = createInputF("SPROUT", SPROUT_DIFFICULTY);
+//    sprout = SPROUT_DIFFICULTY;
+//    stopI = createInputF("STOP", STOP_DIFFICULTY);
+//    stop = STOP_DIFFICULTY;
+//    dieI = createInputF("DIE", DIE_DIFFICULTY);
+//    die = DIE_DIFFICULTY;
+//  }
+//  void clear() {
+//    super.clear();
+//  }
+//  void to_strings() {
+//    super.to_strings();
+//    file.append("GrowingControl");
+//    file.append(str(grow));
+//    file.append(str(sprout));
+//    file.append(str(stop));
+//    file.append(str(die));
+//  }
+  
+//  void drawing(float x, float y) {}
+  
+//  void update() {
+//    float g = growI.get();
+//    float sp = sproutI.get();
+//    float st = stopI.get();
+//    float d = dieI.get();
+    
+//    //if (g != grow) {
+//    //  grow = g; GROW_DIFFICULTY = grow;
+//    //  update_textlabel("GROW", " = r^", GROW_DIFFICULTY); }
+//    //else if (g != GROW_DIFFICULTY) {
+//    //  grow = GROW_DIFFICULTY; growI.set(grow); }
+    
+//    //if (sp != sprout) {
+//    //  sprout = sp; SPROUT_DIFFICULTY = sprout;
+//    //  update_textlabel("BLOOM", " = r^", SPROUT_DIFFICULTY); }
+//    //else if (sp != SPROUT_DIFFICULTY) {
+//    //  sprout = SPROUT_DIFFICULTY; sproutI.set(sprout); }
+    
+//    //if (st != stop) {
+//    //  stop = st; STOP_DIFFICULTY = stop;
+//    //  update_textlabel("STOP", " = r^", STOP_DIFFICULTY); }
+//    //else if (st != STOP_DIFFICULTY) {
+//    //  stop = STOP_DIFFICULTY; stopI.set(stop); }
+    
+//    //if (d != die) {
+//    //  die = d; DIE_DIFFICULTY = die;
+//    //  update_textlabel("DIE", " = r^", DIE_DIFFICULTY); }
+//    //else if (d != DIE_DIFFICULTY) {
+//    //  die = DIE_DIFFICULTY; dieI.set(die); }
+    
+//    super.update();
+//    updated = true;
+//  }
+//}
+
+//class GrowingWatcher extends Macro {
+//  OutputF popO,growO;
+//  float pop,grow;
+  
+//  GrowingWatcher(MacroList l_, int i_, int x_, int y_) {
+//    super(l_, i_, x_, y_);
+//    g.setLabel("Watcher");
+//    g.setWidth(150);
+//    popO = createOutputF("      POP", 0);
+//    growO = createOutputF("  GROW", 0);
+//  }
+//  void clear() {
+//    super.clear();
+//  }
+//  void to_strings() {
+//    super.to_strings();
+//    file.append("GrowWatcher");
+//    file.append(str(pop));
+//    file.append(str(grow));
+//  }
+  
+//  void drawing(float x, float y) {}
+  
+//  void update() {
+//    pop = baseNb(); grow = growsNb();
+//    popO.setBang(pop);
+//    growO.setBang(grow);
+//    super.update();
+//    updated = true;
+//  }
+//}

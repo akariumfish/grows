@@ -85,18 +85,22 @@ cree un soft dans lequel on entre les 12 valeur et qui genere l'image correspond
 boolean DEBUG = true; //utilisable dans draw pour print
 int counter = 0; //conteur de tour depuis le dernier reset ou le debut
 boolean pause = false; //permet d'interompre le defilement des tour
-float repeat_runAll = 1; //nombre de fois ou il faut executé runall par frame
+float repeat_runAll = 2; //nombre de fois ou il faut executé runall par frame
 float repeating_pile = 0; //pile pour stocker les portion de repeat_runall quand il est < a 1
 int SEED = 548651008; //seed pour l'aleatoire
 int slide = 0;
 int maxSlide = 1;
+int repeat_turn = 600;
+boolean auto_repeat = true;
+boolean repeat_random = true;
 
 //ici on as les fonctions principale de processing, 
 //elles geres l'arrengement des differente features
 //plus bas ya des methodes utile qui vont nul par ailleur
 
 void setup() {//executé au demarage
-  size(1600, 900);//taille de l'ecran
+  //size(1600, 900);//taille de l'ecran
+  fullScreen();
   setupInput();//voir onglet input
   noSmooth();//pas d'antialiasing
   //smooth();//anti aliasing
@@ -124,6 +128,13 @@ void draw() {//executé once by frame
       
       counter++;
       repeating_pile--;
+      if (auto_repeat && repeat_turn <= counter) {
+        if (repeat_random) {
+          SEED = int(random(1000000000));
+          textfieldSeed.setValue("" + SEED);
+        }
+        reset();
+      }
     }
     
     //run_each_unpaused_frame:
@@ -385,7 +396,7 @@ void mouseMoved() { mouseMove = true; }
 
 
 PVector cam_pos = new PVector(0, 0); //position de la camera
-float cam_scale = 0.2; //facteur de grossicement
+float cam_scale = 8; //facteur de grossicement
 float ZOOM_FACTOR = 1.1; //facteur de modification de cam_scale quand on utilise la roulette de la sourie
 boolean GRAB = true;
 
