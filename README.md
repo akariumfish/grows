@@ -1,8 +1,6 @@
 # grows
  Generating growing structures
 
- see grows.pde for descriptions
-
  see preview.bmp
 
  image are sample results
