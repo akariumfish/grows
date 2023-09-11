@@ -116,6 +116,9 @@ void setup() {//executé au demarage
   // new comunity systeme
   gcomu = new ComunityList();
   
+  cp5 = new ControlP5(this);
+  new Panel(cp5, 100, 100, 100, 100);
+  
 }
 
 void draw() {//executé once by frame
@@ -195,12 +198,12 @@ void draw() {//executé once by frame
 }
 
 void simcontrol_to_strings() {
-  file.append("simcontrol:");
-  file.append(str(counter));
-  file.append(str(pause));
-  file.append(str(repeat_runAll));
-  file.append(str(repeating_pile));
-  file.append(str(SEED));
+  //file.append("simcontrol:");
+  //file.append(str(counter));
+  //file.append(str(pause));
+  //file.append(str(repeat_runAll));
+  //file.append(str(repeating_pile));
+  //file.append(str(SEED));
   //file.append(str(slide));
   //file.append(str(maxSlide));
 }
@@ -462,12 +465,6 @@ void try_screenshot() {
 //##                         METHODES UTILES                           ##
 //#######################################################################
 
-
-//String popStrLst(StringList sl) {
-//  String s = sl.get(sl.size() - 1);
-//  sl.remove(sl.size() - 1);
-//  return s;
-//}
 
 float distancePointToLine(float x, float y, float x1, float y1, float x2, float y2) {
   float r =  ( ((x-x1)*(x2-x1)) + ((y-y1)*(y2-y1)) ) / pow(distancePointToPoint(x1, y1, x2, y2), 2);

@@ -5,6 +5,12 @@ class RandomTryParam {
   boolean ON = true;
   RandomTryParam() {}
   RandomTryParam(float d, boolean b) {DIFFICULTY = d; ON = b;}
+  
+  void save_to(SavableValueTree t, String name, String nodeName) {
+    t.add("randomtryparam\t" + name, nodeName);
+    t.add(name + "difficulty\t", DIFFICULTY, "randomtryparam\t" + name);
+    t.add(name + "on\t", ON, "randomtryparam\t" + name);
+  }
 }
 
 class GrowerParam {
@@ -21,6 +27,18 @@ class GrowerParam {
   RandomTryParam dieP = new RandomTryParam(3.6, true);
   float MAX_LINE_WIDTH = 1.5; //epaisseur max des ligne, diminuer par l'age, un peut, se vois pas
   float MIN_LINE_WIDTH = 0.2; //epaisseur min des ligne
+  void save_to(SavableValueTree t, String name) {
+    t.add("growerparam\t" + name);
+    growP.save_to(t, name + "grow", "growerparam\t" + name);
+    sproutP.save_to(t, name + "sprout", "growerparam\t" + name);
+    stopP.save_to(t, name + "stop", "growerparam\t" + name);
+    dieP.save_to(t, name + "die", "growerparam\t" + name);
+    t.add(name + "DEVIATION\t", DEVIATION, "growerparam\t" + name);
+    t.add(name + "L_MIN\t", L_MIN, "growerparam\t" + name);
+    t.add(name + "L_MAX\t", L_MAX, "growerparam\t" + name);
+    t.add(name + "L_DIFFICULTY\t", L_DIFFICULTY, "growerparam\t" + name);
+    t.add(name + "OLD_AGE\t", OLD_AGE, "growerparam\t" + name);
+  }
 }
 
 class Grower extends Entity {
@@ -36,7 +54,11 @@ class Grower extends Entity {
   float age = 0.0;
   float start = 0.0;
   
-  Grower(GrowerComu c) { super(c); param = c.param; }
+  Grower(GrowerComu c) { super(c); param = c.param;
+    SavableValueTree t = new SavableValueTree("test");
+    param.save_to(t, "param");
+    t.save_to_file("text.txt");
+  }
   
   Grower define(PVector _p, PVector _d) {
     pos = _p;

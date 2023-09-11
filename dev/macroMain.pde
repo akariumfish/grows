@@ -74,10 +74,10 @@ class MacroList {
   }
   
   void to_strings() {
-    file.append("macros:");
+    //file.append("macros:");
     for (Macro m : macroList)
       m.to_strings();
-    file.append("in/out:");
+    //file.append("in/out:");
     for (InputB m : inBList)
       m.to_strings();
     for (InputF m : inFList)
@@ -86,7 +86,7 @@ class MacroList {
       m.to_strings();
     for (OutputF m : outFList)
       m.to_strings();
-    file.append("links:");
+    //file.append("links:");
     linkList.to_strings();
   }
   
@@ -271,12 +271,12 @@ abstract class Macro {
     g.remove();
   }
   void to_strings() {
-    file.append("macro");
-    file.append(str(id));
-    file.append(str(x));
-    file.append(str(y));
-    file.append(str(inCount));
-    file.append(str(outCount));
+    //file.append("macro");
+    //file.append(str(id));
+    //file.append(str(x));
+    //file.append(str(y));
+    //file.append(str(inCount));
+    //file.append(str(outCount));
   }
   
   void update() {
@@ -376,9 +376,9 @@ class LinkB {
   }
   void to_strings() {
     if (this != macroList.NOTB) {
-      file.append("linkB");
-      file.append(str(in.id));
-      file.append(str(out.id));
+      //file.append("linkB");
+      //file.append(str(in.id));
+      //file.append(str(out.id));
     }
   }
   boolean collision(int x, int y) {
@@ -425,9 +425,9 @@ class LinkF {
   }
   void to_strings() {
     if (this != macroList.NOTF) {
-      file.append("linkF");
-      file.append(str(in.id));
-      file.append(str(out.id));
+      //file.append("linkF");
+      //file.append(str(in.id));
+      //file.append(str(out.id));
     }
   }
   boolean collision(int x, int y) {
@@ -490,11 +490,11 @@ abstract class InputA {
     g.remove();
   }
   void to_strings() {
-    file.append("input");
-    file.append(str(id));
-    file.append(str(x));
-    file.append(str(y));
-    file.append(str(n));
+  //  file.append("input");
+  //  file.append(str(id));
+  //  file.append(str(x));
+  //  file.append(str(y));
+  //  file.append(str(n));
   }
 }
 
@@ -517,7 +517,7 @@ class InputB extends InputA {
   }
   void to_strings() {
     super.to_strings();
-    file.append("B");
+    //file.append("B");
   }
   boolean getUpdate() {
     if (in.isMouseOver() && mouseClick[0] && macroList.creatingLinkB) {macroList.addLinkSelectInB(this);}
@@ -601,8 +601,8 @@ class InputF extends InputA {
   }
   void to_strings() {
     super.to_strings();
-    file.append("F");
-    file.append(str(value));
+    //file.append("F");
+    //file.append(str(value));
   }
 }
 
@@ -636,11 +636,11 @@ abstract class OutputA {
     out.remove();
   }
   void to_strings() {
-    file.append("output");
-    file.append(str(id));
-    file.append(str(x));
-    file.append(str(y));
-    file.append(str(n));
+    //file.append("output");
+    //file.append(str(id));
+    //file.append(str(x));
+    //file.append(str(y));
+    //file.append(str(n));
   }
 }
 
@@ -663,7 +663,7 @@ class OutputB extends OutputA {
   }
   void to_strings() {
     super.to_strings();
-    file.append("B");
+    //file.append("B");
   }
   void set(boolean v) {
     bang = v;
@@ -729,8 +729,8 @@ class OutputF extends OutputA {
   }
   void to_strings() {
     super.to_strings();
-    file.append("F");
-    file.append(str(value));
+    //file.append("F");
+    //file.append(str(value));
   }
   void set(float v) {
     value = v;

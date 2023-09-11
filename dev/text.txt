@@ -1,0 +1,27 @@
+Tree	test
+Node	root
+Node	growerparam	param
+Node	randomtryparam	paramgrow
+float	paramgrowdifficulty		0.5
+boolean	paramgrowon		true
+EndNode	randomtryparam	paramgrow
+Node	randomtryparam	paramsprout
+float	paramsproutdifficulty		2080.0
+boolean	paramsprouton		true
+EndNode	randomtryparam	paramsprout
+Node	randomtryparam	paramstop
+float	paramstopdifficulty		1.25
+boolean	paramstopon		true
+EndNode	randomtryparam	paramstop
+Node	randomtryparam	paramdie
+float	paramdiedifficulty		3.6
+boolean	paramdieon		true
+EndNode	randomtryparam	paramdie
+float	paramDEVIATION		8.0
+float	paramL_MIN		2.0
+float	paramL_MAX		35.0
+float	paramL_DIFFICULTY		180.0
+int	paramOLD_AGE		666
+EndNode	growerparam	param
+EndNode	root
+EndTree	test

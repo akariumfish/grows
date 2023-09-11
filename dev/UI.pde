@@ -6,32 +6,6 @@ ControlP5 cp5; //l'objet main pour les menu
 int TEXT_SIZE = 18;
 int BTN_SIZE = 40;
 
-class savableValueTree {
-  ArrayList<SVTEntry> entrys = new ArrayList<SVTEntry>();
-  
-  void to_string() {
-    for (SVTEntry e : entrys) e.to_string();
-  }
-  
-  void save_to_file(String file) {}
-  void load_from_file(String file) {}
-}
-
-abstract class SVTEntry {
-  abstract void to_string();
-}
-
-class SVTNode extends SVTEntry {
-  ArrayList<SVTEntry> entrys = new ArrayList<SVTEntry>();
-  void to_string() {
-    for (SVTEntry e : entrys) e.to_string();
-  }
-}
-
-abstract class SVTValue extends SVTEntry {
-  abstract void to_string();
-}
-
 ArrayList<Callable> callables = new ArrayList<Callable>();
 void callChannel(Channel chan, float val) {
   for (Callable c : callables) for (Channel i : c.chan) 
@@ -179,13 +153,45 @@ Button addswitch( Group g, String label, int st,
      ;
   if (on) b.setOn();
   b.getCaptionLabel().setText(label).setFont(getFont(st));
-  float v = 0;
-  if (on) v = 1;
-  addUIEvent(id, c, v);
+  addUIEvent(id, c, 0);
   return b;
 }
 
 //panels
+
+class Panel extends Group {
+  float mx = 0; float my = 0;
+  Panel(ControlP5 c, float x, float y, int sx, int sy) {
+    super(c, "panel" + get_free_id());
+    this.setPosition(x, y)
+        .setSize(sx, 10)
+        .setBackgroundHeight(sy)
+        .setBackgroundColor(color(60, 200))
+        .disableCollapse()
+        //.moveTo("Menu")
+        .activateEvent(true)
+        .setMoveable(true)
+        .getCaptionLabel().setText("");
+    this.addListener(new ControlListener() {
+          public void controlEvent(final ControlEvent ev) {  
+            print("e");
+            //moving control panel
+            if (isMouseOver() && mouseClick[0]) {
+              mx = getPosition()[0] - mouseX;
+              my = getPosition()[1] - mouseY;
+              GRAB = false;//deactive le deplacement camera
+            }
+            if (isMouseOver() && mouseUClick[0]) {
+              GRAB = true;
+            }
+            if (isMouseOver() && mouseButtons[0]) {
+              setPosition(mouseX + mx,mouseY + my);
+            }
+          }
+        });
+  }
+}
+
 float mx = 0; float my = 0; //pour bouger les fenetres
 Group addPanel(float x, float y, int sx, int sy) {
   Group g = cp5.addGroup("group" + get_free_id())
@@ -198,18 +204,4 @@ Group addPanel(float x, float y, int sx, int sy) {
              ;
   g.getCaptionLabel().setText("");
   return g;
-}
-void update_panel(Group g) {
-  //moving control panel
-  if (g.isMouseOver() && mouseClick[0]) {
-    mx = g.getPosition()[0] - mouseX;
-    my = g.getPosition()[1] - mouseY;
-    GRAB = false;//deactive le deplacement camera
-  }
-  if (g.isMouseOver() && mouseUClick[0]) {
-    GRAB = true;
-  }
-  if (g.isMouseOver() && mouseButtons[0]) {
-    g.setPosition(mouseX + mx,mouseY + my);
-  }
 }

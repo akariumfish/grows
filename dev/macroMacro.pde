@@ -20,7 +20,7 @@ class Keyboard extends Macro {
   }
   void to_strings() {
     super.to_strings();
-    file.append("Keyboard");
+    //file.append("Keyboard");
   }
   
   void update() {
@@ -70,8 +70,8 @@ class MacroVAL extends Macro {
   }
   void to_strings() {
     super.to_strings();
-    file.append("macroVAL");
-    file.append(str(value));
+    //file.append("macroVAL");
+    //file.append(str(value));
   }
 
   void update() {
@@ -117,10 +117,10 @@ class MacroDELAY extends Macro {
   }
   void to_strings() {
     super.to_strings();
-    file.append("macroDELAY");
-    file.append(str(count));
-    file.append(str(actualCount));
-    file.append(str(on));
+    //file.append("macroDELAY");
+    //file.append(str(count));
+    //file.append(str(actualCount));
+    //file.append(str(on));
   }
   void update() {
     super.update();
@@ -184,7 +184,7 @@ class MacroCOMP extends Macro {
   }
   void to_strings() {
     super.to_strings();
-    file.append("macroCOMP");
+    //file.append("macroCOMP");
   }
 
   void update() {
@@ -240,7 +240,7 @@ class MacroBOOL extends Macro {
   }
   void to_strings() {
     super.to_strings();
-    file.append("macroBOOL");
+    //file.append("macroBOOL");
   }
 
   void update() {
