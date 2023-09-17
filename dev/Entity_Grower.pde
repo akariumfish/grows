@@ -1,3 +1,6 @@
+// ici on definie les structure de type grower
+
+
 
 class RandomTryParam {
   //constructeur avec param values
@@ -55,9 +58,7 @@ class Grower extends Entity {
   float start = 0.0;
   
   Grower(GrowerComu c) { super(c); param = c.param;
-    SavableValueTree t = new SavableValueTree("test");
-    param.save_to(t, "param");
-    t.save_to_file("text.txt");
+    
   }
   
   Grower define(PVector _p, PVector _d) {
@@ -177,6 +178,9 @@ class GrowerComu extends Community {
     super(_c);
     param = new GrowerParam();
     init();
+    //SavableValueTree t = new SavableValueTree("test");
+    //param.save_to(t, "param");
+    //t.save_to_file("text.txt");
   }
   
   Grower build() { return new Grower(this); }

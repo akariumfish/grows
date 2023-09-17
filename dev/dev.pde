@@ -1,8 +1,129 @@
 /*
 
-            -- GROWING STRUCTURES GENERATOR --
+            ------- GROWING STRUCTURES GENERATOR -------
 
 
+
+
+
+avancer sur menu :
+  cree les methode d'easy build en creant le menu main
+  
+methode pour changer grower param depuis un svt
+
+
+
+
+
+
+
+une simulation est constituer d'un nombre indefini et evolutif d'objet au comportement divert.
+
+On vas les organiser en groupe d'objet au modele comportemental identique. Ces groupe seront apeller community
+et les objet simulé seront apeller entity. Un objet communitylist gére la creation et l'execution des
+differente community.
+Un modele comportemental est un ensemble d'alteration applicable a une entity du type approprié et 
+les condition d'aplication de ses alteration. Ses condition serons souvent aleatoire.
+Different parametre peuvent modifier l'amplitude et la nature des alteration ou 
+influencé les condition d'application d'une alteration. Ses parametre sont commun a une communauté et 
+doivent pouvoir etre modifier en cour d'execution par l'utilisateur.
+Si chaque entity d'une meme community suis donc un modele comportemental identique, sont 
+evolution est unique car le resultat de ses test lui est propre. L'objet entity contient ses caracteristique.
+
+des class abstract definise le modele a suivre pour cree un nouvel objet.
+
+
+
+
+------------------------- Objects description -------------------------
+
+communityList               conteneur principale, gestion des comunity
+  arraylist of all community
+  index of active community
+  methods run draw reset :
+    executed at right time in main loop
+    launch corresponding methods of the active community
+
+community       abstract    modele pour les community, gestion des entity
+  arraylist of all entity
+  communityparam
+  methods :
+    init              fill list with unactive entity object using the abstract method build()
+    new entity        search for an inactive entity, reset it and return it
+    reset             kill all, set randomseed, and create new entity following parameters
+    run all           launch run method of all active entity
+    draw all          launch draw //
+    destroy all       launch destroy methods of all entity
+    kill all          launch kill //
+    active entity nb  get nb of active entity
+    build             abstract pour la creation de nouvelle entity
+
+entity          abstract    modele pour les entity, gestion des comportement
+  index et etat d'activation
+  methods :
+    reset             active l'entity et launch init
+    destroy           si active desactive et launch clear
+    kill              deactive
+  methods abstract :
+    run               seras launch each tick
+    draw              seras launch dans la matrice d'affichage camera
+    init              seras launch a chaque activation
+    clear             seras launch a chaque deactivation non forcé (not through kill)
+    randomize         is launch par community reset to set random param for initially activated entity
+
+communityparam              conteneur de data
+  max entity
+  initial entity
+  random seed
+
+randomtryparam              conteneur de data
+  utilisé avec la methode crandom
+  float difficulty   dif pour le crandom
+  bool on            activation
+
+
+programmation d'un nouvel objet simulable : Grower
+on doit extends les objet community et entity
+grower          extends entity      entity qui pousse comme un vegetal
+growercomu      extends community
+  growerparam
+growerparam     conteneur de data
+
+
+
+
+------------------------- MENU -------------------------
+
+chaque panel:
+  titre
+  deplacable
+
+simulation
+  seed selection
+  info : framerate / turn
+  speed
+  pause reset reset-rng print
+  repeat repeat-rng select repeat turn
+
+community panel
+  param community size (reset if changed)
+  param generation initial
+  info : active object number
+  show/hide graphs
+  
+FUTUR:
+chaque panel
+  collapsable (button) / hidable (button)
+simulation
+  open community menu
+comunity menu
+  community list
+  open selected community panel
+
+
+
+
+------------------------- BUG -------------------------
 
 --corriger les beug d'affichage des macro (irregularité en y sur les bp des i/o) 
 --corriger numerotation des screenshots
@@ -11,16 +132,30 @@
     faire un truc mieux, il faut juste trouver comment test l'existance d'un fichier facilement
 
 
-sauvegarde !!
+
+
+------------------------- sauvegarde -------------------------
+
   la traduction en StringList de macroworld est faite <- a verif apres merge macro world et list
   la remise a zero de macroworld aussi <- a verif apres merge macro world et list
   a faire :
     --construction de macrolist a partir d'un stringlist
     --selecteur de fichier source/cible
-    --menu group dedier
+    --menu dedier
     --sauvegarde sous different titre dans un fichier
     --lecture
-    
+cree objet param abstract :
+  void save_to(SVT, name, nodename)
+    create a new node under nodename named name or modify it if it already exist
+  void load from(SVT, name, nodeName)
+    load data if it exist
+menu pour selectionner un fichier
+
+
+
+
+------------------------- macros -------------------------
+
 Les macro sont un outils de patch/programmation visuelle
 qui permettra par exemple une auto regulation des pop parametrable
   grow regulé par nb de pop
@@ -33,10 +168,7 @@ ajouter:
   --ajout et suppression de macros
   --collapsing macros
   type de macro:
-    --on/off growing behaviors
-    --switch pause
     --change speed
-    trig chaque bp des menu en gros...
     --multi val one trig
     --1 line delay
     --environs = : 3 float in , 1 trig out
@@ -49,35 +181,6 @@ ajouter:
 --sur le graph, faire apparaitre d'une autre couleur les "echec" : pop au max ou pop a zero
 garder une image du graph ( le complet depuis le tour 0 de chaque run)
 --switch antialiasing
-
-
-
-une image peut ce reduire a 12 valeur
-
-une seed
-un nombre de tour depuit le debut
-
-une camera :
-  position x, y
-  scale factor
-  
-un comportement:
-  les difficulté:
-    grow
-    sprout
-    stop
-    die
-  la limite d'age
-  le deplacement:
-    drifting (rotation posible en portion de pi (PI/drift))
-    move (longeur max de chaque section)
-
-add la possibilité d'afficher les valeur qui definisse l'image sur le screenshot
-cree un soft dans lequel on entre les 12 valeur et qui genere l'image correspondante
-
-
-
-
 
 */
 
@@ -92,7 +195,10 @@ int repeat_turn = 600;
 boolean auto_repeat = true;
 boolean repeat_random = true;
 
-ComunityList gcomu;
+ComunityList coml;
+
+Channel run_chan = new Channel();
+Channel frame_chan = new Channel();
 
 //ici on as les fonctions principale de processing, 
 //elles geres l'arrengement des differente features
@@ -105,19 +211,9 @@ void setup() {//executé au demarage
   //smooth();//anti aliasing
   frameRate(60);
   
-  //for (String s : PFont.list()) println(s); // liste toute les police de text qui existe
+  init_UI();
   
-  //init_panel(); //onglet panel : initialise le menu
-  //init_macro();
-  //init_base();
-  
-  //saving();
-  
-  // new comunity systeme
-  gcomu = new ComunityList();
-  
-  cp5 = new ControlP5(this);
-  new Panel(cp5, 100, 100, 100, 100);
+  coml = new ComunityList();
   
 }
 
@@ -129,11 +225,8 @@ void draw() {//executé once by frame
     while (repeating_pile > 1) {
       
       //run_speeded:  execute a un ritme definie par repeat_runall
-      
-      //runAll();
-      
-      // new comunity systeme
-      gcomu.run();
+      coml.run();
+      callChannel(run_chan);
       
       counter++;
       repeating_pile--;
@@ -147,76 +240,110 @@ void draw() {//executé once by frame
     }
     
     //run_each_unpaused_frame:
-    //update_graph();
+    
   }
   
   //run_each_frame:
+  callChannel(frame_chan);
   //raccourcie barre espace -> pause
   if (keysClick[6]) {
     Button b = (Button)cp5.getController("running");
     if (b.isOn()) b.setOff(); else b.setOn();
   }
-  //update_all_menu();
-  //mList.update();
 
-  // affichage
+  // AFFICHAGE
   
   //draw_on_screen:
-  //draw_graphs(); // population et grower tracking graph
-  //if (!cp5.getTab("default").isActive()) {// draw framerate
-  //  fill(255);
-  //  textSize(16);
-  //  text(int(frameRate),10,height - 10 );
-  //}
   
   pushMatrix();
   cam_movement(); // matrice d'affichage pour la camera
   
   //draw_on_camera:
-  
-  //comunity systeme
-  gcomu.draw();
-  
-  //drawAll();
+  coml.draw();
   
   popMatrix(); // fin de la matrice d'affichage
   try_screenshot();
   
   //draw_after_screenshot:
-  //mList.drawing();
   
   
   //peut servir
   if (DEBUG) {
-    //println("Frame rate: " + int(frameRate));
-    //println( " " );
-    //println( counter + " " + growsNb());
+    //println( counter );
   }
   
   cam_input_update();
   inputUpdate(); //voir l'onglet input
 }
 
-void simcontrol_to_strings() {
-  //file.append("simcontrol:");
-  //file.append(str(counter));
-  //file.append(str(pause));
-  //file.append(str(repeat_runAll));
-  //file.append(str(repeating_pile));
-  //file.append(str(SEED));
-  //file.append(str(slide));
-  //file.append(str(maxSlide));
-}
-
 void reset() {
   
-  gcomu.reset();
+  coml.reset();
   
   //reset_base();
   //init_graphs();
 
   //reset le conter de tour
   counter = 0;
+}
+
+
+
+
+
+//#######################################################################
+//##                             CAMERA                                ##
+//#######################################################################
+
+
+PVector cam_pos = new PVector(0, 0); //position de la camera
+float cam_scale = 8.0; //facteur de grossicement
+float ZOOM_FACTOR = 1.1; //facteur de modification de cam_scale quand on utilise la roulette de la sourie
+boolean GRAB = true;
+
+boolean screenshot = false; //enregistre une image de la frame sans les menu si true puis se desactive
+//int shot_cnt = 0; //prevue pour la sauvegarde d'image avec des num coherent
+
+void cam_input_update() {
+  //permet le cliquer glisser le l'ecran
+  if (mouseButtons[0] && GRAB) {
+    cam_pos.x += mouseX - pmouseX;
+    cam_pos.y += mouseY - pmouseY;
+  }
+  
+  //permet le zoom
+  if (mouseWheelUp || keysClick[2]) {
+    cam_scale /= ZOOM_FACTOR;
+    cam_pos.x /= ZOOM_FACTOR;
+    cam_pos.y /= ZOOM_FACTOR;
+  }
+  if (mouseWheelDown || keysClick[3]) {
+    cam_scale *= ZOOM_FACTOR;
+    cam_pos.x *= ZOOM_FACTOR;
+    cam_pos.y *= ZOOM_FACTOR;
+  }
+}
+
+void cam_movement() {
+  translate(width / 2.5, height / 2);
+  scale(cam_scale);
+  translate((cam_pos.x / cam_scale), (cam_pos.y / cam_scale));
+}
+
+void try_screenshot() {
+  // enregistrement d'un screenshot si le flag est true
+  if (screenshot) {
+    //String name = "shot" + shot_cnt + ".png";
+    
+    //File file = new File(sketchPath(name));
+    //while (file.exists()) {
+    //  shot_cnt++;
+    //  name = "shot" + shot_cnt + ".png";
+    //  file = new File(sketchPath(name));
+    //}
+    saveFrame("image/shot-########.png");
+  }
+  screenshot = false;
 }
 
 
@@ -397,112 +524,3 @@ void mouseReleased()
 void mouseDragged() { mouseMove = true; }
 
 void mouseMoved() { mouseMove = true; }
-
-
-
-
-
-//#######################################################################
-//##                             CAMERA                                ##
-//#######################################################################
-
-
-PVector cam_pos = new PVector(0, 0); //position de la camera
-float cam_scale = 8.0; //facteur de grossicement
-float ZOOM_FACTOR = 1.1; //facteur de modification de cam_scale quand on utilise la roulette de la sourie
-boolean GRAB = true;
-
-boolean screenshot = false; //enregistre une image de la frame sans les menu si true puis se desactive
-//int shot_cnt = 0; //prevue pour la sauvegarde d'image avec des num coherent
-
-void cam_input_update() {
-  //permet le cliquer glisser le l'ecran
-  if (mouseButtons[0] && GRAB) {
-    cam_pos.x += mouseX - pmouseX;
-    cam_pos.y += mouseY - pmouseY;
-  }
-  
-  //permet le zoom
-  if (mouseWheelUp || keysClick[2]) {
-    cam_scale /= ZOOM_FACTOR;
-    cam_pos.x /= ZOOM_FACTOR;
-    cam_pos.y /= ZOOM_FACTOR;
-  }
-  if (mouseWheelDown || keysClick[3]) {
-    cam_scale *= ZOOM_FACTOR;
-    cam_pos.x *= ZOOM_FACTOR;
-    cam_pos.y *= ZOOM_FACTOR;
-  }
-}
-
-void cam_movement() {
-  translate(width / 2.5, height / 2);
-  scale(cam_scale);
-  translate((cam_pos.x / cam_scale), (cam_pos.y / cam_scale));
-}
-
-void try_screenshot() {
-  // enregistrement d'un screenshot si le flag est true
-  if (screenshot) {
-    //String name = "shot" + shot_cnt + ".png";
-    
-    //File file = new File(sketchPath(name));
-    //while (file.exists()) {
-    //  shot_cnt++;
-    //  name = "shot" + shot_cnt + ".png";
-    //  file = new File(sketchPath(name));
-    //}
-    saveFrame("image/shot-########.png");
-  }
-  screenshot = false;
-}
-
-
-
-
-
-//#######################################################################
-//##                         METHODES UTILES                           ##
-//#######################################################################
-
-
-float distancePointToLine(float x, float y, float x1, float y1, float x2, float y2) {
-  float r =  ( ((x-x1)*(x2-x1)) + ((y-y1)*(y2-y1)) ) / pow(distancePointToPoint(x1, y1, x2, y2), 2);
-  if (r <= 0) {return distancePointToPoint(x1, y1, x, y);}
-  if (r >= 1) {return distancePointToPoint(x, y, x2, y2);}
-  float px = x1 + (r * (x2-x1));
-  float py = y1 + (r * (y2-y1));
-  return distancePointToPoint(x, y, px, py);
-}
-
-float distancePointToPoint(float xa, float ya, float xb, float yb) {
-  return sqrt( pow((xb-xa), 2) + pow((yb-ya), 2) );
-}
-
-float crandom(float d) {
-  return pow(random(1.0), d) ;
-}
-
-/*
-
-crandom results :
-difficulty   nb > 0.5 pour 1000
-       0.04 999
-       0.08 999
-       0.16 986
-       0.32 885
-       0.64 661
-       1.28 418
-       2.56 236
-       5.12 126
-      10.24 65
-      20.48 33
-      40.96 16
-      81.92 8
-     163.84 4
-     327.68 2
-     655.36 1
-    1310.72 0
-    2621.44 0
-
-*/

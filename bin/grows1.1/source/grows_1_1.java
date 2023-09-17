@@ -1503,7 +1503,7 @@ class GrowingControl extends Macro {
         if (r3.getItem("GROW" + id).getState()) {
           GROW_DIFFICULTY *= m;
           update_textlabel("GROW", " = r^", GROW_DIFFICULTY); }
-        if (r3.getItem("SPROUT" + id).getState()) {
+        if (r3.getItem("BLOOM" + id).getState()) {
           SPROUT_DIFFICULTY *= m;
           update_textlabel("SPROUT", " = r^", SPROUT_DIFFICULTY); }
         if (r3.getItem("STOP" + id).getState()) {
@@ -2792,7 +2792,6 @@ public void update_graph() {
   if (gc < larg-1) gc++; 
   else gc = 0;
 }
-
 // ici on gere les fichiers
 
 

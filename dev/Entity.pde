@@ -1,6 +1,6 @@
 
 /*
-ici on definie les objet que l'on vas generer
+ici on definie les objet de structure
 
 */
 
@@ -10,12 +10,22 @@ ici on definie les objet que l'on vas generer
 class ComunityList {
   ArrayList<Community> list = new ArrayList<Community>();
   int active_comu = -1;
+  Panel mainPanel;
   
   ComunityList() {
     init();
   }
   
   void init() {
+    mainPanel = addPanel("SIMULATION CONTROL", width - 410, 20);
+    mainPanel.addButton("p", 12, 
+                   50, 50, 300, 20, 
+                   new ControlListener() {
+          public void controlEvent(final ControlEvent ev) {  
+            pause = !pause;
+          }
+        });
+    
     // - TEMP - TEMP - TEMP - TEMP - TEMP
     GrowerComu c = new GrowerComu(this);
     active_comu = c.id;
