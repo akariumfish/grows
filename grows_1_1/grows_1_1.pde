@@ -99,6 +99,8 @@ int adding_pile = 0;
 float adding_step = 30; // add one new object each adding_step turn
 float adding_counter = 0;
 
+PVector start_point;
+
 //ici on as les fonctions principale de processing, 
 //elles geres l'arrengement des differente features
 //plus bas ya des methodes utile qui vont nul par ailleur
@@ -154,6 +156,12 @@ void draw() {//executé once by frame
     
     //run_each_unpaused_frame:
     update_graph();
+    
+    //if (random(1) > 0.9) {
+    //  start_point.set(1, 0);
+    //  start_point.setMag(random(100));
+    //  start_point.rotate(random(2 * PI));
+    //}
   }
   
   //run_each_frame:

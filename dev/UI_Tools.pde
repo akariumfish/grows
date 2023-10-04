@@ -32,7 +32,7 @@ void addUIEvent(int i, Channel c, float v) {
 public void controlEvent(ControlEvent theEvent) {
   int id = theEvent.getId();
   for (UIEvent e : UIEventList)
-    if (e.id == id) callChannel(e.chan, e.value);
+    if (e.id == id) {callChannel(e.chan, e.value); print("a"); }
 }
 
 //       ----- BUILDER -----
@@ -106,6 +106,60 @@ class Panel extends Callable {
        ;
     b.getCaptionLabel().setText(label).setFont(getFont(st));
     return b;
+  }
+  
+  void addRandomTryControl(String label, float x, float y, RandomTryParam param) {
+    addLine(50);
+    int id = get_free_id();
+    Button b = cp5.addButton("button1" + id)
+       .setPosition(x, y)
+       .setSize(40,40)
+       .setGroup(g)
+       .setId(get_free_id())
+       ;
+    addUIEvent(b.getId(), param.chan, 2);
+    b.getCaptionLabel().setText("x2").setFont(getFont(16));
+    //b = cp5.addButton("button2" + id)
+    //   .setPosition(x + 50, y)
+    //   .setSize(40,40)
+    //   .setGroup(g)
+    //   .addListener(new ControlListener() {
+    //      public void controlEvent(final ControlEvent ev) {  
+    //        print("x1.2");
+    //      }
+    //    })
+    //   ;
+    //b.getCaptionLabel().setText("x1.2").setFont(getFont(16));
+    //b = cp5.addButton("button3" + id)
+    //   .setPosition(x + 290, y)
+    //   .setSize(40,40)
+    //   .setGroup(g)
+    //   .addListener(new ControlListener() {
+    //      public void controlEvent(final ControlEvent ev) {  
+    //        print("/1.2");
+    //      }
+    //    })
+    //   ;
+    //b.getCaptionLabel().setText("/1.2").setFont(getFont(16));
+    //b = cp5.addButton("button4" + id)
+    //   .setPosition(x + 340, y)
+    //   .setSize(40,40)
+    //   .setGroup(g)
+    //   .addListener(new ControlListener() {
+    //      public void controlEvent(final ControlEvent ev) {  
+    //        print("/2");
+    //        //cp5.getController("textlabel" + id);
+    //      }
+    //    })
+    //   ;
+    //b.getCaptionLabel().setText("/2").setFont(getFont(16));
+    //cp5.addTextlabel("textlabel" + id)
+    //   .setText(label)
+    //   .setPosition(x + 100, y + 10)
+    //   .setColorValue(0xffffffff)
+    //   .setFont(getFont(16))
+    //   .setGroup(g)
+    //   ;
   }
   
   void answer(Channel channel, float value) {

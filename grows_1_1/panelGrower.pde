@@ -7,7 +7,7 @@ void init_panel_grower() {
   group_grow = cp5.addGroup("group_grow")
              .setPosition(width - PANEL_WIDTH, 330)
              .setSize(PANEL_WIDTH, 10)
-             .setBackgroundHeight(750)
+             .setBackgroundHeight(800)
              .setBackgroundColor(color(60, 200))
              .disableCollapse()
              .moveTo("Menu")
@@ -22,6 +22,7 @@ void init_panel_grower() {
   build_line_factor(group_grow, "STOP", " * r^", STOP_DIFFICULTY, 10, 170, 2);
   build_line_factor(group_grow, "DIE", " * r^", DIE_DIFFICULTY, 10, 220, 3);
   build_line_factor(group_grow, "AGING", " at ", OLD_AGE, 10, 270, 4);
+  build_line_factor(group_grow, "LEAF", " ", LEAF_DIFFICULTY, 10, 750, 12);
   
   Button b; //pointer
   
@@ -99,6 +100,7 @@ void event_panel_grower(int id, int line, float modifier) {
   if (line == 10) { L_MAX *= modifier;  update_textlabel("LMAX", " = ", L_MAX);}
   if (line == 6) { INIT_BASE += modifier; update_textlabel("INIT", " ", INIT_BASE); }
   if (line == 11) { adding_step += modifier; update_textlabel("STEP", " ", adding_step); }
+  if (line == 12) { LEAF_DIFFICULTY *= modifier; update_textlabel("LEAF", " ", LEAF_DIFFICULTY); }
 }
 
 void update_panel_grower() {

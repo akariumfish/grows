@@ -45,6 +45,7 @@ boolean ON_DIE = true; // active la mort
 //les dificulté sont appliqué a crandom, voir dans l'onglet utils elles on toute un control dans le menu
 float GROW_DIFFICULTY = 0.5;
 float SPROUT_DIFFICULTY = 2080.0;
+float LEAF_DIFFICULTY = 2080.0;
 float STOP_DIFFICULTY = 1.25;
 float DIE_DIFFICULTY = 3.6;
 int OLD_AGE = 666;
@@ -57,8 +58,8 @@ int TEEN_AGE = OLD_AGE / 20;
 float MAX_LINE_WIDTH = 1.5; //epaisseur max des ligne, diminuer par l'age, un peut, se vois pas
 float MIN_LINE_WIDTH = 0.2; //epaisseur min des ligne
 
-
 void init_base() {
+  start_point = new PVector(0,0);
   // redimensionement de l'array a ca taille max
   BaseList = (Base[]) expand(BaseList, MAX_LIST_SIZE);
   //initialisation de chaque element
@@ -232,6 +233,20 @@ class Base {
       //sprouts_nb++;
     }
     
+    // leaf
+    if (ON_SPROUT && start == 1 && !end && crandom(LEAF_DIFFICULTY) > 0.5) {
+      PVector _p = new PVector(0, 0);
+      PVector _d = new PVector(0, 0);
+      _d.add(grows).sub(pos);
+      _d.setMag(random(1.0) * _d.mag());
+      _p.add(pos).add(_d);
+      Base b = createBase(_p, _d, id);
+      if (b != null) {
+        b.end = true;
+        sprouts++;
+      }
+    }
+    
     // stop growing
     if (ON_STOP && start >= 1 && !end && sprouts == 0 && crandom(STOP_DIFFICULTY) > 0.5) {
       end = true;
@@ -264,8 +279,21 @@ class Base {
     
     PVector e = new PVector(dir.x, dir.y);
     if (start < 1) e = e.setMag(e.mag() * start);
-    e = e.add(pos);
-    line(pos.x,pos.y,e.x,e.y);
+    //e = e.add(pos);
+    //line(pos.x,pos.y,e.x,e.y);
+    pushMatrix();
+    translate(pos.x, pos.y);
+    if (end) {
+      PVector e2 = new PVector(e.x, e.y);
+      e.div(2);
+      e.rotate(-PI/16);
+      line(0, 0,e.x,e.y);
+      line(e2.x,e2.y,e.x,e.y);
+      e.rotate(PI/8);
+      line(0, 0,e.x,e.y);
+      line(e2.x,e2.y,e.x,e.y);
+    } else line(0, 0,e.x,e.y);
+    popMatrix();
     
     //strokeWeight(MAX_LINE_WIDTH+1 / cam_scale);
     //point(grows.x,grows.y);
@@ -275,7 +303,7 @@ class Base {
 
 }
 
-Base createFirstBase(float r) { return createBase(new PVector(0, 0), new PVector(1, 0).rotate(r), 0); }
+Base createFirstBase(float r) { return createBase(new PVector(start_point.x, start_point.y), new PVector(1, 0).rotate(r), 0); }
 
 Base createBase(PVector p, PVector d, int id) {
   for (int i = BaseList.length-1; i >= 0; i--) {
@@ -286,6 +314,17 @@ Base createBase(PVector p, PVector d, int id) {
   }
   return null;
 }
+
+//Base createLeaf(PVector p, PVector d, int id) {
+//  for (int i = BaseList.length-1; i >= 0; i--) {
+//    if (!BaseList[i].exist) {
+//      BaseList[i].init(p, d, id);
+//      BaseList[i].end = true;
+//      return BaseList[i];
+//    }
+//  }
+//  return null;
+//}
 
 void runAll() {
   for (int i = BaseList.length-1; i >= 0; i--) {

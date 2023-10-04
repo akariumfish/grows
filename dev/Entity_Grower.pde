@@ -2,17 +2,21 @@
 
 
 
-class RandomTryParam {
+class RandomTryParam extends Callable {
   //constructeur avec param values
   float DIFFICULTY = 4;
   boolean ON = true;
-  RandomTryParam() {}
+  Channel chan;
+  RandomTryParam() { chan = new Channel(); addChannel(chan); }
   RandomTryParam(float d, boolean b) {DIFFICULTY = d; ON = b;}
   
   void save_to(SavableValueTree t, String name, String nodeName) {
     t.add("randomtryparam\t" + name, nodeName);
     t.add(name + "difficulty\t", DIFFICULTY, "randomtryparam\t" + name);
     t.add(name + "on\t", ON, "randomtryparam\t" + name);
+  }
+  void answer(Channel channel, float value) {
+    print("bip"); //
   }
 }
 
@@ -173,11 +177,14 @@ class Grower extends Entity {
 class GrowerComu extends Community {
   
   GrowerParam param;
+  Panel growPanel;
   
   GrowerComu(ComunityList _c) {
     super(_c);
     param = new GrowerParam();
     init();
+    growPanel = addPanel("GROWER", width - 820, 20);
+    growPanel.addRandomTryControl("grow", 10, 50, param.growP);
     //SavableValueTree t = new SavableValueTree("test");
     //param.save_to(t, "param");
     //t.save_to_file("text.txt");
