@@ -1,26 +1,66 @@
 // ici on definie les structure de type grower
 
 
+class GrowerComu extends Community {
+  
+  GrowerParam param;
+  Panel growPanel;
+  
+  GrowerComu(ComunityList _c) {
+    super(_c);
+    param = new GrowerParam();
+    init();
+    growPanel = addPanel("GROWER", width - 820, 20);
+    growPanel.addRandomTryControl("grow", param.growP);
+    growPanel.addRandomTryControl("bloom", param.sproutP);
+    growPanel.addRandomTryControl("stop", param.stopP);
+    growPanel.addRandomTryControl("die", param.dieP);
+    //SavableValueTree t = new SavableValueTree("test");
+    //param.save_to(t, "param");
+    //t.save_to_file("text.txt");
+  }
+  
+  Grower build() { return new Grower(this); }
+}
 
 class RandomTryParam extends Callable {
   //constructeur avec param values
   float DIFFICULTY = 4;
   boolean ON = true;
-  Channel chan;
-  RandomTryParam() { chan = new Channel(); addChannel(chan); }
-  RandomTryParam(float d, boolean b) {DIFFICULTY = d; ON = b;}
+  Channel chan_dif,chan_on;
+  Textlabel textlabel = null;
+  String name;
+  RandomTryParam() {
+    chan_dif = new Channel();
+    addChannel(chan_dif);
+    chan_on = new Channel();
+    addChannel(chan_on);
+  }
+  RandomTryParam(float d, boolean b) {
+    DIFFICULTY = d; ON = b;
+    chan_dif = new Channel();
+    addChannel(chan_dif);
+    chan_on = new Channel();
+    addChannel(chan_on);
+  }
   
   void save_to(SavableValueTree t, String name, String nodeName) {
     t.add("randomtryparam\t" + name, nodeName);
     t.add(name + "difficulty\t", DIFFICULTY, "randomtryparam\t" + name);
     t.add(name + "on\t", ON, "randomtryparam\t" + name);
   }
-  void answer(Channel channel, float value) {
-    print("bip"); //
+  void answer(Channel chan, float value) {
+    if (chan == chan_on) {
+      ON = !ON;
+      return;
+    } else if (chan == chan_dif) {
+      DIFFICULTY *= value;
+      if (textlabel != null) textlabel.setText(name + " " + DIFFICULTY);
+    }
   }
 }
 
-class GrowerParam {
+class GrowerParam extends Callable {
   //constructeur avec param values
   float DEVIATION = 8; //drifting (rotation posible en portion de pi (PI/drift))
   float L_MIN = 2; //longeur minimum de chaque section
@@ -34,6 +74,19 @@ class GrowerParam {
   RandomTryParam dieP = new RandomTryParam(3.6, true);
   float MAX_LINE_WIDTH = 1.5; //epaisseur max des ligne, diminuer par l'age, un peut, se vois pas
   float MIN_LINE_WIDTH = 0.2; //epaisseur min des ligne
+  
+  Channel chan_dev = new Channel();
+  
+  GrowerParam() {
+    addChannel(chan_dev);
+  }
+  
+  void answer(Channel chan, float value) {
+    if (chan == chan_dev) {
+      DEVIATION *= value;
+    }
+  }
+  
   void save_to(SavableValueTree t, String name) {
     t.add("growerparam\t" + name);
     growP.save_to(t, name + "grow", "growerparam\t" + name);
@@ -172,23 +225,4 @@ class Grower extends Entity {
   //  file.append(str(sprouts));
   //  file.append(str(age));
   //}
-}
-
-class GrowerComu extends Community {
-  
-  GrowerParam param;
-  Panel growPanel;
-  
-  GrowerComu(ComunityList _c) {
-    super(_c);
-    param = new GrowerParam();
-    init();
-    growPanel = addPanel("GROWER", width - 820, 20);
-    growPanel.addRandomTryControl("grow", 10, 50, param.growP);
-    //SavableValueTree t = new SavableValueTree("test");
-    //param.save_to(t, "param");
-    //t.save_to_file("text.txt");
-  }
-  
-  Grower build() { return new Grower(this); }
 }

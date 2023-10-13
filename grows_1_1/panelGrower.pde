@@ -1,13 +1,13 @@
 
 Group group_grow; // la grande tab 
 Textlabel info3, info4; // les texte d'info, declarer pour pouvoir les modif
-Button bGrow,bSprout,bStop,bDie;
+Button bGrow,bSprout,bStop,bDie,bLeaf;
 
 void init_panel_grower() {
   group_grow = cp5.addGroup("group_grow")
-             .setPosition(width - PANEL_WIDTH, 330)
+             .setPosition(width - PANEL_WIDTH*2, 10)
              .setSize(PANEL_WIDTH, 10)
-             .setBackgroundHeight(800)
+             .setBackgroundHeight(840)
              .setBackgroundColor(color(60, 200))
              .disableCollapse()
              .moveTo("Menu")
@@ -38,6 +38,9 @@ void init_panel_grower() {
   bDie = addButton(group_grow, "ON_DIE", "", 110+5, 220+5, BTN_SIZE-10, BTN_SIZE-10, utilctrlid + 7, TEXT_SIZE)
     .setSwitch(true);
   if (ON_DIE) bDie.setOn();
+  bLeaf = addButton(group_grow, "ON_LEAF", "", 110+5, 750+5, BTN_SIZE-10, BTN_SIZE-10, utilctrlid + 25, TEXT_SIZE)
+    .setSwitch(true);
+  if (ON_LEAF) bLeaf.setOn();
   
   addText(group_grow, "title3", "Movement", 140, 320, 24);
   build_line_factor(group_grow, "DRIFT", " = PI/", DEVIATION, 10, 350, 7);
@@ -58,12 +61,14 @@ void init_panel_grower() {
   
   addButton(group_grow, "HIDE_GROW", "H", 370, 720, 20, 20, utilctrlid + 12, 16);
   
+  addButton(group_grow, "ADD", "ADD", 100, 800, 200, 30, utilctrlid + 24, 16);
   
-  b = addButton(group_grow, "REGSTR", "R", 110, 615, BTN_SIZE-10, BTN_SIZE-10, utilctrlid + 22, TEXT_SIZE)
+  
+  b = addButton(group_grow, "REGSTR", "R", 110+5, 615, BTN_SIZE-10, BTN_SIZE-10, utilctrlid + 22, TEXT_SIZE)
     .setSwitch(true);
   if (REGULAR_START) b.setOn();
   
-  b = addButton(group_grow, "addstep", "", 110, 665, BTN_SIZE-10, BTN_SIZE-10, utilctrlid + 23, TEXT_SIZE)
+  b = addButton(group_grow, "addstep", "", 110+5, 665, BTN_SIZE-10, BTN_SIZE-10, utilctrlid + 23, TEXT_SIZE)
     .setSwitch(true);
   if (adding_type) b.setOn();
   
@@ -77,6 +82,11 @@ void event_panel_grower(int id, int line, float modifier) {
     REGULAR_START = ((Button)cp5.getController("REGSTR")).isOn(); }
   if (id == utilctrlid + 23) {
     adding_type = ((Button)cp5.getController("addstep")).isOn(); }
+  if (id == utilctrlid + 24) {
+    reset_angle = random( 2 * PI);
+    reset_angle_incr = 2 * PI / INIT_BASE;
+    if (!adding_type) for (int i = 0; i < INIT_BASE; i++) create_init_base();
+    else adding_pile = INIT_BASE; }
   
   //activation
   if (id == utilctrlid + 4) {
@@ -87,6 +97,8 @@ void event_panel_grower(int id, int line, float modifier) {
     ON_STOP = ((Button)cp5.getController("ON_STOP")).isOn(); }
   if (id == utilctrlid + 7) {
     ON_DIE = ((Button)cp5.getController("ON_DIE")).isOn(); }
+  if (id == utilctrlid + 25) {
+    ON_LEAF = ((Button)cp5.getController("ON_LEAF")).isOn(); }
   
   // apply modifier
   if (line == 0) { GROW_DIFFICULTY *= modifier; update_textlabel("GROW", " * r^", GROW_DIFFICULTY); }

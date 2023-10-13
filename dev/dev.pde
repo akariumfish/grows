@@ -215,8 +215,6 @@ void setup() {//executé au demarage
   
   coml = new ComunityList();
   
-  print("" + UIEventList.size());
-  
 }
 
 void draw() {//executé once by frame

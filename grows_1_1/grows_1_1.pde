@@ -106,9 +106,9 @@ PVector start_point;
 //plus bas ya des methodes utile qui vont nul par ailleur
 
 void setup() {//executé au demarage
-  //size(1720, 900);//taille de l'ecran
+  size(1720, 900);//taille de l'ecran
   
-  fullScreen();
+  //fullScreen();
   setupInput();//voir onglet input
   noSmooth();//pas d'antialiasing
   //smooth();//anti aliasing

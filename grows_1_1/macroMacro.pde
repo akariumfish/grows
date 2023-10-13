@@ -1,5 +1,39 @@
 
 
+
+class GrowingPop extends Macro {
+  InputB addI;
+  
+  GrowingPop(MacroList l_, int i_, int x_, int y_) {
+    super(l_, i_, x_, y_);
+    g.setLabel("GROW");
+    g.setWidth(200);
+    addI = createInputB("ADD");
+  }
+  void clear() {
+    super.clear();
+  }
+  void to_strings() {
+    super.to_strings();
+    file.append("GrowingPop");
+  }
+  
+  void drawing(float x, float y) {}
+  
+  void update() {
+    if (addI.getUpdate()) {
+      if (addI.get()) {
+        reset_angle = random( 2 * PI);
+        reset_angle_incr = 2 * PI / INIT_BASE;
+        if (!adding_type) for (int i = 0; i < INIT_BASE; i++) create_init_base();
+        else adding_pile = INIT_BASE;
+      }
+    }
+    super.update();
+    updated = true;
+  }
+}
+
 class GrowingParam extends Macro {
   InputF growI,sproutI,stopI,dieI,ageI;
   float grow,sprout,stop,die,age;
@@ -217,8 +251,8 @@ class GrowingControl extends Macro {
 }
 
 class GrowingWatcher extends Macro {
-  OutputF popO,growO;
-  float pop,grow;
+  OutputF popO,growO,turnO;
+  float pop,grow,turn;
   
   GrowingWatcher(MacroList l_, int i_, int x_, int y_) {
     super(l_, i_, x_, y_);
@@ -226,6 +260,7 @@ class GrowingWatcher extends Macro {
     g.setWidth(150);
     popO = createOutputF("      POP", 0);
     growO = createOutputF("  GROW", 0);
+    turnO = createOutputF("  turn", 0);
   }
   void clear() {
     super.clear();
@@ -244,9 +279,11 @@ class GrowingWatcher extends Macro {
     int g = growsNb();
     popO.set(p);
     growO.set(g);
+    turnO.set(counter);
     if (pop != p) popO.bang();
     if (grow != g) growO.bang();
-    pop = baseNb(); grow = growsNb();
+    if (turn != counter) turnO.bang();
+    pop = p; grow = g; turn = counter;
     super.update();
     updated = true;
   }
@@ -289,6 +326,51 @@ class SimControl extends Macro {
     super.update();
     updated = true;
   }
+}
+
+class Pulse extends Macro {
+  OutputB out;
+  InputF in;
+  int turn = 0;
+  int freq = 100;
+  int cnt = 0;
+  
+  Pulse(MacroList l_, int i_, int x_, int y_) {
+    super(l_, i_, x_, y_);
+    g.setLabel("pulse");
+    g.setWidth(150);
+    out = createOutputB("");
+    in = createInputF("", freq);
+    turn = freq;
+    cnt = counter;
+  }
+  void clear() {
+    super.clear();
+  }
+  void to_strings() {
+    super.to_strings();
+    file.append("pulse");
+  }
+  
+  void update() {
+    if (in.getUpdate()) {
+      int m = int(in.get());
+      if (m != freq) {
+        turn = counter + m;
+        freq = m;
+      }
+    }
+    if (counter < cnt) turn = freq;
+    cnt = counter;
+    if (counter >= turn) {
+      out.set(true);
+      turn += freq;
+    } else out.set(false);
+    super.update();
+    updated = true;
+  }
+  
+  void drawing(float x, float y) {}
 }
 
 class Keyboard extends Macro {

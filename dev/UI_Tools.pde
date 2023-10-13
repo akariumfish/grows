@@ -32,7 +32,7 @@ void addUIEvent(int i, Channel c, float v) {
 public void controlEvent(ControlEvent theEvent) {
   int id = theEvent.getId();
   for (UIEvent e : UIEventList)
-    if (e.id == id) {callChannel(e.chan, e.value); print("a"); }
+    if (e.id == id) {callChannel(e.chan, e.value); }
 }
 
 //       ----- BUILDER -----
@@ -108,58 +108,67 @@ class Panel extends Callable {
     return b;
   }
   
-  void addRandomTryControl(String label, float x, float y, RandomTryParam param) {
+  void addRandomTryControl(String label, RandomTryParam param) {
     addLine(50);
     int id = get_free_id();
+    int x = 10;
+    int y = int(line_total_height) - 30;
     Button b = cp5.addButton("button1" + id)
        .setPosition(x, y)
        .setSize(40,40)
        .setGroup(g)
        .setId(get_free_id())
        ;
-    addUIEvent(b.getId(), param.chan, 2);
+    addUIEvent(b.getId(), param.chan_dif, 2);
     b.getCaptionLabel().setText("x2").setFont(getFont(16));
-    //b = cp5.addButton("button2" + id)
-    //   .setPosition(x + 50, y)
-    //   .setSize(40,40)
-    //   .setGroup(g)
-    //   .addListener(new ControlListener() {
-    //      public void controlEvent(final ControlEvent ev) {  
-    //        print("x1.2");
-    //      }
-    //    })
-    //   ;
-    //b.getCaptionLabel().setText("x1.2").setFont(getFont(16));
-    //b = cp5.addButton("button3" + id)
-    //   .setPosition(x + 290, y)
-    //   .setSize(40,40)
-    //   .setGroup(g)
-    //   .addListener(new ControlListener() {
-    //      public void controlEvent(final ControlEvent ev) {  
-    //        print("/1.2");
-    //      }
-    //    })
-    //   ;
-    //b.getCaptionLabel().setText("/1.2").setFont(getFont(16));
-    //b = cp5.addButton("button4" + id)
-    //   .setPosition(x + 340, y)
-    //   .setSize(40,40)
-    //   .setGroup(g)
-    //   .addListener(new ControlListener() {
-    //      public void controlEvent(final ControlEvent ev) {  
-    //        print("/2");
-    //        //cp5.getController("textlabel" + id);
-    //      }
-    //    })
-    //   ;
-    //b.getCaptionLabel().setText("/2").setFont(getFont(16));
-    //cp5.addTextlabel("textlabel" + id)
-    //   .setText(label)
-    //   .setPosition(x + 100, y + 10)
-    //   .setColorValue(0xffffffff)
-    //   .setFont(getFont(16))
-    //   .setGroup(g)
-    //   ;
+    
+    b = cp5.addButton("button2" + id)
+       .setPosition(x + 50, y)
+       .setSize(40,40)
+       .setGroup(g)
+       .setId(get_free_id())
+       ;
+    addUIEvent(b.getId(), param.chan_dif, 1.2);
+    b.getCaptionLabel().setText("x1.2").setFont(getFont(16));
+    
+    b = cp5.addButton("button3" + id)
+       .setPosition(x + 290, y)
+       .setSize(40,40)
+       .setGroup(g)
+       .setId(get_free_id())
+       ;
+    addUIEvent(b.getId(), param.chan_dif, 0.833);
+    b.getCaptionLabel().setText("/1.2").setFont(getFont(16));
+    
+    b = cp5.addButton("button4" + id)
+       .setPosition(x + 340, y)
+       .setSize(40,40)
+       .setGroup(g)
+       .setId(get_free_id())
+       ;
+    addUIEvent(b.getId(), param.chan_dif, 0.5);
+    b.getCaptionLabel().setText("/2").setFont(getFont(16));
+    
+    b = cp5.addButton("button5" + id)
+       .setPosition(x + 100, y + 5)
+       .setSize(30,30)
+       .setGroup(g)
+       .setId(get_free_id())
+       .setSwitch(true)
+       ;
+    if (param.ON) b.setOn();
+    addUIEvent(b.getId(), param.chan_on, 0);
+    b.getCaptionLabel().setText("");
+    
+    Textlabel t = cp5.addTextlabel("textlabel" + id)
+       .setText(label + " " + param.DIFFICULTY)
+       .setPosition(x + 150, y + 10)
+       .setColorValue(0xffffffff)
+       .setFont(getFont(20))
+       .setGroup(g)
+       ;
+    param.name = label;
+    param.textlabel = t;
   }
   
   void answer(Channel channel, float value) {

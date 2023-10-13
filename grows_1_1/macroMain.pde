@@ -16,6 +16,8 @@ void init_macro() {
   mList.addGrowingWatcher(50, 250);
   mList.addKeyboard(50, 50);
   mList.addSimControl(60, 400);
+  mList.addGrowingPop(50, 550);
+  mList.addPulse(300, 550);
   
   mList.addMacroVAL(20, height - 80, 0);
   mList.addMacroVAL(360, height - 80, 0);
@@ -201,9 +203,19 @@ class MacroList {
     return new Keyboard(this, id, _x, _y);
   }
   
+  Pulse addPulse(int _x, int _y) {
+    int id = macroList.size();
+    return new Pulse(this, id, _x, _y);
+  }
+  
   SimControl addSimControl(int _x, int _y) {
     int id = macroList.size();
     return new SimControl(this, id, _x, _y);
+  }
+  
+  GrowingPop addGrowingPop(int _x, int _y) {
+    int id = macroList.size();
+    return new GrowingPop(this, id, _x, _y);
   }
   
   GrowingParam addGrowingParam(int _x, int _y) {

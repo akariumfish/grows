@@ -40,6 +40,7 @@ float L_DIFFICULTY = 90;
 boolean ON_GROW = true; // active la pousse de nouveau grower au bout des grower actif
 boolean ON_SPROUT = true; // active le bourgeonnement de nouveau grower sur les branche
 boolean ON_STOP = true; // active l'arret (devien vert)
+boolean ON_LEAF = true; // active l'arret (devien vert)
 boolean ON_DIE = true; // active la mort
 
 //les dificulté sont appliqué a crandom, voir dans l'onglet utils elles on toute un control dans le menu
@@ -234,7 +235,7 @@ class Base {
     }
     
     // leaf
-    if (ON_SPROUT && start == 1 && !end && crandom(LEAF_DIFFICULTY) > 0.5) {
+    if (ON_LEAF && start == 1 && !end && crandom(LEAF_DIFFICULTY) > 0.5) {
       PVector _p = new PVector(0, 0);
       PVector _d = new PVector(0, 0);
       _d.add(grows).sub(pos);
