@@ -13,8 +13,9 @@ class Node extends Entity {
   Node(NodeComu c) { super(c); }
   
   Node init() {
-    pos.x = random(width - 100) - (width - 100) / 2;
-    pos.y = random(height - 100) - (height - 100) / 2;
+    pos.x = random(min(width - 100, height - 100)/2);
+    pos.y = 0;
+    pos.rotate(random(2*PI));
     return this;
   }
   Node run() {
