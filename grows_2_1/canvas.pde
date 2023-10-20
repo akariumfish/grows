@@ -5,7 +5,7 @@
 Canvas can;
 
 void init_canvas() {
-  can = new Canvas(50, 50, (width-100), (height-100), 5);
+  can = new Canvas(0, 0, int((width) / cam.cam_scale), int((height) / cam.cam_scale), 4);
 }
 
 class Canvas extends Callable {

@@ -10,9 +10,9 @@ MacroVAL mv1,mv2;
 
 void init_macro() {
   mList = new MacroList();
-  mList.addGrowingParam(1400, 50);
-  mList.addGrowingActive(1400, 230);
-  mList.addGrowingControl(1400, 500);
+  //mList.addGrowingParam(1400, 50);
+  //mList.addGrowingActive(1400, 230);
+  //mList.addGrowingControl(1400, 500);
   mList.addGrowingWatcher(50, 250);
   mList.addKeyboard(50, 50);
   mList.addSimControl(60, 400);

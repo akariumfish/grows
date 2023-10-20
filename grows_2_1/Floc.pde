@@ -38,7 +38,7 @@ class FlocComu extends Community {
       .addValueController("SPEED ", sMode.FACTOR, 2, 1.2, SPEED)
       .addSeparator(5)
       ;
-    initial_entity.set(10);
+    initial_entity.set(0);
     
   }
   void custom_tick() {
@@ -63,6 +63,8 @@ class Floc extends Entity {
   float halo_size = 0;
   float halo_density = 0;
   
+  int age = 0;
+  
   Floc(FlocComu c) { super(c); }
   
   void draw_halo(Canvas canvas, PImage i) {
@@ -74,7 +76,7 @@ class Floc extends Entity {
           //the color to add to the current pix is function of his distence to the center
           //the decreasing of the quantity of color to add is soothed
           int a = int( (255.0 * halo_density) * soothedcurve(1.0, m.mag() / halo_size) );
-          canvas.addpix(i, px, py, color(a, a, a));
+          canvas.addpix(i, px, py, color(a, 0, 0));
         }
     }
   }
@@ -104,6 +106,7 @@ class Floc extends Entity {
   }
   
   Floc init() {
+    age = 0;
     halo_size = com().HALO_SIZE.get();
     halo_density = com().HALO_DENS.get();
     halo_size += random(com().HALO_SIZE.get());
@@ -116,8 +119,16 @@ class Floc extends Entity {
     return this;
   }
   Floc tick() {
+    age++;
+    if (age>2000) {
+      Grower ng = gcom.newEntity();
+      if (ng != null) ng.define(new PVector(pos.x, pos.y), new PVector(1, 0).rotate(random(2*PI)));
+      destroy();
+    }
     //point toward mouse
     //headTo(cam.screen_to_cam(new PVector(mouseX, mouseY)), 0.01);
+    //point toward center
+    headTo(new PVector(0, 0), 0.01);
     pos.add(mov);
     return this;
   }

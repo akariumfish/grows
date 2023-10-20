@@ -1,7 +1,7 @@
 import controlP5.*; //la lib pour les menu
 
 
-void init_panel() {
+void init_panel(String s) {
   cp5 = new ControlP5(this);
 
   cp5.addTab("Menu")
@@ -16,7 +16,7 @@ void init_panel() {
     .setLabel("Main")
     .getCaptionLabel().setFont(getFont(16))
     ;
-  cp5.getTab("Menu").bringToFront();
+  cp5.getTab(s).bringToFront();
 
   init_macro();
 }

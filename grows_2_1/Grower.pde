@@ -26,7 +26,7 @@ class GrowerComu extends Community {
   
   sLabel grower_nb_label;
   
-  GrowerComu(ComunityList _c) { super(_c, "Grower", 5000); init();
+  GrowerComu(ComunityList _c) { super(_c, "Grower", 500); init();
     panel.addText("Shape", 150, 0, 22)
       .addSeparator(8)
       .addValueController("DEV ", sMode.FACTOR, 2, 1.2, DEVIATION)
@@ -172,6 +172,11 @@ class Grower extends Entity {
     
     // stop growing
     if (com().stopP.ON.get() && start == 1 && !end && sprouts == 0 && crandom(com().stopP.DIFFICULTY.get()) > 0.5) {
+      Floc f = fcom.newEntity();
+      if (f != null) {
+        f.pos.x = pos.x;
+        f.pos.y = pos.y;
+      }
       end = true;
     }
     

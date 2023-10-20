@@ -19,7 +19,7 @@ sGraph graph = new sGraph();
 
 sInt tick = new sInt(simval, 0); //conteur de tour depuis le dernier reset ou le debut
 sBoo pause = new sBoo(simval, false); //permet d'interompre le defilement des tour
-sFlt tick_by_frame = new sFlt(simval, 1); //nombre de tour a executé par frame
+sFlt tick_by_frame = new sFlt(simval, 16); //nombre de tour a executé par frame
 float tick_pile = 0; //pile des tour
 sInt SEED = new sInt(simval, 548651008); //seed pour l'aleatoire
 sInt framerate = new sInt(simval, 0);
@@ -32,16 +32,16 @@ GrowerComu gcom;
 FlocComu fcom;
 
 void setup() {//executé au demarage
-  size(1600, 900);//taille de l'ecran
-  //fullScreen();
+  //size(1600, 900);//taille de l'ecran
+  fullScreen();
   setupInput();//voir input plus bas
   noSmooth();//pas d'antialiasing
   //smooth();//anti aliasing
   frameRate(60);
   
-  cam.cam_pos.x = -200;
+  //cam.cam_pos.x = -200;
   
-  init_panel();
+  init_panel("default");
   
   init_canvas();
   
@@ -56,6 +56,8 @@ void setup() {//executé au demarage
   comlist.comunity_reset();
   
   graph.init();
+  
+  loading(simval, "save.txt");
   
 }
 
@@ -147,14 +149,14 @@ void reset() {
 
 class Camera {
   PVector cam_pos = new PVector(0, 0); //position de la camera
-  float cam_scale = 1.0; //facteur de grossicement
+  float cam_scale = 0.5; //facteur de grossicement
   float ZOOM_FACTOR = 1.1; //facteur de modification de cam_scale quand on utilise la roulette de la sourie
   boolean GRAB = true;
   boolean screenshot = false; //enregistre une image de la frame sans les menu si true puis se desactive
   
   boolean matrixPushed = false;
   
-  sBoo grid = new sBoo(simval, true);
+  sBoo grid = new sBoo(simval, false);
   
   Channel zoom_chan = new Channel();
   

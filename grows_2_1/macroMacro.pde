@@ -23,10 +23,10 @@ class GrowingPop extends Macro {
   void update() {
     if (addI.getUpdate()) {
       if (addI.get()) {
-        //reset_angle = random( 2 * PI);
-        //reset_angle_incr = 2 * PI / INIT_BASE;
-        //if (!adding_type) for (int i = 0; i < INIT_BASE; i++) create_init_base();
-        //else adding_pile = INIT_BASE;
+        if (!gcom.adding_type.get()) 
+        for (int j = 0; j < gcom.initial_entity.get(); j++)
+          gcom.initialEntity();
+        if (gcom.adding_type.get()) gcom.adding_pile = gcom.initial_entity.get();
       }
     }
     super.update();
@@ -275,15 +275,15 @@ class GrowingWatcher extends Macro {
   void drawing(float x, float y) {}
   
   void update() {
-    //int p = baseNb();
-    //int g = growsNb();
-    //popO.set(p);
-    //growO.set(g);
-    //turnO.set(counter);
-    //if (pop != p) popO.bang();
-    //if (grow != g) growO.bang();
-    //if (turn != counter) turnO.bang();
-    //pop = p; grow = g; turn = counter;
+    int p = gcom.active_Entity_Nb();
+    int g = gcom.grower_Nb();
+    popO.set(p);
+    growO.set(g);
+    turnO.set(tick.get());
+    if (pop != p) popO.bang();
+    if (grow != g) growO.bang();
+    if (turn != tick.get()) turnO.bang();
+    pop = p; grow = g; turn = tick.get();
     super.update();
     updated = true;
   }
@@ -311,18 +311,16 @@ class SimControl extends Macro {
   void drawing(float x, float y) {}
   
   void update() {
-    //if (inR.getUpdate() && inRng.getUpdate()) {
-    //  if (inR.get()) reset();
-    //  if (inRng.get()) {
-    //    SEED = int(random(1000000000));
-    //    textfieldSeed.setValue("" + SEED);
-    //    reset();
-    //  }
-    //  if (inP.get()) {
-    //    Button b = (Button)cp5.getController("running");
-    //    if (b.isOn()) b.setOff(); else b.setOn();
-    //  }
-    //}
+    if (inR.getUpdate() && inRng.getUpdate() && inP.getUpdate()) {
+      if (inR.get()) reset();
+      if (inRng.get()) {
+        SEED.set(int(random(1000000000)));
+        reset();
+      }
+      if (inP.get()) {
+        pause.set(!pause.get());
+      }
+    }
     super.update();
     updated = true;
   }
@@ -342,7 +340,7 @@ class Pulse extends Macro {
     out = createOutputB("");
     in = createInputF("", freq);
     turn = freq;
-    //cnt = counter;
+    cnt = tick.get();
   }
   void clear() {
     super.clear();
@@ -353,19 +351,19 @@ class Pulse extends Macro {
   //}
   
   void update() {
-    //if (in.getUpdate()) {
-    //  int m = int(in.get());
-    //  if (m != freq) {
-    //    //turn = counter + m;
-    //    freq = m;
-    //  }
-    //}
-    //if (counter < cnt) turn = freq;
-    //cnt = counter;
-    //if (counter >= turn) {
-    //  out.set(true);
-    //  turn += freq;
-    //} else out.set(false);
+    if (in.getUpdate()) {
+      int m = int(in.get());
+      if (m != freq) {
+        turn = tick.get() + m;
+        freq = m;
+      }
+    }
+    if (tick.get() < cnt) turn = freq;
+    cnt = tick.get();
+    if (tick.get() >= turn) {
+      out.set(true);
+      turn += freq;
+    } else out.set(false);
     super.update();
     updated = true;
   }
@@ -697,13 +695,13 @@ class MacroCALC extends Macro {
     if (in1.getUpdate() && in2.getUpdate()) {
       
       if (r1.getItem("+" + id).getState())  
-        out.set(in1.get() + in2.get());
+        out.setBang(in1.get() + in2.get());
       else if (r1.getItem("-" + id).getState())  
-        out.set(in1.get() - in2.get());
+        out.setBang(in1.get() - in2.get());
       else if (r1.getItem("x" + id).getState())  
-        out.set(in1.get() * in2.get());
+        out.setBang(in1.get() * in2.get());
       else if (r1.getItem("/" + id).getState())  
-        out.set(in1.get() / in2.get());
+        out.setBang(in1.get() / in2.get());
       
       if (v1 != in1.get() || v2 != in2.get()) out.bang();
       else out.unBang();
