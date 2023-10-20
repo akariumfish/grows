@@ -8,24 +8,28 @@
 */
 
 ControlP5 cp5; //l'objet main pour les menu
+SpecialValue simval = new SpecialValue();
 Camera cam = new Camera();
 ComunityList comlist;
-SpecialValue simval = new SpecialValue();
 
 Channel frame_chan = new Channel();
 Channel tick_chan = new Channel();
 
+sGraph graph = new sGraph();
+
 sInt tick = new sInt(simval, 0); //conteur de tour depuis le dernier reset ou le debut
 sBoo pause = new sBoo(simval, false); //permet d'interompre le defilement des tour
-sFlt tick_by_frame = new sFlt(simval, 8); //nombre de tour a executé par frame
+sFlt tick_by_frame = new sFlt(simval, 1); //nombre de tour a executé par frame
 float tick_pile = 0; //pile des tour
 sInt SEED = new sInt(simval, 548651008); //seed pour l'aleatoire
 sInt framerate = new sInt(simval, 0);
-
 sBoo auto_reset = new sBoo(simval, true);
 sBoo auto_reset_rng_seed = new sBoo(simval, true);
-sInt auto_reset_turn = new sInt(simval, 2000);
+sInt auto_reset_turn = new sInt(simval, 4000);
+sBoo auto_screenshot = new sBoo(simval, false);
 
+GrowerComu gcom;
+FlocComu fcom;
 
 void setup() {//executé au demarage
   size(1600, 900);//taille de l'ecran
@@ -35,30 +39,48 @@ void setup() {//executé au demarage
   //smooth();//anti aliasing
   frameRate(60);
   
-  cp5 = new ControlP5(this);
+  cam.cam_pos.x = -200;
+  
+  init_panel();
+  
+  init_canvas();
+  
   comlist = new ComunityList();
   
-  new GrowerComu(comlist);
+  gcom = new GrowerComu(comlist);
+  gcom.hide_entity();
+  gcom.hide_menu();
+  
+  fcom = new FlocComu(comlist);
   
   comlist.comunity_reset();
+  
+  graph.init();
   
 }
 
 void draw() {//executé once by frame
   background(0);//fond noir
   
-  //execute les fonction tick de tout les objet Entity actifs
+  //drive l'execution
   if (!pause.get()) {
     tick_pile += tick_by_frame.get();
+    
+    //auto screenshot before reset
+    if (auto_reset.get() && auto_reset_turn.get() == tick.get() + tick_by_frame.get() + tick_by_frame.get() && auto_screenshot.get()) {
+        cam.screenshot = true; }
+    
     while (tick_pile >= 1) {
-      //tick
+      //tick call
       callChannel(tick_chan);
       
+      //tick communitys
       comlist.tick();
       
       tick.set(tick.get()+1);
       tick_pile--;
       
+      //auto reset
       if (auto_reset.get() && auto_reset_turn.get() <= tick.get()) {
         if (auto_reset_rng_seed.get()) {
           SEED.set(int(random(1000000000)));
@@ -69,26 +91,41 @@ void draw() {//executé once by frame
     
     //run_each_unpaused_frame
     
+    //get value pour le graph
+    graph.update(gcom.active_Entity_Nb(), gcom.grower_Nb());
+    
+    //add halo for each entity of floc community
+    can.drawHalo(fcom);
   }
   
   //run_each_frame
   callChannel(frame_chan);
-
-  // affichage
   
+  //update des macros
+  mList.update();
+  
+  // affichage
+  // apply camera view
   cam.pushCam();
   
+  //canvas
+  can.drawCanvas();
+  
+  //community
   comlist.draw();
   
+  //pop cam view and cam updates
   cam.popCam();
+  
+  graph.draw();
+  
+  mList.drawing();
   
   //framerate:
   fill(255); textSize(16);
   text(int(frameRate),10,height - 10 );
   
   simval.unFlagChange();
-  
-  //cam.input_update();
   
   framerate.set(int(frameRate));
   
@@ -113,28 +150,54 @@ class Camera {
   float cam_scale = 1.0; //facteur de grossicement
   float ZOOM_FACTOR = 1.1; //facteur de modification de cam_scale quand on utilise la roulette de la sourie
   boolean GRAB = true;
-  
   boolean screenshot = false; //enregistre une image de la frame sans les menu si true puis se desactive
-  //int shot_cnt = 0; //prevue pour la sauvegarde d'image avec des num coherent
   
-  void input_update() {
-    //permet le cliquer glisser le l'ecran
-    if (mouseButtons[0] && GRAB) {
-      cam_pos.x += mouseX - pmouseX;
-      cam_pos.y += mouseY - pmouseY;
+  boolean matrixPushed = false;
+  
+  sBoo grid = new sBoo(simval, true);
+  
+  Channel zoom_chan = new Channel();
+  
+  PVector cam_to_screen(PVector p) {
+    PVector r = new PVector();
+    if (matrixPushed) {
+      r.x = screenX(p.x, p.y); r.y = screenY(p.x, p.y);
+    } else {
+      pushMatrix();
+      translate(width / 2, height / 2);
+      scale(cam_scale);
+      translate((cam_pos.x / cam_scale), (cam_pos.y / cam_scale));
+      
+      r.x = screenX(p.x, p.y); r.y = screenY(p.x, p.y);
+      
+      popMatrix();
     }
-    
-    //permet le zoom
-    if (mouseWheelUp || keysClick[2]) {
-      cam_scale /= ZOOM_FACTOR;
-      cam_pos.x /= ZOOM_FACTOR;
-      cam_pos.y /= ZOOM_FACTOR;
+    return r;
+  }
+  
+  PVector screen_to_cam(PVector p) {
+    PVector r = new PVector();
+    if (matrixPushed) {
+      pushMatrix();
+      translate(-(cam_pos.x / cam_scale), -(cam_pos.y / cam_scale));
+      scale(1/cam_scale);
+      translate(-width / 2, -height / 2);
+      
+      translate(-(cam_pos.x / cam_scale), -(cam_pos.y / cam_scale));
+      scale(1/cam_scale);
+      translate(-width / 2, -height / 2);
+      
+      r.x = screenX(p.x, p.y); r.y = screenY(p.x, p.y);
+      popMatrix();
+    } else {
+      pushMatrix();
+      translate(-(cam_pos.x / cam_scale), -(cam_pos.y / cam_scale));
+      scale(1/cam_scale);
+      translate(-width / 2, -height / 2);
+      r.x = screenX(p.x, p.y); r.y = screenY(p.x, p.y);
+      popMatrix();
     }
-    if (mouseWheelDown || keysClick[3]) {
-      cam_scale *= ZOOM_FACTOR;
-      cam_pos.x *= ZOOM_FACTOR;
-      cam_pos.y *= ZOOM_FACTOR;
-    }
+    return r;
   }
   
   void pushCam() {
@@ -142,24 +205,44 @@ class Camera {
     translate(width / 2, height / 2);
     scale(cam_scale);
     translate((cam_pos.x / cam_scale), (cam_pos.y / cam_scale));
+    matrixPushed = true;
+    
+    if (grid.get() && cam_scale > 0.0008) {
+      int spacing = 200;
+      if (cam_scale > 2) spacing /= 5;
+      if (cam_scale < 0.2) spacing *= 5;
+      if (cam_scale < 0.04) spacing *= 5;
+      if (cam_scale < 0.008) spacing *= 5;
+      stroke(100);
+      strokeWeight(2.0 / cam_scale);
+      PVector s = screen_to_cam(new PVector(-spacing * cam_scale, -spacing * cam_scale));
+      s.x -= s.x%spacing; s.y -= s.y%spacing;
+      PVector m = screen_to_cam( new PVector(width, height) );
+      for (float x = s.x ; x < m.x ; x += spacing) {
+        if ( ( (x-(x%spacing)) / spacing) % 5 == 0 ) stroke(100); else stroke(70);
+        if (x == 0) stroke(150, 0, 0);
+        line(x, s.y, x, m.y);
+      }
+      for (float y = s.y ; y < m.y ; y += spacing) {
+        if ( ( (y-(y%spacing)) / spacing) % 5 == 0 ) stroke(100); else stroke(70);
+        if (y == 0) stroke(150, 0, 0);
+        line(s.x, y, m.x, y);
+      }
+    }
   }
   
-  void popCam() { popMatrix(); try_screenshot(); input_update();  }
-  
-  void try_screenshot() {
-    // enregistrement d'un screenshot si le flag est true
-    if (screenshot) {
-      //String name = "shot" + shot_cnt + ".png";
-      
-      //File file = new File(sketchPath(name));
-      //while (file.exists()) {
-      //  shot_cnt++;
-      //  name = "shot" + shot_cnt + ".png";
-      //  file = new File(sketchPath(name));
-      //}
-      saveFrame("image/shot-########.png");
-    }
+  void popCam() {
+    popMatrix();
+    matrixPushed = false;
+    if (screenshot) { saveFrame("image/shot-########.png"); }
     screenshot = false;
+    
+    //permet le cliquer glisser le l'ecran
+    if (mouseButtons[0] && GRAB) { cam_pos.add(mouseX - pmouseX, mouseY - pmouseY); }
+    
+    //permet le zoom
+    if (mouseWheelUp) { cam_scale /= ZOOM_FACTOR; cam_pos.mult(1/ZOOM_FACTOR); callChannel(zoom_chan); }
+    if (mouseWheelDown) { cam_scale *= ZOOM_FACTOR; cam_pos.mult(ZOOM_FACTOR); callChannel(zoom_chan); }
   }
 }
 

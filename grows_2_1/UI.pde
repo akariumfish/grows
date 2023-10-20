@@ -1,5 +1,89 @@
 import controlP5.*; //la lib pour les menu
 
+
+void init_panel() {
+  cp5 = new ControlP5(this);
+
+  cp5.addTab("Menu")
+    .getCaptionLabel().setFont(getFont(16))
+    ;
+  cp5.addTab("Macros")
+    .getCaptionLabel().setFont(getFont(16))
+    ;
+
+  cp5.getTab("default")
+    // .activateEvent(true)
+    .setLabel("Main")
+    .getCaptionLabel().setFont(getFont(16))
+    ;
+  cp5.getTab("Menu").bringToFront();
+
+  init_macro();
+}
+
+class sGrabable extends Callable {
+  float mx = 0; float my = 0;
+  Group g;
+  PVector pos = new PVector(0, 0);
+  
+  sGrabable(ControlP5 c, float x, float y) {
+    g = new Group(c, "panel" + get_free_id());
+    pos = cam.screen_to_cam(new PVector(x, y));
+    g.setPosition(x, y)
+        .setSize(20, 0)
+        .setBackgroundHeight(0)
+        .setBarHeight(20)
+        //.setColorActive(color(255))
+        .setColorBackground(color(200))
+        .disableCollapse()
+        .moveTo("Menu")
+        .getCaptionLabel().setText("");
+        
+    this.addChannel(frame_chan);
+    this.addChannel(cam.zoom_chan);
+  }
+  
+  void hide() { g.hide(); }
+  void show() { g.show(); }
+  
+  float getX() { return g.getPosition()[0]; }
+  float getY() { return g.getPosition()[1]; }
+  PVector getP() { return new PVector(g.getPosition()[0], g.getPosition()[1]); }
+  
+  sGrabable setTab(String s) { g.moveTo(s); return this; }
+  
+  void answer(Channel chan, float value) {
+    if (chan == frame_chan) {
+      if (g.isMouseOver()) {
+        if (mouseClick[0]) {
+          mx = g.getPosition()[0] - mouseX;
+          my = g.getPosition()[1] - mouseY;
+          cam.GRAB = false; //deactive le deplacement camera
+        } else if (mouseUClick[0]) {
+          cam.GRAB = true;
+        }
+        if (mouseButtons[0]) {
+          g.setPosition(mouseX + mx,mouseY + my);
+          pos = cam.screen_to_cam(new PVector(mouseX + mx, mouseY + my));
+        }
+      } else {
+        if (mouseClick[0] && cam.GRAB == true) {
+          mx = g.getPosition()[0] - mouseX;
+          my = g.getPosition()[1] - mouseY;
+        }
+        if (mouseButtons[0] && cam.GRAB == true) {
+          g.setPosition(mouseX + mx,mouseY + my);
+          pos = cam.screen_to_cam(new PVector(mouseX + mx, mouseY + my));
+        }
+      }
+    }
+    if (chan == cam.zoom_chan) {
+      PVector p = cam.cam_to_screen(pos);
+      g.setPosition(p.x, p.y); 
+    }
+  }
+}
+
 class sPanel extends Callable {
   int PANEL_WIDTH = 400;
   int PANEL_MARGIN = 10;
@@ -24,17 +108,11 @@ class sPanel extends Callable {
         .setBackgroundHeight(0)
         .setBackgroundColor(color(60, 200))
         .disableCollapse()
+        .moveTo("Menu")
         .getCaptionLabel().setText("");
         
     this.addChannel(frame_chan);
   }
-  
-  //void adjustHeight(int newobjectmax) {
-  //  if (newobjectmax + PANEL_MARGIN > PANEL_HEIGHT) {
-  //    PANEL_HEIGHT = newobjectmax + PANEL_MARGIN;
-  //    g.setBackgroundHeight(PANEL_HEIGHT);
-  //  }
-  //}
   
   void answer(Channel channel, float value) {
     //moving control panel
@@ -52,11 +130,13 @@ class sPanel extends Callable {
     }
   }
   
+  sPanel setTab(String s) { g.moveTo(s); return this; }
+  
   sDrawer addDrawer(int h) { return new sDrawer(this, h); }
   sDrawer lastDrawer() { return last_drawer; }
   
   sPanel addRngTryCtrl(String title, RandomTryParam p) {
-    addFltController(title, p.DIFFICULTY).lastDrawer()
+    addValueController(title, sMode.FACTOR, 2, 1.2, p.DIFFICULTY).lastDrawer()
       .addSwitch("", 80, 5)
         .setValue(p.ON)
         .setSize(20, 20).setFont(18)
@@ -79,16 +159,25 @@ class sPanel extends Callable {
     addDrawer(h);
     return this;
   }
-  sPanel addIntController(String label, sInt i) {
+  
+  sPanel addValueController(String label, sMode mode, float f1, float f2, sInt i) {
+    String signe1 = "-", signe2 = "+";
+    float f1a = 0, f1b = 0, f2a = 0, f2b = 0;
+    if (mode == sMode.INCREMENT) {
+      f1a = -f1; f1b = f1; f2a = -f2; f2b = f2;
+    } else if (mode == sMode.FACTOR) {
+      signe1 = "/"; signe2 = "x";
+      f1a = 1/f1; f2a = 1/f2; f1b = f1; f2b = f2;
+    }
     addDrawer(30)
-      .addIntModifier("-10", 0, 0)
-        .setIncremental(-10)
+      .addIntModifier(signe1+str(f1), 0, 0)
+        .setMode(mode, f1a)
         .setValue(i)
         .setSize(30, 30)
         .setFont(16)
       .getDrawer()
-      .addIntModifier("-1", 40, 0)
-        .setIncremental(-1)
+      .addIntModifier(signe1+str(f2), 40, 0)
+        .setMode(mode, f2a)
         .setValue(i)
         .setSize(30, 30)
         .setFont(16)
@@ -100,30 +189,38 @@ class sPanel extends Callable {
         .setValue(i)
         .setFont(18)
       .getDrawer()
-      .addIntModifier("+1", 310, 0)
-        .setIncremental(1)
+      .addIntModifier(signe2+str(f2), 310, 0)
+        .setMode(mode, f2b)
         .setValue(i)
         .setSize(30, 30)
         .setFont(16)
       .getDrawer()
-      .addIntModifier("+10", 350, 0)
-        .setIncremental(10)
+      .addIntModifier(signe2+str(f1), 350, 0)
+        .setMode(mode, f1b)
         .setValue(i)
         .setSize(30, 30)
         .setFont(16)
       ;
     return this;
   }
-  sPanel addFltController(String label, sFlt i) {
+  sPanel addValueController(String label, sMode mode, float f1, float f2, sFlt i) {
+    String signe1 = "-", signe2 = "+";
+    float f1a = 0, f1b = 0, f2a = 0, f2b = 0;
+    if (mode == sMode.INCREMENT) {
+      f1a = -f1; f1b = f1; f2a = -f2; f2b = f2;
+    } else if (mode == sMode.FACTOR) {
+      signe1 = "/"; signe2 = "x";
+      f1a = 1/f1; f2a = 1/f2; f1b = f1; f2b = f2;
+    }
     addDrawer(30)
-      .addFltModifier("/2", 0, 0)
-        .setFactorial(0.5)
+      .addFltModifier(signe1+str(f1), 0, 0)
+        .setMode(mode, f1a)
         .setValue(i)
         .setSize(30, 30)
         .setFont(16)
       .getDrawer()
-      .addFltModifier("/1.2", 40, 0)
-        .setFactorial(0.833)
+      .addFltModifier(signe1+str(f2), 40, 0)
+        .setMode(mode, f2a)
         .setValue(i)
         .setSize(30, 30)
         .setFont(16)
@@ -135,14 +232,14 @@ class sPanel extends Callable {
         .setValue(i)
         .setFont(18)
       .getDrawer()
-      .addFltModifier("x1.2", 310, 0)
-        .setFactorial(1.2)
+      .addFltModifier(signe2+str(f2), 310, 0)
+        .setMode(mode, f2b)
         .setValue(i)
         .setSize(30, 30)
         .setFont(16)
       .getDrawer()
-      .addFltModifier("x2", 350, 0)
-        .setFactorial(2)
+      .addFltModifier(signe2+str(f1), 350, 0)
+        .setMode(mode, f1b)
         .setValue(i)
         .setSize(30, 30)
         .setFont(16)
@@ -167,8 +264,37 @@ class sDrawer {
   
   sPanel getPanel() { return panel; }
   
+  sDrawer addExclusiveSwitchs(String l1, String l2, int x, int y, sBoo b1, sBoo b2) {
+    sExclusifSwitch s1 = addExclusifSwitch(l1, x, y);
+    s1.setValue(b1).setSize(60, 20).setFont(16);
+    sExclusifSwitch s2 = addExclusifSwitch(l2, x+70, y);
+    s2.setValue(b2).setSize(60, 20).setFont(16);
+    s1.addExclu(s2);
+    s2.addExclu(s1);
+    return this;
+  }
+  
+  sDrawer addExclusiveSwitchs(String l1, String l2, String l3, int x, int y, sBoo b1, sBoo b2, sBoo b3) {
+    sExclusifSwitch s1 = addExclusifSwitch(l1, x, y);
+    s1.setValue(b1).setSize(60, 20).setFont(16);
+    sExclusifSwitch s2 = addExclusifSwitch(l2, x+70, y);
+    s2.setValue(b2).setSize(60, 20).setFont(16);
+    sExclusifSwitch s3 = addExclusifSwitch(l3, x+140, y);
+    s2.setValue(b3).setSize(60, 20).setFont(16);
+    s1.addExclu(s2).addExclu(s3);
+    s2.addExclu(s1).addExclu(s3);
+    s3.addExclu(s1).addExclu(s2);
+    return this;
+  }
+  
   sTextfield addTextfield(int _x, int _y) {
     sTextfield b = new sTextfield(cp5, _x+mx, _y+my);
+    b.setPanel(panel);
+    b.drawer = this;
+    return b;
+  }
+  sExclusifSwitch addExclusifSwitch(String label, int _x, int _y) {
+    sExclusifSwitch b = new sExclusifSwitch(cp5, label, _x+mx, _y+my);
     b.setPanel(panel);
     b.drawer = this;
     return b;
@@ -277,15 +403,15 @@ enum sMode { INCREMENT, FACTOR }
 
 class sIntModifier extends sButton {
   sInt val = null;
-  int modifier = 0;
+  float modifier = 0;
   sMode mode = sMode.INCREMENT;
   
   sIntModifier(ControlP5 cp5) { super(cp5); }
   sIntModifier(ControlP5 cp5, String label, int _x, int _y) { super(cp5, label, _x, _y); }
   
-  sIntModifier setIncremental(int m) { mode = sMode.INCREMENT; modifier = m; return this; }
-  sIntModifier setFactorial(int m) { mode = sMode.FACTOR; modifier = m; return this; }
-  sIntModifier setMode(sMode _m, int f) { mode = _m; modifier = f; return this; }
+  sIntModifier setIncremental(float m) { mode = sMode.INCREMENT; modifier = m; return this; }
+  sIntModifier setFactorial(float m) { mode = sMode.FACTOR; modifier = m; return this; }
+  sIntModifier setMode(sMode _m, float f) { mode = _m; modifier = f; return this; }
   
   sIntModifier setValue(sInt v) {
     val = v;
@@ -293,9 +419,9 @@ class sIntModifier extends sButton {
       public void controlEvent(final ControlEvent ev) {  
         if (val != null)
           if (mode == sMode.INCREMENT)
-            val.set(val.get()+modifier);
+            val.set(int(val.get()+modifier));
           else if (mode == sMode.FACTOR)
-            val.set(val.get()*modifier);
+            val.set(int(val.get()*modifier));
       }
     });
     return this;
@@ -316,7 +442,7 @@ class sFltModifier extends sButton {
   
   sFltModifier setIncremental(float m) { mode = sMode.INCREMENT; modifier = m; return this; }
   sFltModifier setFactorial(float m) { mode = sMode.FACTOR; modifier = m; return this; }
-  sFltModifier setMode(sMode _m, int f) { mode = _m; modifier = f; return this; }
+  sFltModifier setMode(sMode _m, float f) { mode = _m; modifier = f; return this; }
   sFltModifier setValue(sFlt v) {
     val = v;
     b.addListener(new ControlListener() {
@@ -331,6 +457,45 @@ class sFltModifier extends sButton {
     return this;
   }
 }
+
+
+
+
+class sExclusifSwitch extends sButton {
+  sBoo val = null;
+  ArrayList<sExclusifSwitch> exclu = new ArrayList<sExclusifSwitch>();
+  sExclusifSwitch(ControlP5 cp5) {
+    super(cp5);
+    b.setSwitch(true);
+  }
+  sExclusifSwitch(ControlP5 cp5, String label, int _x, int _y) {
+    super(cp5, label, _x, _y); 
+    b.setSwitch(true);
+  }
+  
+  sExclusifSwitch setValue(sBoo v) {
+    val = v;
+    this.addChannel(frame_chan);
+    if (val.get()) b.setOn();
+    b.addListener(new ControlListener() {
+      public void controlEvent(final ControlEvent ev) {  
+        if (val != null) val.set(b.isOn());
+        if (val.get()) for (sExclusifSwitch s : exclu) s.val.set(false);
+      }
+    });
+    return this;
+  }
+  
+  sExclusifSwitch addExclu(sExclusifSwitch s) { exclu.add(s); return this; }
+  
+  void answer(Channel chan, float v) {
+    if (val != null && val.has_changed) {
+      if (val.get()) b.setOn(); else b.setOff();
+      //val.set(!val.get()); // the controlListener was called by b.set so we change the value back
+    }
+  }
+}
+
 
 
 

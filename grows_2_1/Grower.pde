@@ -19,23 +19,23 @@ class GrowerComu extends Community {
   RandomTryParam growP = new RandomTryParam(0.5, true);
   RandomTryParam sproutP = new RandomTryParam(2080, true);
   RandomTryParam stopP = new RandomTryParam(1.25, true);
-  //RandomTryParam leafP = new RandomTryParam(1.25, true);
+  RandomTryParam leafP = new RandomTryParam(2080, true);
   RandomTryParam dieP = new RandomTryParam(3.6, true);
   float MAX_LINE_WIDTH = 1.5; //epaisseur max des ligne, diminuer par l'age, un peut, se vois pas
   float MIN_LINE_WIDTH = 0.2; //epaisseur min des ligne
   
   sLabel grower_nb_label;
   
-  GrowerComu(ComunityList _c) { super(_c); init();
+  GrowerComu(ComunityList _c) { super(_c, "Grower", 5000); init();
     panel.addText("Shape", 150, 0, 22)
       .addSeparator(8)
-      .addFltController("DEV ", DEVIATION)
+      .addValueController("DEV ", sMode.FACTOR, 2, 1.2, DEVIATION)
       .addSeparator(10)
-      .addFltController("L_MIN ", L_MIN)
+      .addValueController("L_MIN ", sMode.FACTOR, 2, 1.2, L_MIN)
       .addSeparator(10)
-      .addFltController("L_MAX ", L_MAX)
+      .addValueController("L_MAX ", sMode.FACTOR, 2, 1.2, L_MAX)
       .addSeparator(10)
-      .addFltController("L_DIFF ", L_DIFFICULTY)
+      .addValueController("L_DIFF ", sMode.FACTOR, 2, 1.2, L_DIFFICULTY)
       .addLine(22)
       .addText("Behavior", 140, 0, 22)
       .addSeparator(8)
@@ -45,9 +45,11 @@ class GrowerComu extends Community {
       .addSeparator(10)
       .addRngTryCtrl("STOP ", stopP)
       .addSeparator(10)
+      .addRngTryCtrl("LEAF ", leafP)
+      .addSeparator(10)
       .addRngTryCtrl("DIE ", dieP)
       .addSeparator(10)
-      .addFltController("age ", OLD_AGE)
+      .addValueController("age ", sMode.FACTOR, 2, 1.2, OLD_AGE)
       .addSeparator(10)
       ;
     grower_nb_label = new sLabel(cp5) { 
@@ -59,6 +61,11 @@ class GrowerComu extends Community {
       .setFont(20)
       ;
     grower_nb_label.addChannel(frame_chan);
+    new sSwitch(cp5, "G", 320, 62)
+      .setValue(graph.SHOW_GRAPH)
+      .setPanel(panel)
+      .setSize(30, 30)
+      ;
   }
   
   Grower build() { return new Grower(this); }
@@ -86,6 +93,9 @@ class Grower extends Entity {
   PVector pos = new PVector();
   PVector grows = new PVector();
   PVector dir = new PVector();
+  
+  float halo_size = 10;
+  float halo_density = 0.2;
   
   // condition de croissance
   boolean end = false;
@@ -145,6 +155,21 @@ class Grower extends Entity {
       //sprouts_nb++;
     }
     
+    // leaf
+    if (com().leafP.ON.get() && start == 1 && !end && crandom(com().leafP.DIFFICULTY.get()) > 0.5) {
+      PVector _p = new PVector(0, 0);
+      PVector _d = new PVector(0, 0);
+      _d.add(grows).sub(pos);
+      _d.setMag(random(1.0) * _d.mag());
+      _p.add(pos).add(_d);
+      Grower n = com().newEntity();
+      if (n != null) {
+        n.define(_p, _d);
+        n.end = true;
+        sprouts++;
+      }
+    }
+    
     // stop growing
     if (com().stopP.ON.get() && start == 1 && !end && sprouts == 0 && crandom(com().stopP.DIFFICULTY.get()) > 0.5) {
       end = true;
@@ -171,8 +196,21 @@ class Grower extends Entity {
     
     PVector e = new PVector(dir.x, dir.y);
     if (start < 1) e = e.setMag(e.mag() * start);
-    e = e.add(pos);
-    line(pos.x,pos.y,e.x,e.y);
+    //e = e.add(pos);
+    //line(pos.x,pos.y,e.x,e.y);
+    pushMatrix();
+    translate(pos.x, pos.y);
+    if (end) {
+      PVector e2 = new PVector(e.x, e.y);
+      e.div(2);
+      e.rotate(-PI/16);
+      line(0, 0,e.x,e.y);
+      line(e2.x,e2.y,e.x,e.y);
+      e.rotate(PI/8);
+      line(0, 0,e.x,e.y);
+      line(e2.x,e2.y,e.x,e.y);
+    } else line(0, 0,e.x,e.y);
+    popMatrix();
     
     //line(pos.x,pos.y,grows.x,grows.y);
     
