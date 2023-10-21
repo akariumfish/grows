@@ -121,8 +121,8 @@ class Floc extends Entity {
   Floc tick() {
     age++;
     if (age>2000) {
-      Grower ng = gcom.newEntity();
-      if (ng != null) ng.define(new PVector(pos.x, pos.y), new PVector(1, 0).rotate(random(2*PI)));
+      //Grower ng = gcom.newEntity();
+      //if (ng != null) ng.define(new PVector(pos.x, pos.y), new PVector(1, 0).rotate(random(2*PI)));
       destroy();
     }
     //point toward mouse
@@ -135,7 +135,7 @@ class Floc extends Entity {
   Floc drawing() {
     fill(255);
     stroke(255);
-    strokeWeight(4/cam.cam_scale);
+    strokeWeight(4/cam.cam_scale.get());
     pushMatrix();
     translate(pos.x, pos.y);
     rotate(mov.heading());

@@ -1,10 +1,6 @@
 /*
 
            
-
-
-
-
 */
 
 ControlP5 cp5; //l'objet main pour les menu
@@ -17,7 +13,7 @@ Channel tick_chan = new Channel();
 
 sGraph graph = new sGraph();
 
-sInt tick = new sInt(simval, 0); //conteur de tour depuis le dernier reset ou le debut
+sFlt tick = new sFlt(simval, 0); //conteur de tour depuis le dernier reset ou le debut
 sBoo pause = new sBoo(simval, false); //permet d'interompre le defilement des tour
 sFlt tick_by_frame = new sFlt(simval, 16); //nombre de tour a executé par frame
 float tick_pile = 0; //pile des tour
@@ -30,35 +26,33 @@ sBoo auto_screenshot = new sBoo(simval, false);
 
 GrowerComu gcom;
 FlocComu fcom;
+BoxComu bcom;
 
 void setup() {//executé au demarage
-  //size(1600, 900);//taille de l'ecran
-  fullScreen();
+  size(1600, 900);//taille de l'ecran
+  //fullScreen();
   setupInput();//voir input plus bas
   noSmooth();//pas d'antialiasing
   //smooth();//anti aliasing
   frameRate(60);
   
-  //cam.cam_pos.x = -200;
+  cam.cam_pos.x = -200;
   
-  init_panel("default");
+  init_panel("Menu");
   
   init_canvas();
   
   comlist = new ComunityList();
   
   gcom = new GrowerComu(comlist);
-  gcom.hide_entity();
-  gcom.hide_menu();
-  
   fcom = new FlocComu(comlist);
+  bcom = new BoxComu(comlist);
   
   comlist.comunity_reset();
   
   graph.init();
   
   loading(simval, "save.txt");
-  
 }
 
 void draw() {//executé once by frame
@@ -100,11 +94,11 @@ void draw() {//executé once by frame
     can.drawHalo(fcom);
   }
   
-  //run_each_frame
-  callChannel(frame_chan);
-  
   //update des macros
   mList.update();
+  
+  //run_each_frame
+  callChannel(frame_chan);
   
   // affichage
   // apply camera view
@@ -149,7 +143,7 @@ void reset() {
 
 class Camera {
   PVector cam_pos = new PVector(0, 0); //position de la camera
-  float cam_scale = 0.5; //facteur de grossicement
+  sFlt cam_scale = new sFlt(simval, 0.2); //facteur de grossicement
   float ZOOM_FACTOR = 1.1; //facteur de modification de cam_scale quand on utilise la roulette de la sourie
   boolean GRAB = true;
   boolean screenshot = false; //enregistre une image de la frame sans les menu si true puis se desactive
@@ -157,6 +151,10 @@ class Camera {
   boolean matrixPushed = false;
   
   sBoo grid = new sBoo(simval, false);
+  
+  sFlt pos_x = new sFlt(simval, 0);
+  sFlt pos_y = new sFlt(simval, 0);
+  boolean pos_loaded = false;
   
   Channel zoom_chan = new Channel();
   
@@ -167,8 +165,8 @@ class Camera {
     } else {
       pushMatrix();
       translate(width / 2, height / 2);
-      scale(cam_scale);
-      translate((cam_pos.x / cam_scale), (cam_pos.y / cam_scale));
+      scale(cam_scale.get());
+      translate((cam_pos.x / cam_scale.get()), (cam_pos.y / cam_scale.get()));
       
       r.x = screenX(p.x, p.y); r.y = screenY(p.x, p.y);
       
@@ -181,20 +179,20 @@ class Camera {
     PVector r = new PVector();
     if (matrixPushed) {
       pushMatrix();
-      translate(-(cam_pos.x / cam_scale), -(cam_pos.y / cam_scale));
-      scale(1/cam_scale);
+      translate(-(cam_pos.x / cam_scale.get()), -(cam_pos.y / cam_scale.get()));
+      scale(1/cam_scale.get());
       translate(-width / 2, -height / 2);
       
-      translate(-(cam_pos.x / cam_scale), -(cam_pos.y / cam_scale));
-      scale(1/cam_scale);
+      translate(-(cam_pos.x / cam_scale.get()), -(cam_pos.y / cam_scale.get()));
+      scale(1/cam_scale.get());
       translate(-width / 2, -height / 2);
       
       r.x = screenX(p.x, p.y); r.y = screenY(p.x, p.y);
       popMatrix();
     } else {
       pushMatrix();
-      translate(-(cam_pos.x / cam_scale), -(cam_pos.y / cam_scale));
-      scale(1/cam_scale);
+      translate(-(cam_pos.x / cam_scale.get()), -(cam_pos.y / cam_scale.get()));
+      scale(1/cam_scale.get());
       translate(-width / 2, -height / 2);
       r.x = screenX(p.x, p.y); r.y = screenY(p.x, p.y);
       popMatrix();
@@ -205,19 +203,19 @@ class Camera {
   void pushCam() {
     pushMatrix();
     translate(width / 2, height / 2);
-    scale(cam_scale);
-    translate((cam_pos.x / cam_scale), (cam_pos.y / cam_scale));
+    scale(cam_scale.get());
+    translate((cam_pos.x / cam_scale.get()), (cam_pos.y / cam_scale.get()));
     matrixPushed = true;
     
-    if (grid.get() && cam_scale > 0.0008) {
+    if (grid.get() && cam_scale.get() > 0.0008) {
       int spacing = 200;
-      if (cam_scale > 2) spacing /= 5;
-      if (cam_scale < 0.2) spacing *= 5;
-      if (cam_scale < 0.04) spacing *= 5;
-      if (cam_scale < 0.008) spacing *= 5;
+      if (cam_scale.get() > 2) spacing /= 5;
+      if (cam_scale.get() < 0.2) spacing *= 5;
+      if (cam_scale.get() < 0.04) spacing *= 5;
+      if (cam_scale.get() < 0.008) spacing *= 5;
       stroke(100);
-      strokeWeight(2.0 / cam_scale);
-      PVector s = screen_to_cam(new PVector(-spacing * cam_scale, -spacing * cam_scale));
+      strokeWeight(2.0 / cam_scale.get());
+      PVector s = screen_to_cam(new PVector(-spacing * cam_scale.get(), -spacing * cam_scale.get()));
       s.x -= s.x%spacing; s.y -= s.y%spacing;
       PVector m = screen_to_cam( new PVector(width, height) );
       for (float x = s.x ; x < m.x ; x += spacing) {
@@ -239,12 +237,29 @@ class Camera {
     if (screenshot) { saveFrame("image/shot-########.png"); }
     screenshot = false;
     
+    if (!pos_loaded) {
+      cam_pos.set(pos_x.get(),pos_y.get());
+      pos_loaded = true;
+    }
+      
     //permet le cliquer glisser le l'ecran
-    if (mouseButtons[0] && GRAB) { cam_pos.add(mouseX - pmouseX, mouseY - pmouseY); }
+    if (mouseButtons[0] && GRAB) { 
+      cam_pos.add(mouseX - pmouseX, mouseY - pmouseY); 
+      pos_x.set(cam_pos.x);
+      pos_y.set(cam_pos.y);
+    }
     
     //permet le zoom
-    if (mouseWheelUp) { cam_scale /= ZOOM_FACTOR; cam_pos.mult(1/ZOOM_FACTOR); callChannel(zoom_chan); }
-    if (mouseWheelDown) { cam_scale *= ZOOM_FACTOR; cam_pos.mult(ZOOM_FACTOR); callChannel(zoom_chan); }
+    if (mouseWheelUp) { 
+      cam_scale.set(cam_scale.get()*1/ZOOM_FACTOR); cam_pos.mult(1/ZOOM_FACTOR); callChannel(zoom_chan);
+      pos_x.set(cam_pos.x);
+      pos_y.set(cam_pos.y);
+    }
+    if (mouseWheelDown) {
+      cam_scale.set(cam_scale.get()*ZOOM_FACTOR); cam_pos.mult(ZOOM_FACTOR); callChannel(zoom_chan);
+      pos_x.set(cam_pos.x);
+      pos_y.set(cam_pos.y);
+    }
   }
 }
 

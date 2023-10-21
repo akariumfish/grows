@@ -253,7 +253,14 @@ class InputF extends InputA {
       bang |= f.out.bang;
       if (f.out.bang) {value = f.out.value;}
     }
-    if (bang) {in.setOn(); textf.setFocus(true); textf.setText(str(value)); textf.setFocus(false);} else {in.setOff();}
+    if (bang) { textf.setFocus(true); textf.setText(str(value)); textf.setFocus(false); }
+    
+    if (!bang && float(textf.getText()) != value) {
+      value = float(textf.getText());
+      bang = true;
+    }
+    if (bang) {in.setOn();} else {in.setOff();}
+    
     return true;
   }
   boolean bang() {

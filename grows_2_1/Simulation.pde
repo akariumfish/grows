@@ -11,7 +11,8 @@ class ComunityList {
   sTextfield file_path_tf;
   
   ComunityList() {
-    panel = new sPanel(cp5, 1190, 550)
+    //menu principale de la sim
+    panel = new sPanel(cp5, 1190, 500)
       .addText("SIMULATION CONTROL", 28, 0, 28)
       .addLine(10)
       .addDrawer(30)
@@ -124,6 +125,68 @@ class ComunityList {
       .setSize(240, 30)
       ;
     panel.addSeparator(10);
+    
+    //macro custom et menu d'ajout
+    macro_build_panel
+      .addText("SIMULATION :", 0, 0, 18)
+      .addSeparator(8)
+      .addDrawer(30)
+        .addButton("SIM IN", 30, 0)
+          .setSize(150, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroSimIN(); } } )
+          .getDrawer()
+        .addButton("SIM OUT", 200, 0)
+          .setSize(150, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroSimOUT(); } } )
+          .getDrawer()
+        .getPanel()
+      .addSeparator(10)
+      ;
+  }
+  
+  void newMacroSimIN() {
+    new MacroCUSTOM(mList)
+      .setLabel("SIM IN")
+      .setWidth(170)
+      .addMCRun()
+        .addRunnable(new Runnable() { public void run() { reset(); }})
+        .setText("reset")
+        .getMacro()
+      .addMCRun()
+        .addRunnable(new Runnable() { public void run() { SEED.set(int(random(1000000000))); reset(); }})
+        .setText("rng")
+        .getMacro()
+      .addMCsBooControl()
+        .setValue(pause)
+        .setText("pause")
+        .getMacro()
+      .addMCsFltControl()
+        .setValue(tick_by_frame)
+        .setText("speed")
+        .getMacro()
+      ;
+  }
+  
+  void newMacroSimOUT() {
+    new MacroCUSTOM(mList)
+      .setLabel("SIM OUT")
+      .setWidth(150)
+      .addMCsBooWatcher()
+        .addValue(pause)
+        .setText("pause")
+        .getMacro()
+      .align()
+      .addMCsFltWatcher()
+        .addValue(tick)
+        .setText("   tick")
+        .getMacro()
+      .addMCsFltWatcher()
+        .addValue(tick_by_frame)
+        .setText("   speed")
+        .getMacro()
+      ;
   }
   
   void tick() {
@@ -184,7 +247,7 @@ abstract class Community {
       .addSeparator(10)
       ;
     
-    panel = new sPanel(cp5, 1190, 20 + id*20)
+    panel = new sPanel(cp5, 30 + id*50, 50 + id*30)
       .addText("COMUNITY CONTROL", 38, 0, 28)
       .addLine(10)
       .addText("Utilities", 140, 0, 22)
@@ -215,6 +278,70 @@ abstract class Community {
       .addLine(22)
       ;
     if (!show_menu.get()) panel.g.hide();
+    
+    macro_build_panel
+      .addText("Community: " + name, 0, 0, 18)
+      .addSeparator(8)
+      .addDrawer(30)
+        .addButton("COM IN", 30, 0)
+          .setSize(150, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroComuIN(); } } )
+          .getDrawer()
+        .addButton("COM OUT", 200, 0)
+          .setSize(150, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroComuOUT(); } } )
+          .getDrawer()
+        .getPanel()
+      .addSeparator(10)
+      ;
+  }
+  
+  void newMacroComuIN() {
+    new MacroCUSTOM(mList)
+      .setLabel("COMU IN " + name)
+      .setWidth(200)
+      .addMCsIntControl()
+        .setValue(initial_entity)
+        .setText("init")
+        .getMacro()
+      .addMCsIntControl()
+        .setValue(adding_step)
+        .setText("step")
+        .getMacro()
+      .addMCsBooControl()
+        .setValue(adding_type)
+        .setText("step")
+        .getMacro()
+      .addMCRun()
+        .addRunnable(new Runnable() { public void run() { adding_pile += initial_entity.get(); }})
+        .setText("add")
+        .getMacro()
+      ;
+  }
+  
+  void newMacroComuOUT() {
+    new MacroCUSTOM(mList)
+      .setLabel("COMU OUT " + name)
+      .setWidth(200)
+      .addMCsIntWatcher()
+        .addValue(activeEntity)
+        .setText("  active")
+        .getMacro()
+      .addMCsIntWatcher()
+        .addValue(initial_entity)
+        .setText("  init")
+        .getMacro()
+      .addMCsIntWatcher()
+        .addValue(adding_step)
+        .setText("  step")
+        .getMacro()
+      .addMCsBooWatcher()
+        .addValue(adding_type)
+        .setText("  step")
+        .getMacro()
+      ;
   }
   
   Community show_menu() { panel.g.show(); show_menu.set(true); return this; }

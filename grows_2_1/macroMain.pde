@@ -2,45 +2,71 @@
 
 MacroList mList;
 
-Keyboard keyb;
-GrowingControl gcC;
-GrowingWatcher gwC;
+//Keyboard keyb;
+//GrowingControl gcC;
+//GrowingWatcher gwC;
 
-MacroVAL mv1,mv2;
+//MacroVAL mv1,mv2;
+
+sPanel macro_build_panel;
 
 void init_macro() {
   mList = new MacroList();
-  //mList.addGrowingParam(1400, 50);
-  //mList.addGrowingActive(1400, 230);
-  //mList.addGrowingControl(1400, 500);
-  mList.addGrowingWatcher(50, 250);
-  mList.addKeyboard(50, 50);
-  mList.addSimControl(60, 400);
-  mList.addGrowingPop(50, 550);
-  mList.addPulse(300, 550);
   
-  mList.addMacroVAL(20, height - 80, 0);
-  mList.addMacroVAL(360, height - 80, 0);
-  mList.addMacroVAL(700, height - 80, 0);
-  mList.addMacroVAL(1040, height - 80, 0);
-  mList.addMacroVAL(1380, height - 80, 0);
-  mList.addMacroVAL(20, height - 180, 0);
-  mList.addMacroVAL(360, height - 180, 0);
-  mList.addMacroVAL(700, height - 180, 0);
-  mList.addMacroCALC(1040, height - 180);
-  mList.addMacroCALC(1380, height - 180);
-  mList.addMacroCOMP(20, height - 280);
-  mList.addMacroCOMP(360, height - 280);
-  mList.addMacroBOOL(700, height - 280);
-  mList.addMacroBOOL(1040, height - 280);
-  mList.addMacroDELAY(1380, height - 280, 10);
-  
-  //gcC = mList.addGrowingControl(800, 50);
-  //gwC = mList.addGrowingWatcher(50, 400);
-  //keyb = mList.addKeyboard(50, 50);
-  
-  //mv1 = mList.addMacroVAL(300, 50, 0.16);
-  //mv2 = mList.addMacroVAL(300, 200, 0.833);
+  macro_build_panel = new sPanel(cp5, 100, 300)
+    .setTab("Macros")
+    .addSeparator(5)
+    .addText("- NEW  MACRO -", 85, 0, 26)
+    .addSeparator(12)
+    .addText("BASIC MACRO :", 0, 0, 18)
+    .addSeparator(8)
+    .addDrawer(70)
+      .addButton("VAL", 30, 0)
+        .setSize(100, 30)
+        .addListener(new ControlListener() {
+          public void controlEvent(final ControlEvent ev) {
+            mList.addMacroVAL(mList.adding_pos, mList.adding_pos, 0);
+          } } )
+        .getDrawer()
+      .addButton("PULSE", 140, 0)
+        .setSize(100, 30)
+        .addListener(new ControlListener() {
+          public void controlEvent(final ControlEvent ev) {
+            mList.addPulse(mList.adding_pos, mList.adding_pos);
+          } } )
+        .getDrawer()
+      .addButton("DELAY", 250, 0)
+        .setSize(100, 30)
+        .addListener(new ControlListener() {
+          public void controlEvent(final ControlEvent ev) {
+            mList.addMacroDELAY(mList.adding_pos, mList.adding_pos, 0);
+          } } )
+        .getDrawer()
+      .addButton("COMP", 30, 40)
+        .setSize(100, 30)
+        .addListener(new ControlListener() {
+          public void controlEvent(final ControlEvent ev) {
+            mList.addMacroCOMP(mList.adding_pos, mList.adding_pos);
+          } } )
+        .getDrawer()
+      .addButton("BOOL", 140, 40)
+        .setSize(100, 30)
+        .addListener(new ControlListener() {
+          public void controlEvent(final ControlEvent ev) {
+            mList.addMacroBOOL(mList.adding_pos, mList.adding_pos);
+          } } )
+        .getDrawer()
+      .addButton("CALC", 250, 40)
+        .setSize(100, 30)
+        .addListener(new ControlListener() {
+          public void controlEvent(final ControlEvent ev) {
+            mList.addMacroCALC(mList.adding_pos, mList.adding_pos);
+          } } )
+        .getDrawer()
+      .getPanel()
+    .addLine(12)
+    .addSeparator(5)
+    ;
   
   //keyb.wO.linkTo(mv1.in);
   //keyb.aO.linkTo(mv2.in);
@@ -70,6 +96,8 @@ class MacroList {
   OutputB selectOutB;
   boolean creatingLinkF = false;
   OutputF selectOutF;
+  
+  int adding_pos = 40;
   
   MacroList() {
     g = cp5.addGroup("Main")
@@ -309,6 +337,8 @@ abstract class Macro {
   Macro(MacroList ml, int i_, int x_, int y_) {
     ml.addMacro(this);
     macroList = ml;
+    ml.adding_pos += 60;
+    if (ml.adding_pos >= 700) ml.adding_pos -= 635;
     id = i_;
     x = x_; y = y_;
     g = cp5.addGroup("Macro" + str(id))
@@ -320,11 +350,12 @@ abstract class Macro {
                   .moveTo("Macros")
                   .setHeight(22)
                   ;
-  g.getCaptionLabel().setFont(createFont("Arial",16));
+    g.getCaptionLabel().setFont(createFont("Arial",16));
   }
   void clear() {
     g.remove();
   }
+  
   //void to_strings() {
   //  file.append("macro");
   //  file.append(str(id));

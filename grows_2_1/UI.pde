@@ -91,6 +91,10 @@ class sPanel extends Callable {
   sDrawer last_drawer = null;
   float mx = 0; float my = 0;
   Group g;
+  boolean pos_loaded = false;
+  
+  sInt pos_x = new sInt(simval, 100);
+  sInt pos_y = new sInt(simval, 100);
   
   sPanel(ControlP5 c, float x, float y) {
     g = new Group(c, "panel" + get_free_id()) {
@@ -103,6 +107,10 @@ class sPanel extends Callable {
         super.onLeave();
       }
     };
+    
+    pos_x.set(int(x));
+    pos_y.set(int(y));
+    
     g.setPosition(x, y)
         .setSize(PANEL_WIDTH, 0)
         .setBackgroundHeight(0)
@@ -115,17 +123,24 @@ class sPanel extends Callable {
   }
   
   void answer(Channel channel, float value) {
-    //moving control panel
-    if (g.isMouseOver()) {
-      if (mouseClick[0]) {
-        mx = g.getPosition()[0] - mouseX;
-        my = g.getPosition()[1] - mouseY;
-        cam.GRAB = false; //deactive le deplacement camera
-      } else if (mouseUClick[0]) {
-        cam.GRAB = true;
-      }
-      if (mouseButtons[0]) {
-        g.setPosition(mouseX + mx,mouseY + my);
+    if (!pos_loaded) {
+      g.setPosition(pos_x.get(),pos_y.get());
+      pos_loaded = true;
+    } else {
+      //moving control panel
+      if (g.isMouseOver()) {
+        if (mouseClick[0]) {
+          mx = g.getPosition()[0] - mouseX;
+          my = g.getPosition()[1] - mouseY;
+          cam.GRAB = false; //deactive le deplacement camera
+        } else if (mouseUClick[0]) {
+          cam.GRAB = true;
+        }
+        if (mouseButtons[0]) {
+          g.setPosition(mouseX + mx,mouseY + my);
+          pos_x.set(int(mouseX+mx));
+          pos_y.set(int(mouseY+my));
+        }
       }
     }
   }

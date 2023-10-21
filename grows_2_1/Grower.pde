@@ -26,7 +26,10 @@ class GrowerComu extends Community {
   
   sLabel grower_nb_label;
   
+  sInt activeGrower = new sInt(simval, 0);
+  
   GrowerComu(ComunityList _c) { super(_c, "Grower", 500); init();
+    //creation du menu
     panel.addText("Shape", 150, 0, 22)
       .addSeparator(8)
       .addValueController("DEV ", sMode.FACTOR, 2, 1.2, DEVIATION)
@@ -66,6 +69,94 @@ class GrowerComu extends Community {
       .setPanel(panel)
       .setSize(30, 30)
       ;
+    
+    //creation de macro custom
+    macro_build_panel
+      .addDrawer(30)
+        .addButton("GROWER SHAPE", 30, 0)
+          .setSize(150, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroGrowerINShape(); } } )
+          .getDrawer()
+        .addButton("GROWER MOUV", 200, 0)
+          .setSize(150, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroGrowerINMove(); } } )
+          .getDrawer()
+        .getPanel()
+      .addSeparator(10)
+      .addDrawer(30)
+        .addButton(" GROWER OUT", 30, 0)
+          .setSize(150, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroGrowerOUT(); } } )
+          .getDrawer()
+        .getPanel()
+      .addSeparator(10)
+      ;
+    initial_entity.set(0);
+  }
+  
+  void newMacroGrowerINShape() {
+    new MacroCUSTOM(mList)
+      .setLabel("GROWER IN")
+      .setWidth(150)
+      .addMCsFltControl()
+        .setValue(DEVIATION)
+        .setText("dev")
+        .getMacro()
+      .addMCsFltControl()
+        .setValue(L_MIN)
+        .setText("l min")
+        .getMacro()
+      .addMCsFltControl()
+        .setValue(L_MAX)
+        .setText("l max")
+        .getMacro()
+      .addMCsFltControl()
+        .setValue(L_DIFFICULTY)
+        .setText("dif")
+        .getMacro()
+      ;
+  }
+  
+  void newMacroGrowerINMove() {
+    MacroCUSTOM m = new MacroCUSTOM(mList)
+      .setLabel("GROWER IN")
+      .setWidth(150)
+      ;
+    addRngTry(m, growP, "grow");
+    addRngTry(m, sproutP, "sprout");
+    addRngTry(m, leafP, "leaf");
+    addRngTry(m, stopP, "stop");
+    addRngTry(m, dieP, "die");
+  }
+  
+  void addRngTry(MacroCUSTOM m, RandomTryParam r, String s) {
+    m.addMCsFltControl()
+        .setValue(r.DIFFICULTY)
+        .setText(s)
+        .getMacro()
+      .addMCsBooControl()
+        .setValue(r.ON)
+        .setText("")
+        .getMacro()
+      ;
+  }
+  
+  void newMacroGrowerOUT() {
+    new MacroCUSTOM(mList)
+      .setLabel("GROWER OUT")
+      .setWidth(150)
+      .addMCsIntWatcher()
+        .addValue(activeEntity)
+        .setText("  active")
+        .getMacro()
+      .addMCsIntWatcher()
+        .addValue(activeGrower)
+        .setText("  grover")
+        .getMacro()
+      ;
   }
   
   Grower build() { return new Grower(this); }
@@ -80,7 +171,9 @@ class GrowerComu extends Community {
       if (!e.active && ng == null) { ng = (Grower)e; e.activate(); }
     return ng;
   }
-  
+  void custom_tick() {
+    activeGrower.set(grower_Nb());
+  }
   int grower_Nb() {
     int n = 0;
     for (Entity e : list) if (e.active && !((Grower)e).end && ((Grower)e).sprouts == 0) n++;
@@ -172,11 +265,11 @@ class Grower extends Entity {
     
     // stop growing
     if (com().stopP.ON.get() && start == 1 && !end && sprouts == 0 && crandom(com().stopP.DIFFICULTY.get()) > 0.5) {
-      Floc f = fcom.newEntity();
-      if (f != null) {
-        f.pos.x = pos.x;
-        f.pos.y = pos.y;
-      }
+      //Floc f = fcom.newEntity();
+      //if (f != null) {
+      //  f.pos.x = pos.x;
+      //  f.pos.y = pos.y;
+      //}
       end = true;
     }
     
@@ -195,9 +288,9 @@ class Grower extends Entity {
     int ca = 255;
     if (age > com().OLD_AGE.get() / 2) ca = (int)constrain(255 + int(com().OLD_AGE.get()/2) - int(age/1.2), 90, 255);
     //if (!end && sprouts == 0) { stroke(255, 0, 0); strokeWeight(param.MAX_LINE_WIDTH+1 / cam_scale); } //BIG red head
-    if (!end && sprouts == 0) { stroke(255); strokeWeight((com().MAX_LINE_WIDTH+1) / cam.cam_scale); }
-    else if (end) { stroke(0, ca, 0); strokeWeight((com().MAX_LINE_WIDTH+1) / cam.cam_scale); }
-    else { stroke(ca, ca, ca); strokeWeight(((float)com().MIN_LINE_WIDTH + ((float)com().MAX_LINE_WIDTH * (float)ca / 255.0)) / cam.cam_scale); }              
+    if (!end && sprouts == 0) { stroke(255); strokeWeight((com().MAX_LINE_WIDTH+1) / cam.cam_scale.get()); }
+    else if (end) { stroke(0, ca, 0); strokeWeight((com().MAX_LINE_WIDTH+1) / cam.cam_scale.get()); }
+    else { stroke(ca, ca, ca); strokeWeight(((float)com().MIN_LINE_WIDTH + ((float)com().MAX_LINE_WIDTH * (float)ca / 255.0)) / cam.cam_scale.get()); }              
     
     PVector e = new PVector(dir.x, dir.y);
     if (start < 1) e = e.setMag(e.mag() * start);

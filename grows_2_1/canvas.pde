@@ -5,7 +5,7 @@
 Canvas can;
 
 void init_canvas() {
-  can = new Canvas(0, 0, int((width) / cam.cam_scale), int((height) / cam.cam_scale), 4);
+  can = new Canvas(0, 0, int((width) / cam.cam_scale.get()), int((height) / cam.cam_scale.get()), 4);
 }
 
 class Canvas extends Callable {
@@ -42,7 +42,7 @@ class Canvas extends Callable {
   
   void answer(Channel channel, float value) {
     pos = cam.screen_to_cam(can_grab.getP());
-    pos.y -= 20 / cam.cam_scale;
+    pos.y -= 20 / cam.cam_scale.get();
   }
   
   void drawHalo(Community com) {
@@ -74,7 +74,7 @@ class Canvas extends Callable {
     if (show_canvas.get()) {
       if (show_canvas_bound.get()) {
         stroke(255);
-        strokeWeight(3 / cam.cam_scale);
+        strokeWeight(3 / cam.cam_scale.get());
         noFill();
         rect(pos.x, pos.y, can1.width * canvas_scale, can1.height * canvas_scale);
       }

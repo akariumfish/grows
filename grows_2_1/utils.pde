@@ -77,10 +77,12 @@ void callChannel(Channel chan, float val) {
 void callChannel(Channel chan) { callChannel(chan, 0); }
 class Channel { ArrayList<Callable> calls = new ArrayList<Callable>(); }
 abstract class Callable {
+  Callable() {}   Callable(Channel c) {addChannel(c);}
   void addChannel(Channel c) { c.calls.add(this); }
-  abstract void answer(Channel channel, float value); }
+  public abstract void answer(Channel channel, float value); }
   
-
+//Channel test_chan = new Channel();
+//new Callable(test_chan) { public void answer(Channel c, float v) { print("test"); }};
 
 
 
