@@ -63,9 +63,9 @@ class MacroCUSTOM extends Macro {
   MCsFltControl addMCsFltControl() { return new MCsFltControl(this); }
   MCsIntControl addMCsIntControl() { return new MCsIntControl(this); }
   
-  void update() {
+  void update() { //tick
     super.update();
-    for (MCConnexion c : connexions) c.update();
+    for (MCConnexion c : connexions) c.tick();
     updated = true;
   }
   
@@ -74,13 +74,14 @@ class MacroCUSTOM extends Macro {
   //void to_strings() { super.to_strings(); file.append(""); }
 }
 
-abstract class MCConnexion {
+abstract class MCConnexion extends Callable {
   MacroCUSTOM macro;
   MCConnexion(MacroCUSTOM m) {
     macro = m; macro.connexions.add(this); }
   MacroCUSTOM getMacro() { return macro; }
-  abstract void update();
+  abstract void tick();
   abstract MCConnexion setText(String s);
+  void answer(Channel c, float f) {}
 }
 
 
@@ -95,7 +96,7 @@ class MCsFltControl extends MCConnexion {
   MCsFltControl setText(String s) { in.t.setText(s); return this; }
   MCsFltControl setValue(sFlt b) { flt = b; in.set(flt.get()); return this; }
   
-  void update() {
+  void tick() {
     if (in.getUpdate()) {
       if (in.bang()) {
         //print("b" + flt.get() + " ");
@@ -119,7 +120,7 @@ class MCsIntControl extends MCConnexion {
   MCsIntControl setText(String s) { in.t.setText(s); return this; }
   MCsIntControl setValue(sInt b) { i = b; in.set(i.get()); return this; }
   
-  void update() {
+  void tick() {
     if (in.getUpdate()) {
       if (in.bang()) {
         //print("b" + flt.get() + " ");
@@ -155,7 +156,7 @@ class MCsBooControl extends MCConnexion {
   MCsBooControl setText(String s) { in.t.setText(s); return this; }
   MCsBooControl setValue(sBoo b) { boo = b;; return this; }
   
-  void update() {
+  void tick() {
     if (in.getUpdate()) {
       if (in.get()) {
         if (swtch) { boo.set(!boo.get()); }  //change l'etat de la cicle quand bang
@@ -173,21 +174,37 @@ class MCsFltWatcher extends MCConnexion {
   OutputF out;
   float v = 0;
   sFlt flt;
+  Button ch;
+  boolean onchange = true;
   
   MCsFltWatcher(MacroCUSTOM m) { super(m);
-    out =  macro.createOutputF("WatchF", 0); }
+    out =  macro.createOutputF("WatchF", 0);
+    ch = cp5.addButton("button" + get_free_id())
+      .setGroup(macro.g)
+      .setSize(12, 22)
+      .setSwitch(true)
+      .setPosition(out.out.getPosition()[0] - 14, out.out.getPosition()[1])
+      .addListener(new ControlListener() {
+        public void controlEvent(final ControlEvent ev) { onchange = !ch.isOn(); } } )
+      ;
+    ch.getCaptionLabel().setText("A").setFont(getFont(12));
+    addChannel(frame_chan);
+  }
   
   MCsFltWatcher setText(String s) { out.t.setText(s); return this; }
   
   MCsFltWatcher addValue(sFlt f) {
     flt = f;
     v = f.get();
-    out.set(v);
+    out.setBang(v);
     return this; }
-  void update() {
-    if (v != flt.get()) out.set(flt.get());
-    out.bang();                                    // !! ou seulement si changement !!
-    v = flt.get(); }
+  void answer(Channel c, float f) { out.set(flt.get()); out.update(); }
+  void tick() {
+    float t = flt.get();
+    out.set(t);
+    if (v != t || !onchange) out.bang(); else out.unBang();
+    v = t;
+  }
 }
 
 
@@ -196,21 +213,37 @@ class MCsIntWatcher extends MCConnexion {
   OutputF out;
   float v = 0;
   sInt i;
+  Button ch;
+  boolean onchange = true;
   
   MCsIntWatcher(MacroCUSTOM m) { super(m);
-    out =  macro.createOutputF("WatchI", 0); }
+    out =  macro.createOutputF("WatchI", 0);
+    ch = cp5.addButton("button" + get_free_id())
+      .setGroup(macro.g)
+      .setSize(12, 22)
+      .setSwitch(true)
+      .setPosition(out.out.getPosition()[0] - 14, out.out.getPosition()[1])
+      .addListener(new ControlListener() {
+          public void controlEvent(final ControlEvent ev) { onchange = !ch.isOn(); } } )
+      ;
+    ch.getCaptionLabel().setText("A").setFont(getFont(12));
+    addChannel(frame_chan);
+  }
   
   MCsIntWatcher setText(String s) { out.t.setText(s); return this; }
   
   MCsIntWatcher addValue(sInt f) {
     i = f;
     v = f.get();
-    out.set(v);
+    out.setBang(v);
     return this; }
-  void update() {
-    if (v != i.get()) out.set(i.get());
-    out.bang();                                    // !! ou seulement si changement !!
-    v = i.get(); }
+  void answer(Channel c, float f) { out.set(i.get()); out.update(); }
+  void tick() {
+    int a = i.get();
+    out.set(a);
+    //
+    if (v != a || !onchange) out.bang(); else out.unBang();
+    v = a; }
 }
 
 
@@ -229,7 +262,7 @@ class MCsBooWatcher extends MCConnexion {
     boo = b;
     v = boo.get();
     return this; }
-  void update() {
+  void tick() {
     out.set(boo.get());
     v = boo.get(); }
 }
@@ -246,7 +279,7 @@ class MCRun extends MCConnexion {
   MCRun setText(String s) { in.t.setText(s); return this; }
   MCRun addRunnable(Runnable r) { runs.add(r); return this; }
   
-  void update() { if (in.getUpdate() && in.get()) for (Runnable r : runs) r.run(); }
+  void tick() { if (in.getUpdate() && in.get()) for (Runnable r : runs) r.run(); }
 }
 
 //#############    RUNNABLE    #############
@@ -263,10 +296,10 @@ class MCListen extends MCConnexion {
     
   MCListen setText(String s) { out.t.setText(s); return this; }
   
-  MCListen addChannel(Channel chan) {
+  MCListen listenTo(Channel chan) {
     new Callable(chan) { public void answer(Channel channel, float value) { v = true; }};
     return this; }
-  void update() {
+  void tick() {
     if (v) out.set(true); else out.set(false);
     v = false; }
 }
@@ -281,8 +314,8 @@ class MCCall extends MCConnexion {
     in =  macro.createInputB("call"); }
   
   MCCall setText(String s) { in.t.setText(s); return this; }
-  MCCall addChannel(Channel chan) { chans.add(chan); return this; }
-  void update() { if (in.getUpdate() && in.get()) for (Channel c : chans) callChannel(c); }
+  MCCall callTo(Channel chan) { chans.add(chan); return this; }
+  void tick() { if (in.getUpdate() && in.get()) for (Channel c : chans) callChannel(c); }
 }
 
 
@@ -446,25 +479,26 @@ class MacroVAL extends Macro {
   InputB in;
   InputF inV;
   float value;
-  //Textfield txtf;
+  boolean flag = false;
   
   MacroVAL(MacroPlane ml, float v_, int i_, int x_, int y_) {
     super(ml, i_, x_, y_);
     value = v_;
     g.setLabel("Value");
-    g.setSize(220, 22);
-    in =  createInputB("IN");
+    g.setSize(180, 22);
+    in =  createInputB(">");
     inV =  createInputF("  VAL",value);
-    out = createOutputF("    OUT",v_);
-    //txtf = cp5.addTextfield("textVal" + str(id))
-    //   .setLabel("")
-    //   .setPosition(100,2)
-    //   .setSize(70,22)
-    //   .setAutoClear(false)
-    //   .setGroup(g)
-    //   .setText(str(value))
-    //   ;
-    //txtf.getValueLabel().setFont(createFont("Arial",18));
+    out = createOutputF("",v_);
+    new Button(cp5, "button"+get_free_id())
+      .setPosition(50, 3)
+      .setSize(45, 22)
+      .setGroup(g)
+      .addListener(new ControlListener() {
+        public void controlEvent(final ControlEvent ev) { 
+          flag = true;
+        } } )
+      .getCaptionLabel().setText(">").setFont(getFont(18))
+      ;
   }
   void clear() {
     //txtf.remove();
@@ -483,8 +517,8 @@ class MacroVAL extends Macro {
       //if (inV.bang()) {value = inV.get(); }//txtf.setText(str(value));}
       value = inV.get();
       out.set(value);
-      if (in.get()) {out.bang();} else {out.unBang();}
-      //out.update();
+      if (in.get() || flag) {out.bang();} else {out.unBang();}
+      flag = false;
       updated = true;
     }
   }

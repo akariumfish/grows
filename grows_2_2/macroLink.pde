@@ -218,6 +218,8 @@ class InputF extends InputA {
   float value;
   Textfield textf;
   Textlabel t;
+  Button ch;
+  boolean auto_reset = false;
   InputF(MacroPlane m, int id, Group g_, int i, String text, int n_, float d) {
     super(m, "inF", id, g_, n_);
     value = d;
@@ -247,6 +249,15 @@ class InputF extends InputA {
         }) 
        ;
     textf.getValueLabel().setFont(createFont("Arial",18));
+    ch = cp5.addButton("button" + get_free_id())
+      .setGroup(g)
+      .setSize(12, 22)
+      .setSwitch(true)
+      .setPosition(in.getPosition()[0] + 14, in.getPosition()[1])
+      .addListener(new ControlListener() {
+          public void controlEvent(final ControlEvent ev) { auto_reset = ch.isOn(); } } )
+      ;
+    ch.getCaptionLabel().setText("R").setFont(getFont(12));
   }
   void clear() {
     textf.remove();
@@ -264,12 +275,17 @@ class InputF extends InputA {
     for (LinkF f : l) {
       if (!f.out.updated) {return false;}
     }
+    //
     for (LinkF f : l) {
       bang |= f.out.bang;
       if (f.out.bang) {value = f.out.value;}
     }
     if (bang) { textf.setFocus(true); textf.setText(str(value)); textf.setFocus(false); }
-    
+    if (!bang && auto_reset && value != 0) {
+      value = 0;
+      bang = true;
+      textf.setFocus(true); textf.setText(str(value)); textf.setFocus(false);
+    }
     if (!bang && float(textf.getText()) != value) {
       value = float(textf.getText());
       bang = true;
@@ -416,6 +432,7 @@ class OutputF extends OutputA {
        .setFocus(false)
        ;
     textf.getValueLabel().setFont(createFont("Arial",18));
+    
   }
   void clear() {
     t.remove();
@@ -435,22 +452,25 @@ class OutputF extends OutputA {
     if (value != v) { value = v; bang(); return; }
     value = v;
   }
-  void unBang() {bang = false;}
+  void unBang() { bang = false; update(); }
   void bang() {
     bang = true;
     for (LinkF f : l) {
       f.in.bang = true;
     }
-   //update();
+    update();
   }
   float get() {return value;}
   void answer(Channel chan, float v) {
     if (out.isMouseOver() && kb.mouseClick[0]) {macroList.addLinkSelectOutF(this);}
     updated = true;
     x = int(g.getPosition()[0] + g.getWidth()); y = int(g.getPosition()[1] + 12 + (n*26));
-    if (value < 0.000001) {value = 0;}
-    if (bang) {out.setOn(); textf.setFocus(true); textf.setText(str(value).trim()); textf.setFocus(false);} else {out.setOff();}
     //bang = false;
+    update();
+  }
+  void update() {
+    //if (value < 0.000001) {value = 0;}
+    if (bang) {out.setOn(); textf.setFocus(true); textf.setText(str(value).trim()); textf.setFocus(false);} else {out.setOff();}
   }
   OutputF linkTo(InputF in) {
     LinkF nl = macroList.linkList.createLinkF();

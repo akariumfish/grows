@@ -48,7 +48,7 @@ class MacroPlane extends Callable {
       .setTab("Macros")
       .addTitle("- NEW  MACRO -", 85, 0, 28)
       .addSeparator(12)
-      .addText("BASIC MACRO :", 0, 0, 18)
+      .addText("Basic Macro :", 0, 0, 18)
       .addSeparator(8)
       .addDrawer(150)
         .addButton("VAL", 30, 0)
@@ -187,7 +187,7 @@ class MacroPlane extends Callable {
     }
   }
   
-  void answer(Channel channel, float value) {
+  void answer(Channel channel, float value) { //tick chan
     update();
   }
   
@@ -391,7 +391,7 @@ abstract class Macro {
   //  file.append(str(outCount));
   //}
   
-  void update() {}
+  void update() {} //tick
   void custom_frame() {}
   
   void frame() {

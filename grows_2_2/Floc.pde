@@ -7,12 +7,11 @@ class FlocComu extends Community {
   sFlt SPEED = new sFlt(simval, 2);
   sInt LIMIT = new sInt(simval, 400);
   sInt AGE = new sInt(simval, 2000);
+  sFlt HALO_SIZE = new sFlt(simval, 20);
+  sFlt HALO_DENS = new sFlt(simval, 0.2);
   
   sBoo DRAWMODE_DEF = new sBoo(simval, true);
   sBoo DRAWMODE_DEBUG = new sBoo(simval, false);
-  
-  sFlt HALO_SIZE = new sFlt(simval, 20);
-  sFlt HALO_DENS = new sFlt(simval, 0.2);
   
   sBoo create_grower = new sBoo(simval, true);
   sBoo point_to_mouse = new sBoo(simval, false);
@@ -20,7 +19,7 @@ class FlocComu extends Community {
   
   int startbox = 400;
   
-  FlocComu(Simulation _c) { super(_c, "Floc", 100); init();
+  FlocComu(Simulation _c) { super(_c, " Floc ", 100); init();
     
     init_canvas();
   }
@@ -73,25 +72,38 @@ class FlocComu extends Community {
     //creation de macro custom
     plane.build_panel
       .addDrawer(30)
-        .addButton("FLOC IN", 30, 0)
-          .setSize(150, 30)
+        .addButton("LIFE", 0, 0)
+          .setSize(120, 30)
           .addListener(new ControlListener() {
-            public void controlEvent(final ControlEvent ev) { newMacroFlocIN(); } } )
+            public void controlEvent(final ControlEvent ev) { newMacroFlocIN1(); } } )
           .getDrawer()
-        .addButton("FLOC OUT", 200, 0)
-          .setSize(150, 30)
+        .addButton("MOVE", 130, 0)
+          .setSize(120, 30)
           .addListener(new ControlListener() {
-            public void controlEvent(final ControlEvent ev) { ; } } )
+            public void controlEvent(final ControlEvent ev) { newMacroFlocIN2(); } } )
+          .getDrawer()
+        .addButton("HALO", 260, 0)
+          .setSize(120, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroFlocIN3(); } } )
           .getDrawer()
         .getPanel()
       .addSeparator(10)
       ;
   }
   
-  void newMacroFlocIN() {
+  //sFlt POURSUITE = new sFlt(simval, 0.6);
+  //sFlt FOLLOW = new sFlt(simval, 0.0036);
+  //sFlt SPACING = new sFlt(simval, 150);
+  //sFlt SPEED = new sFlt(simval, 2);
+  //sInt LIMIT = new sInt(simval, 400);
+  //sFlt HALO_SIZE = new sFlt(simval, 20);
+  //sFlt HALO_DENS = new sFlt(simval, 0.2);
+  
+  void newMacroFlocIN1() {
     new MacroCUSTOM(plane)
-      .setLabel("FLOC IN")
-      .setWidth(150)
+      .setLabel("FLOC LIFE")
+      .setWidth(140)
       .addMCsBooControl()
         .setValue(create_grower)
         .setText("create")
@@ -110,6 +122,48 @@ class FlocComu extends Community {
         .getMacro()
       ;
     
+  }
+  
+  void newMacroFlocIN2() {
+    new MacroCUSTOM(plane)
+      .setLabel("FLOC MOVE")
+      .setWidth(160)
+      .addMCsFltControl()
+        .setValue(POURSUITE)
+        .setText("pursue")
+        .getMacro()
+      .addMCsFltControl()
+        .setValue(FOLLOW)
+        .setText("follow")
+        .getMacro()
+      .addMCsFltControl()
+        .setValue(SPACING)
+        .setText("space")
+        .getMacro()
+      .addMCsFltControl()
+        .setValue(SPEED)
+        .setText("speed")
+        .getMacro()
+      .addMCsIntControl()
+        .setValue(LIMIT)
+        .setText("limit")
+        .getMacro()
+      ;
+  }
+  
+  void newMacroFlocIN3() {
+    new MacroCUSTOM(plane)
+      .setLabel("FLOC HALO")
+      .setWidth(160)
+      .addMCsFltControl()
+        .setValue(HALO_SIZE)
+        .setText("size")
+        .getMacro()
+      .addMCsFltControl()
+        .setValue(HALO_DENS)
+        .setText("density")
+        .getMacro()
+      ;
   }
   
   void custom_tick() {

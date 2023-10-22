@@ -61,7 +61,7 @@ class Simulation {
       .addDrawer(30)
         .addSwitch("PAUSE", 20, 0)
           .setValue(pause)
-          .setSize(160, 30)
+          .setSize(170, 30)
           .getDrawer()
         .addButton("NEXT TICK", 200, 0)
           .setSize(160, 30)
@@ -72,15 +72,23 @@ class Simulation {
         .addSeparator(10)
       .addDrawer(30)
         
-        .addButton("RESET", 80, 0)
-          .setSize(100, 30)
+        .addButton("RESET", 20, 0)
+          .setSize(80, 30)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { reset(); } } )
           .getDrawer()
-        .addButton("RNG", 200, 0)
-          .setSize(100, 30)
+        .addButton("RNG", 110, 0)
+          .setSize(80, 30)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { SEED.set(int(random(1000000000))); reset(); } } )
+          .getDrawer()
+        .addButton("NEXT FRAME", 200, 0)
+          .setSize(160, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              for (int i = 0; i < tick_by_frame.get()-1; i++) tick();
+              next_tick = true;
+            } } )
           .getDrawer()
         
         .getPanel()
@@ -167,16 +175,26 @@ class Simulation {
     
     //macro custom et menu d'ajout
     plane.build_panel
-      .addText("SIMULATION :", 0, 0, 18)
+      .addText("Simulation :", 0, 0, 18)
       .addSeparator(8)
       .addDrawer(30)
-        .addButton("SIM IN", 30, 0)
-          .setSize(150, 30)
+        .addButton("RESET", 20, 0)
+          .setSize(80, 30)
           .addListener(new ControlListener() {
-            public void controlEvent(final ControlEvent ev) { newMacroSimIN(); } } )
+            public void controlEvent(final ControlEvent ev) { newMacroSimIN1(); } } )
           .getDrawer()
-        .addButton("SIM OUT", 200, 0)
-          .setSize(150, 30)
+        .addButton("RUN", 110, 0)
+          .setSize(80, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroSimIN2(); } } )
+          .getDrawer()
+        .addButton("AUTO", 200, 0)
+          .setSize(80, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroSimIN3(); } } )
+          .getDrawer()
+        .addButton("OUT", 290, 0)
+          .setSize(80, 30)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { newMacroSimOUT(); } } )
           .getDrawer()
@@ -186,9 +204,9 @@ class Simulation {
     for (Community c : list) c.building();
   }
   
-  void newMacroSimIN() {
+  void newMacroSimIN1() {
     new MacroCUSTOM(plane)
-      .setLabel("SIM IN")
+      .setLabel("SIM RESET")
       .setWidth(170)
       .addMCRun()
         .addRunnable(new Runnable() { public void run() { reset(); }})
@@ -198,13 +216,24 @@ class Simulation {
         .addRunnable(new Runnable() { public void run() { SEED.set(int(random(1000000000))); reset(); }})
         .setText("rng")
         .getMacro()
-      .addMCRun()
-        .addRunnable(new Runnable() { public void run() { next_tick = true; }})
-        .setText("tick")
+      ;
+  }
+  
+  void newMacroSimIN2() {
+    new MacroCUSTOM(plane)
+      .setLabel("SIM RUN")
+      .setWidth(155)
+      .addMCsBooWatcher()
+        .addValue(pause)
+        .setText("pause")
         .getMacro()
       .addMCsBooControl()
         .setValue(pause)
-        .setText("pause")
+        .setText("")
+        .getMacro()
+      .addMCRun()
+        .addRunnable(new Runnable() { public void run() { next_tick = true; }})
+        .setText("tick")
         .getMacro()
       .addMCsFltControl()
         .setValue(tick_by_frame)
@@ -213,14 +242,25 @@ class Simulation {
       ;
   }
   
+  void newMacroSimIN3() {
+    new MacroCUSTOM(plane)
+      .setLabel("SIM AUTO")
+      .setWidth(170)
+      .addMCsBooControl()
+        .setValue(auto_reset)
+        .setText("auto reset")
+        .getMacro()
+      .addMCsIntControl()
+        .setValue(auto_reset_turn)
+        .setText("reset tick")
+        .getMacro()
+      ;
+  }
+  
   void newMacroSimOUT() {
     new MacroCUSTOM(plane)
       .setLabel("SIM OUT")
-      .setWidth(150)
-      .addMCsBooWatcher()
-        .addValue(pause)
-        .setText("pause")
-        .getMacro()
+      .setWidth(170)
       .align()
       .addMCsFltWatcher()
         .addValue(tick)
@@ -336,8 +376,8 @@ abstract class Community {
       .addSeparator(10)
       ;
     
-    panel = new sPanel(cp5, 30 + id*50, 50 + id*30)
-      .addTitle("COMMUNITY CONTROL", 30, 0, 28)
+    panel = new sPanel(cp5, 20 + id*50, 20 + id*30)
+      .addTitle(name+" Control", 90, 0, 28)
       .addLine(10)
       .addText("Utilities", 140, 0, 22)
       .addSeparator(8)
@@ -380,13 +420,18 @@ abstract class Community {
       .addText("Community: " + name, 0, 0, 18)
       .addSeparator(8)
       .addDrawer(30)
-        .addButton("COM IN", 30, 0)
-          .setSize(150, 30)
+        .addButton("INIT", 0, 0)
+          .setSize(120, 30)
           .addListener(new ControlListener() {
-            public void controlEvent(final ControlEvent ev) { newMacroComuIN(); } } )
+            public void controlEvent(final ControlEvent ev) { newMacroComuINIT(); } } )
           .getDrawer()
-        .addButton("COM OUT", 200, 0)
-          .setSize(150, 30)
+        .addButton("ADD", 130, 0)
+          .setSize(120, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroComuADD(); } } )
+          .getDrawer()
+        .addButton("POP", 260, 0)
+          .setSize(120, 30)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { newMacroComuOUT(); } } )
           .getDrawer()
@@ -396,22 +441,49 @@ abstract class Community {
     custom_build();
   }
   
-  void newMacroComuIN() {
+  void newMacroComuINIT() {
     new MacroCUSTOM(plane)
-      .setLabel("COMU IN " + name)
-      .setWidth(200)
+      .setLabel(name + " INIT")
+      .setWidth(250)
+      .addMCsIntControl()
+        .setValue(MAX_ENT)
+        .setText("")
+        .getMacro()
       .addMCsIntControl()
         .setValue(initial_entity)
-        .setText("init")
+        .setText("")
         .getMacro()
       .addMCsIntControl()
         .setValue(adding_step)
-        .setText("step")
+        .setText("")
         .getMacro()
       .addMCsBooControl()
         .setValue(adding_type)
-        .setText("step")
+        .setText("              do step")
         .getMacro()
+      .addMCsIntWatcher()
+        .addValue(MAX_ENT)
+        .setText("     max")
+        .getMacro()
+      .addMCsIntWatcher()
+        .addValue(initial_entity)
+        .setText("     add")
+        .getMacro()
+      .addMCsIntWatcher()
+        .addValue(adding_step)
+        .setText("    step")
+        .getMacro()
+      .addMCsBooWatcher()
+        .addValue(adding_type)
+        .setText("")
+        .getMacro()
+      ;
+  }
+  
+  void newMacroComuADD() {
+    new MacroCUSTOM(plane)
+      .setLabel("ADD " + name)
+      .setWidth(120)
       .addMCRun()
         .addRunnable(new Runnable() { public void run() { adding_pile += initial_entity.get(); }})
         .setText("add")
@@ -421,23 +493,11 @@ abstract class Community {
   
   void newMacroComuOUT() {
     new MacroCUSTOM(plane)
-      .setLabel("COMU OUT " + name)
-      .setWidth(200)
+      .setLabel(name + " POP")
+      .setWidth(160)
       .addMCsIntWatcher()
         .addValue(activeEntity)
         .setText("  active")
-        .getMacro()
-      .addMCsIntWatcher()
-        .addValue(initial_entity)
-        .setText("  init")
-        .getMacro()
-      .addMCsIntWatcher()
-        .addValue(adding_step)
-        .setText("  step")
-        .getMacro()
-      .addMCsBooWatcher()
-        .addValue(adding_type)
-        .setText("  step")
         .getMacro()
       ;
   }

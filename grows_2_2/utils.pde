@@ -3,6 +3,7 @@
 //##                         METHODES UTILES                           ##
 //#######################################################################
 
+
 String trimStringFloat(float f) {
   String s;
   if (f%1.0 == 0.0) s = nfc(int(f)); else s = str(f);
@@ -14,7 +15,11 @@ String trimStringFloat(float f) {
   }
   for (int i = 0; i < s.length() ; i++) {
     if (s.charAt(i) == '.' && s.length() - i > 4) {
-      s = s.substring(0, i+4);
+      int m = 4;
+      if (f >= 10) m -= 1;
+      if (f >= 100) m -= 1;
+      if (f >= 1000) m -= 2;
+      s = s.substring(0, i+m);
       s = s + end;
       return s;
     }
@@ -40,33 +45,7 @@ float distancePointToPoint(float xa, float ya, float xb, float yb) {
   return sqrt( pow((xb-xa), 2) + pow((yb-ya), 2) );
 }
 
-float crandom(float d) {
-  return pow(random(1.0), d) ;
-}
-
-/*
-
-crandom results :
-difficulty   nb > 0.5 pour 1000
-       0.04 999
-       0.08 999
-       0.16 986
-       0.32 885
-       0.64 661
-       1.28 418
-       2.56 236
-       5.12 126
-      10.24 65
-      20.48 33
-      40.96 16
-      81.92 8
-     163.84 4
-     327.68 2
-     655.36 1
-    1310.72 0
-    2621.44 0
-
-*/
+float crandom(float d) { return pow(random(1.0), d); }
 
 // auto indexing
 int used_index = 0;
@@ -115,11 +94,13 @@ class SpecialValue {
   ArrayList<sFlt> sfltlist = new ArrayList<sFlt>();
   ArrayList<sBoo> sboolist = new ArrayList<sBoo>();
   ArrayList<sVec> sveclist = new ArrayList<sVec>();
+  ArrayList<sStr> sstrlist = new ArrayList<sStr>();
   void unFlagChange() {
     for (sInt i : sintlist) i.has_changed = false;
     for (sFlt i : sfltlist) i.has_changed = false;
     for (sBoo i : sboolist) i.has_changed = false;
-    for (sVec i : sveclist) i.has_changed = false; }
+    for (sVec i : sveclist) i.has_changed = false; 
+    for (sStr i : sstrlist) i.has_changed = false; }
 }
 
 
@@ -164,12 +145,25 @@ class sVec {
   SpecialValue save;
   PVector val = new PVector();
   int id = 0;
-  String name = "boo";
+  String name = "vec";
   sVec(SpecialValue s, PVector v) { save = s; val = v; id = save.sveclist.size(); save.sveclist.add(this); }
   sVec(SpecialValue s, PVector v, String n) { name = n; save = s; val = v; id = save.sveclist.size(); save.sveclist.add(this); }
   PVector get() { return new PVector(val.x, val.y); }
   void set(PVector v) { if (v.x != val.x || v.y != val.y) { has_changed = true; val.x = v.x; val.y = v.y; } }
 }
+
+class sStr {
+  boolean has_changed = false;
+  SpecialValue save;
+  String val = new String();
+  int id = 0;
+  String name = "str";
+  sStr(SpecialValue s, String v) { save = s; val = v; id = save.sstrlist.size(); save.sstrlist.add(this); }
+  sStr(SpecialValue s, String v, String n) { name = n; save = s; val = v; id = save.sstrlist.size(); save.sstrlist.add(this); }
+  String get() { return new String(val); }
+  void set(String v) { if (!v.equals(val)) { has_changed = true; val = v; } }
+}
+
 
 
 //#######################################################################

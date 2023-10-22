@@ -15,14 +15,15 @@ Simulation sim;
 MacroPlane plane;
 
 Channel frame_chan = new Channel();
+Channel frameend_chan = new Channel();
 
 GrowerComu gcom;
 FlocComu fcom;
 BoxComu bcom;
 
 void setup() {//executé au demarage
-  size(1600, 900);//taille de l'ecran
-  //fullScreen();
+  //size(1600, 900);//taille de l'ecran
+  fullScreen();
   noSmooth();//pas d'antialiasing
   //smooth();//anti aliasing
   
@@ -31,7 +32,7 @@ void setup() {//executé au demarage
   fr = new sFramerate(60);
   
   cp5 = new ControlP5(this);
-  init_Tabs("Macros");
+  init_Tabs("Menu");
   
   sim = new Simulation();
   plane = new MacroPlane();
@@ -45,14 +46,19 @@ void setup() {//executé au demarage
   loading(simval, "save.txt");
   
   sim.reset();
+  
+  background(0);//fond noir
 }
+
 
 void draw() {//executé once by frame
   background(0);//fond noir
-  
+  //fill(0,0,0,3);
+  //noStroke();
+  //rect(-10, -10, 10000, 10000);
   //framerate
   fr.update();
-  
+  callChannel(frameend_chan);
   //execution de la simulation
   sim.frame();
   

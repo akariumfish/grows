@@ -1,10 +1,12 @@
-class RandomTryParam {
+class RandomTryParam extends Callable {
   //constructeur avec param values
   sFlt DIFFICULTY = new sFlt(simval, 4);
   sBoo ON = new sBoo(simval, true);
-  RandomTryParam(float d, boolean b) {
-    DIFFICULTY.set(d); ON.set(b);
-  }
+  sFlt test_by_tick = new sFlt(simval, 0);
+  int count = 0;
+  RandomTryParam(float d, boolean b) { DIFFICULTY.set(d); ON.set(b); addChannel(frameend_chan); }
+  boolean test() { if(ON.get()) count++; test_by_tick.set(count / sim.tick_by_frame.get()); return ON.get() && crandom(DIFFICULTY.get()) > 0.5; }
+  void answer(Channel chan, float v) { count = 0; test_by_tick.set(0); }
 }
 
 class GrowerComu extends Community {
@@ -70,6 +72,24 @@ class GrowerComu extends Community {
           .getDrawer()
         .getPanel()
       .addSeparator(10)
+      .addDrawer(30)
+        .addText("test by tick: ", 140, 0)
+          .getDrawer()
+        .getPanel()
+      .addDrawer(60)
+        .addText("grow try: ", 30, 0)
+          .setValue(growP.test_by_tick)
+          .getDrawer()
+        .addText("sprout try: ", 200, 0)
+          .setValue(sproutP.test_by_tick)
+          .getDrawer()
+        .addText("stop try: ", 30, 30)
+          .setValue(stopP.test_by_tick)
+          .getDrawer()
+        .addText("leaf try: ", 200, 30)
+          .setValue(leafP.test_by_tick)
+          .getDrawer()
+        .getPanel()
       ;
     grower_nb_label = new sLabel(cp5) { 
         public void answer(Channel channel, float value) {
@@ -89,21 +109,18 @@ class GrowerComu extends Community {
     //creation de macro custom
     plane.build_panel
       .addDrawer(30)
-        .addButton("GROWER SHAPE", 30, 0)
-          .setSize(150, 30)
+        .addButton("SHAPE", 260, 0)
+          .setSize(120, 30)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { newMacroGrowerINShape(); } } )
           .getDrawer()
-        .addButton("GROWER MOUV", 200, 0)
-          .setSize(150, 30)
+        .addButton("BEHAVIOR", 130, 0)
+          .setSize(120, 30)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { newMacroGrowerINMove(); } } )
           .getDrawer()
-        .getPanel()
-      .addSeparator(10)
-      .addDrawer(30)
-        .addButton(" GROWER OUT", 30, 0)
-          .setSize(150, 30)
+        .addButton("LIFE", 0, 0)
+          .setSize(120, 30)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { newMacroGrowerOUT(); } } )
           .getDrawer()
@@ -139,10 +156,6 @@ class GrowerComu extends Community {
     MacroCUSTOM m = new MacroCUSTOM(plane)
       .setLabel("GROWER Move")
       .setWidth(150)
-      .addMCsBooControl()
-        .setValue(create_floc)
-        .setText("create")
-        .getMacro()
       ;
     addRngTry(m, growP, "grow");
     addRngTry(m, sproutP, "sprout");
@@ -152,12 +165,12 @@ class GrowerComu extends Community {
   }
   
   void addRngTry(MacroCUSTOM m, RandomTryParam r, String s) {
-    m.addMCsFltControl()
-        .setValue(r.DIFFICULTY)
+    m.addMCsBooControl()
+        .setValue(r.ON)
         .setText(s)
         .getMacro()
-      .addMCsBooControl()
-        .setValue(r.ON)
+      .addMCsFltControl()
+        .setValue(r.DIFFICULTY)
         .setText("")
         .getMacro()
       ;
@@ -165,15 +178,15 @@ class GrowerComu extends Community {
   
   void newMacroGrowerOUT() {
     new MacroCUSTOM(plane)
-      .setLabel("GROWER OUT")
-      .setWidth(150)
-      .addMCsIntWatcher()
-        .addValue(activeEntity)
-        .setText("  active")
-        .getMacro()
+      .setLabel("GROWER LIFE")
+      .setWidth(280)
       .addMCsIntWatcher()
         .addValue(activeGrower)
-        .setText("  grover")
+        .setText("   growing")
+        .getMacro()
+      .addMCsBooControl()
+        .setValue(create_floc)
+        .setText("create floc")
         .getMacro()
       ;
   }
@@ -247,7 +260,7 @@ class Grower extends Entity {
     } else start = 1;
     
     //grow
-    if (com().growP.ON.get() && start == 1 && !end && sprouts == 0 && crandom(com().growP.DIFFICULTY.get()) > 0.5) {
+    if (start == 1 && !end && sprouts == 0 && com().growP.test()) {
       Grower n = com().newEntity();
       if (n != null) {
         n.define(grows, dir);
@@ -256,7 +269,7 @@ class Grower extends Entity {
     }
     
     // sprout
-    if (com().sproutP.ON.get() && start == 1 && !end && crandom(com().sproutP.DIFFICULTY.get()) > 0.5) {
+    if (start == 1 && !end && com().sproutP.test()) {
       Grower n = com().newEntity();
       if (n != null) {
         PVector _p = new PVector(0, 0);
@@ -274,7 +287,7 @@ class Grower extends Entity {
     }
     
     // leaf
-    if (com().leafP.ON.get() && start == 1 && !end && crandom(com().leafP.DIFFICULTY.get()) > 0.5) {
+    if (start == 1 && !end && com().leafP.test()) {
       PVector _p = new PVector(0, 0);
       PVector _d = new PVector(0, 0);
       _d.add(grows).sub(pos);
@@ -289,7 +302,7 @@ class Grower extends Entity {
     }
     
     // stop growing
-    if (com().stopP.ON.get() && start == 1 && !end && sprouts == 0 && crandom(com().stopP.DIFFICULTY.get()) > 0.5) {
+    if (start == 1 && !end && sprouts == 0 && com().stopP.test()) {
       if (com().create_floc.get()) {
         Floc f = fcom.newEntity();
         if (f != null) {
