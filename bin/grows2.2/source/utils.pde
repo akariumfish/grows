@@ -4,6 +4,29 @@
 //#######################################################################
 
 
+String trimStringFloat(float f) {
+  String s;
+  if (f%1.0 == 0.0) s = nfc(int(f)); else s = str(f);
+  String end = "";
+  for (int i = s.length()-1; i > 0 ; i--) {
+    if (s.charAt(i) == 'E') {
+      end = s.substring(i, s.length());
+    }
+  }
+  for (int i = 0; i < s.length() ; i++) {
+    if (s.charAt(i) == '.' && s.length() - i > 4) {
+      int m = 4;
+      if (f >= 10) m -= 1;
+      if (f >= 100) m -= 1;
+      if (f >= 1000) m -= 2;
+      s = s.substring(0, i+m);
+      s = s + end;
+      return s;
+    }
+  }
+  return s;
+}
+
 float soothedcurve(float rad, float dst) {
   float val = max(0, rad*rad - dst*dst);
   return val * val * val;
@@ -22,33 +45,7 @@ float distancePointToPoint(float xa, float ya, float xb, float yb) {
   return sqrt( pow((xb-xa), 2) + pow((yb-ya), 2) );
 }
 
-float crandom(float d) {
-  return pow(random(1.0), d) ;
-}
-
-/*
-
-crandom results :
-difficulty   nb > 0.5 pour 1000
-       0.04 999
-       0.08 999
-       0.16 986
-       0.32 885
-       0.64 661
-       1.28 418
-       2.56 236
-       5.12 126
-      10.24 65
-      20.48 33
-      40.96 16
-      81.92 8
-     163.84 4
-     327.68 2
-     655.36 1
-    1310.72 0
-    2621.44 0
-
-*/
+float crandom(float d) { return pow(random(1.0), d); }
 
 // auto indexing
 int used_index = 0;
@@ -96,10 +93,14 @@ class SpecialValue {
   ArrayList<sInt> sintlist = new ArrayList<sInt>();
   ArrayList<sFlt> sfltlist = new ArrayList<sFlt>();
   ArrayList<sBoo> sboolist = new ArrayList<sBoo>();
+  ArrayList<sVec> sveclist = new ArrayList<sVec>();
+  ArrayList<sStr> sstrlist = new ArrayList<sStr>();
   void unFlagChange() {
     for (sInt i : sintlist) i.has_changed = false;
     for (sFlt i : sfltlist) i.has_changed = false;
-    for (sBoo i : sboolist) i.has_changed = false; }
+    for (sBoo i : sboolist) i.has_changed = false;
+    for (sVec i : sveclist) i.has_changed = false; 
+    for (sStr i : sstrlist) i.has_changed = false; }
 }
 
 
@@ -108,7 +109,9 @@ class sInt {
   SpecialValue save;
   int val = 0;
   int id = 0;
+  String name = "int";
   sInt(SpecialValue s, int v) { save = s; val = v; id = save.sintlist.size(); save.sintlist.add(this); }
+  sInt(SpecialValue s, int v, String n) { name = n; save = s; val = v; id = save.sintlist.size(); save.sintlist.add(this); }
   int get() { return val; }
   void set(int v) { if (v != val) has_changed = true; val = v; }
 }
@@ -118,7 +121,9 @@ class sFlt {
   SpecialValue save;
   float val = 0;
   int id = 0;
+  String name = "flt";
   sFlt(SpecialValue s, float v) { save = s; val = v; id = save.sfltlist.size(); save.sfltlist.add(this); }
+  sFlt(SpecialValue s, float v, String n) { name = n; save = s; val = v; id = save.sfltlist.size(); save.sfltlist.add(this); }
   float get() { return val; }
   void set(float v) { if (v != val) has_changed = true; val = v; }
 }
@@ -128,11 +133,36 @@ class sBoo {
   SpecialValue save;
   boolean val = false;
   int id = 0;
+  String name = "boo";
   sBoo(SpecialValue s, boolean v) { save = s; val = v; id = save.sboolist.size(); save.sboolist.add(this); }
+  sBoo(SpecialValue s, boolean v, String n) { name = n; save = s; val = v; id = save.sboolist.size(); save.sboolist.add(this); }
   boolean get() { return val; }
   void set(boolean v) { if (v != val) { has_changed = true; val = v; } }
 }
 
+class sVec {
+  boolean has_changed = false;
+  SpecialValue save;
+  PVector val = new PVector();
+  int id = 0;
+  String name = "vec";
+  sVec(SpecialValue s, PVector v) { save = s; val = v; id = save.sveclist.size(); save.sveclist.add(this); }
+  sVec(SpecialValue s, PVector v, String n) { name = n; save = s; val = v; id = save.sveclist.size(); save.sveclist.add(this); }
+  PVector get() { return new PVector(val.x, val.y); }
+  void set(PVector v) { if (v.x != val.x || v.y != val.y) { has_changed = true; val.x = v.x; val.y = v.y; } }
+}
+
+class sStr {
+  boolean has_changed = false;
+  SpecialValue save;
+  String val = new String();
+  int id = 0;
+  String name = "str";
+  sStr(SpecialValue s, String v) { save = s; val = v; id = save.sstrlist.size(); save.sstrlist.add(this); }
+  sStr(SpecialValue s, String v, String n) { name = n; save = s; val = v; id = save.sstrlist.size(); save.sstrlist.add(this); }
+  String get() { return new String(val); }
+  void set(String v) { if (!v.equals(val)) { has_changed = true; val = v; } }
+}
 
 
 
@@ -141,31 +171,45 @@ class sBoo {
 //#######################################################################
 
 
+int SV_start_bloc = 3;
+
 void saving(SpecialValue sv, String file) {
-  String[] sl = new String[sv.sintlist.size() + sv.sfltlist.size() + sv.sboolist.size()];
-  //for (String s : sl) s = new String(); //??maybe useless?
+  String[] sl = new String[SV_start_bloc + sv.sintlist.size() + sv.sfltlist.size() + sv.sboolist.size()];
+  sl[0] = str(sv.sintlist.size());
+  sl[1] = str(sv.sfltlist.size());
+  sl[2] = str(sv.sboolist.size());
   for (sInt i : sv.sintlist) {
-    sl[i.id] = str(i.get());
+    sl[SV_start_bloc + i.id] = str(i.get());
   }
   for (sFlt i : sv.sfltlist) {
-    sl[sv.sintlist.size() + i.id] = str(i.get());
+    sl[SV_start_bloc + sv.sintlist.size() + i.id] = str(i.get());
   }
   for (sBoo i : sv.sboolist) {
-    sl[sv.sintlist.size() + sv.sfltlist.size() + i.id] = str(i.get());
+    sl[SV_start_bloc + sv.sintlist.size() + sv.sfltlist.size() + i.id] = str(i.get());
   }
   saveStrings(file, sl);
 }
 void loading(SpecialValue s, String file) {
+  
   String[] sl = loadStrings(file);
-  if (sl.length != s.sintlist.size() + s.sfltlist.size() + s.sboolist.size()) return;
+  
+  int intlsize = int(sl[0]);
+  int fltlsize = int(sl[1]);
+  int boolsize = int(sl[2]);
+  
+  if (intlsize != s.sintlist.size()) return;
+  if (fltlsize != s.sfltlist.size()) return;
+  if (boolsize != s.sboolist.size()) return;
+  if (sl.length < SV_start_bloc + intlsize + fltlsize + boolsize) return;
+  
   for (sInt i : s.sintlist) {
-    i.set(int(sl[i.id]));
+    i.set(int(sl[SV_start_bloc + i.id]));
   }
   for (sFlt i : s.sfltlist) {
-    i.set(float(sl[s.sintlist.size() + i.id]));
+    i.set(float(sl[SV_start_bloc + s.sintlist.size() + i.id]));
   }
   for (sBoo i : s.sboolist) {
-    i.set(boolean(sl[s.sintlist.size() + s.sfltlist.size() + i.id]));
+    i.set(boolean(sl[SV_start_bloc + s.sintlist.size() + s.sfltlist.size() + i.id]));
   }
 }
 
@@ -179,10 +223,9 @@ void loading(SpecialValue s, String file) {
 
 
 class sGraph {
-  //permet l'enregistrement de donné pour le graphique
   int larg =             1200;
-  int[] graph  = new int[1200];
-  int[] graph2 = new int[1200];
+  int[] graph  = new int[larg];
+  int[] graph2 = new int[larg];
   int gc = 0;
   int max = 10;
   
@@ -195,6 +238,7 @@ class sGraph {
       graph2[i] = 0;
     }
     max = 10;
+    //addChannel(c);
   }
   
   void draw() {

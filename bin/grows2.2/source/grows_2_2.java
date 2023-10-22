@@ -14,7 +14,7 @@ import java.io.InputStream;
 import java.io.OutputStream; 
 import java.io.IOException; 
 
-public class grows_2_1 extends PApplet {
+public class grows_2_2 extends PApplet {
 
 /*
 
@@ -22,25 +22,18 @@ public class grows_2_1 extends PApplet {
 */
 
 ControlP5 cp5; //l'objet main pour les menu
-SpecialValue simval = new SpecialValue();
-Camera cam = new Camera();
-ComunityList comlist;
+
+SpecialValue simval = new SpecialValue(); 
+
+sInput kb;
+Camera cam;
+sFramerate fr;
+
+Simulation sim;
+MacroPlane plane;
 
 Channel frame_chan = new Channel();
-Channel tick_chan = new Channel();
-
-sGraph graph = new sGraph();
-
-sFlt tick = new sFlt(simval, 0); //conteur de tour depuis le dernier reset ou le debut
-sBoo pause = new sBoo(simval, false); //permet d'interompre le defilement des tour
-sFlt tick_by_frame = new sFlt(simval, 16); //nombre de tour a executé par frame
-float tick_pile = 0; //pile des tour
-sInt SEED = new sInt(simval, 548651008); //seed pour l'aleatoire
-sInt framerate = new sInt(simval, 0);
-sBoo auto_reset = new sBoo(simval, true);
-sBoo auto_reset_rng_seed = new sBoo(simval, true);
-sInt auto_reset_turn = new sInt(simval, 4000);
-sBoo auto_screenshot = new sBoo(simval, false);
+Channel frameend_chan = new Channel();
 
 GrowerComu gcom;
 FlocComu fcom;
@@ -49,111 +42,142 @@ BoxComu bcom;
 public void setup() {//executé au demarage
   //size(1600, 900);//taille de l'ecran
   
-  setupInput();//voir input plus bas
   //pas d'antialiasing
   //smooth();//anti aliasing
-  frameRate(60);
   
-  init_panel("Menu");
+  cam = new Camera();
+  kb = new sInput();
+  fr = new sFramerate(60);
   
-  init_canvas();
+  cp5 = new ControlP5(this);
+  init_Tabs("Menu");
   
-  comlist = new ComunityList();
+  sim = new Simulation();
+  plane = new MacroPlane();
   
-  gcom = new GrowerComu(comlist);
-  fcom = new FlocComu(comlist);
-  bcom = new BoxComu(comlist);
+  gcom = new GrowerComu(sim);
+  fcom = new FlocComu(sim);
+  //bcom = new BoxComu(sim);
   
-  
-  
-  graph.init();
+  sim.building();
   
   loading(simval, "save.txt");
   
-  reset();
+  sim.reset();
+  
+  background(0);//fond noir
 }
+
 
 public void draw() {//executé once by frame
   background(0);//fond noir
+  //fill(0,0,0,3);
+  //noStroke();
+  //rect(-10, -10, 10000, 10000);
+  //framerate
+  fr.update();
+  callChannel(frameend_chan);
+  //execution de la simulation
+  sim.frame();
   
-  //drive l'execution
-  if (!pause.get()) {
-    tick_pile += tick_by_frame.get();
-    
-    //auto screenshot before reset
-    if (auto_reset.get() && auto_reset_turn.get() == tick.get() + tick_by_frame.get() + tick_by_frame.get() && auto_screenshot.get()) {
-        cam.screenshot = true; }
-    
-    while (tick_pile >= 1) {
-      //tick call
-      callChannel(tick_chan);
-      
-      //tick communitys
-      comlist.tick();
-      
-      tick.set(tick.get()+1);
-      tick_pile--;
-      
-      //auto reset
-      if (auto_reset.get() && auto_reset_turn.get() <= tick.get()) {
-        if (auto_reset_rng_seed.get()) {
-          SEED.set(PApplet.parseInt(random(1000000000)));
-        }
-        reset();
-      }
-    }
-    
-    //run_each_unpaused_frame
-    
-    //get value pour le graph
-    graph.update(gcom.active_Entity_Nb(), gcom.grower_Nb());
-    
-    //add halo for each entity of floc community
-    can.drawHalo(fcom);
-  }
+  //frame update des macros
+  plane.frame();
   
-  //update des macros
-  mList.update();
-  
-  //run_each_frame
+  //call each frame
   callChannel(frame_chan);
   
   // affichage
   // apply camera view
   cam.pushCam();
   
-  //canvas
-  can.drawCanvas();
-  
-  //community
-  comlist.draw();
+  //simulation draw to camera
+  sim.draw_to_cam();
   
   //pop cam view and cam updates
   cam.popCam();
   
-  graph.draw();
+  //simulation draw to screen
+  sim.draw_to_screen();
   
-  mList.drawing();
+  //macro drawings
+  plane.drawing();
   
   //framerate:
   fill(255); textSize(16);
-  text(PApplet.parseInt(frameRate),10,height - 10 );
+  text(PApplet.parseInt(fr.get()),10,height - 10 );
   
   //info
   if (!cp5.getTab("default").isActive()) {
     textSize(24);
     text("Click somewhere then hit ESC to quit",700,height - 30 );
   }
+  
+  //reset des flag de changement des svalue
   simval.unFlagChange();
   
-  framerate.set(PApplet.parseInt(frameRate));
-  
-  inputUpdate(); //voir l'onglet input
+  kb.update(); // input
 }
 
-public void reset() {
-  comlist.comunity_reset();
-  tick.set(0);
+
+
+
+//#######################################################################
+//##                           FRAMERATE                               ##
+//#######################################################################
+
+
+class sFramerate {
+  int frameRate_cible = 60;
+  
+  float[] frameR_history = new float[frameRate_cible];
+  int hist_it = 0;
+  int frameR_update_rate = 10; // frames between update 
+  int frameR_update_counter = frameR_update_rate;
+  
+  float current_time = 0;
+  float prev_time = 0;
+  float frame_length = 0;
+  
+  float frame_median = 0;
+  sInt value = new sInt(simval, 0);
+  
+  sInt time = new sInt(simval, 0);
+  float reset_time = 0;
+  
+  sFlt tickrate = new sFlt(simval, 0);
+  
+  sFramerate(int c) {
+    frameRate_cible = c;
+    frameRate(frameRate_cible);
+    for (int i = 0 ; i < frameR_history.length ; i++) frameR_history[i] = 1000/frameRate_cible;
+  }
+  
+  public float get() { return value.get(); }
+  
+  public void reset() { time.set(0); reset_time = millis(); }
+  
+  public void update() {
+    
+    current_time = millis();
+    frame_length = current_time - prev_time;
+    prev_time = current_time;
+    
+    time.set(PApplet.parseInt((current_time - reset_time) / 1000));
+    
+    frameR_history[hist_it] = frame_length;
+    hist_it++;
+    if (hist_it >= frameR_history.length) { hist_it = 0; }
+    
+    if (frameR_update_counter == frameR_update_rate) {
+      frame_median = 0;
+      for (int i = 0 ; i < frameR_history.length ; i++)  frame_median += frameR_history[i];
+      frame_median /= frameR_history.length;
+      value.set(PApplet.parseInt(1000/frame_median));
+      tickrate.set(value.get() * sim.tick_by_frame.get());
+      frameR_update_counter = 0;
+    }
+    frameR_update_counter++;
+  }
 }
 
 
@@ -266,19 +290,19 @@ class Camera {
     }
       
     //permet le cliquer glisser le l'ecran
-    if (mouseButtons[0] && GRAB) { 
+    if (kb.mouseButtons[0] && GRAB) { 
       cam_pos.add(mouseX - pmouseX, mouseY - pmouseY); 
       pos_x.set(cam_pos.x);
       pos_y.set(cam_pos.y);
     }
     
     //permet le zoom
-    if (mouseWheelUp) { 
+    if (kb.mouseWheelUp) { 
       cam_scale.set(cam_scale.get()*1/ZOOM_FACTOR); cam_pos.mult(1/ZOOM_FACTOR); callChannel(zoom_chan);
       pos_x.set(cam_pos.x);
       pos_y.set(cam_pos.y);
     }
-    if (mouseWheelDown) {
+    if (kb.mouseWheelDown) {
       cam_scale.set(cam_scale.get()*ZOOM_FACTOR); cam_pos.mult(ZOOM_FACTOR); callChannel(zoom_chan);
       pos_x.set(cam_pos.x);
       pos_y.set(cam_pos.y);
@@ -292,178 +316,143 @@ class Camera {
 //##                             INPUT                                 ##
 //#######################################################################
 
-//ici c'est super mal foutu
-//mais sa gere les boutton du clavier et de la sourie
 
-boolean[] keysButtons;
-boolean[] keysClick;
-boolean[] keysJClick;
-boolean[] keysUClick;
-boolean[] keysJUClick;
-boolean[] mouseButtons;
-boolean[] mouseClick;
-boolean[] mouseJClick;
-boolean[] mouseUClick;
-boolean[] mouseJUClick;
-boolean mouseMove = false;
-boolean mouseWheelUp = false;
-boolean mouseWheelDown = false;
-PVector mouseCoord = new PVector(0,0);
-PVector mouseGridCoord = new PVector(0,0);
+public void mouseWheel(MouseEvent event) { kb.mouseWheelEvent(event); }  
+public void keyPressed() { kb.keyPressedEvent(); }  
+public void keyReleased() { kb.keyReleasedEvent(); }
+public void mousePressed() { kb.mousePressedEvent(); }
+public void mouseReleased() { kb.mouseReleasedEvent(); }
+public void mouseDragged() { kb.mouseDraggedEvent(); }
+public void mouseMoved() { kb.mouseMovedEvent(); }
 
-int keyNb = 10;
-
-public void inputUpdate() {
-  mouseCoord.x = mouseX; mouseCoord.y = mouseY;
-  mouseWheelUp = false; mouseWheelDown = false;
-  if (mouseX == pmouseX && mouseY == pmouseY) {mouseMove = false;}
-  for (int i = mouseClick.length-1; i >= 0; i--) {if (mouseClick[i] == true && mouseJClick[i] == false) {mouseJClick[i] = true;}}
-  for (int i = mouseJClick.length-1; i >= 0; i--) {if (mouseClick[i] == true && mouseJClick[i] == true) {mouseClick[i] = false; mouseJClick[i] = false;}}
-  for (int i = mouseUClick.length-1; i >= 0; i--) {if (mouseUClick[i] == true && mouseJUClick[i] == false) {mouseJUClick[i] = true;}}
-  for (int i = mouseJUClick.length-1; i >= 0; i--) {if (mouseUClick[i] == true && mouseJUClick[i] == true) {mouseUClick[i] = false; mouseJUClick[i] = false;}}
-  for (int i = keysClick.length-1; i >= 0; i--) {if (keysClick[i] == true) {keysJClick[i] = true;}}
-  for (int i = keysJClick.length-1; i >= 0; i--) {if (keysClick[i] == true && keysJClick[i] == true) {keysClick[i] = false; keysJClick[i] = false;}}
-  for (int i = keysUClick.length-1; i >= 0; i--) {if (keysUClick[i] == true) {keysJUClick[i] = true;}}
-  for (int i = keysJUClick.length-1; i >= 0; i--) {if (keysUClick[i] == true && keysJUClick[i] == true) {keysUClick[i] = false; keysJUClick[i] = false;}}
-}
-
-public void setupInput() {
-  keysButtons = new boolean[keyNb];
-  for (int i = keysButtons.length-1; i >= 0; i--) {keysButtons[i] = false;}
-  keysClick = new boolean[keyNb];
-  for (int i = keysClick.length-1; i >= 0; i--) {keysClick[i] = false;}
-  keysJClick = new boolean[keyNb];
-  for (int i = keysJClick.length-1; i >= 0; i--) {keysJClick[i] = false;}
-  keysUClick = new boolean[keyNb];
-  for (int i = keysUClick.length-1; i >= 0; i--) {keysUClick[i] = false;}
-  keysJUClick = new boolean[keyNb];
-  for (int i = keysJUClick.length-1; i >= 0; i--) {keysJUClick[i] = false;}
-  mouseButtons = new boolean[3];
-  for (int i = mouseButtons.length-1; i >= 0; i--) {mouseButtons[i] = false;}
-  mouseClick = new boolean[3];
-  for (int i = mouseClick.length-1; i >= 0; i--) {mouseClick[i] = false;}
-  mouseJClick = new boolean[3];
-  for (int i = mouseJClick.length-1; i >= 0; i--) {mouseJClick[i] = false;}
-  mouseUClick = new boolean[3];
-  for (int i = mouseUClick.length-1; i >= 0; i--) {mouseUClick[i] = false;}
-  mouseJUClick = new boolean[3];
-  for (int i = mouseJUClick.length-1; i >= 0; i--) {mouseJUClick[i] = false;}
-}
-
-public void mouseWheel(MouseEvent event) {
-  float e = event.getAmount();
-  if (e>0) {
-    mouseWheelUp =true; 
-    mouseWheelDown =false;
+public class sInput {
+  boolean[] keysButtons, keysClick, keysJClick, keysUClick, keysJUClick;
+  boolean[] mouseButtons, mouseClick, mouseJClick, mouseUClick, mouseJUClick;
+  boolean mouseMove = false;
+  boolean mouseWheelUp = false;
+  boolean mouseWheelDown = false;
+  
+  char[] keys_code = { 'a', 'b', 'c', 'd'};
+  int keyNb = keys_code.length;
+  
+  public boolean getButton(char c) {
+    for (int i = 0 ; i < keys_code.length ; i++)
+      if (keys_code[i] == c && keysButtons[i]) return true;
+    return false; }
+  
+  public boolean getClick(char c) {
+    for (int i = 0 ; i < keys_code.length ; i++)
+      if (keys_code[i] == c && keysClick[i]) return true;
+    return false; }
+  
+  public boolean getUnclick(char c) {
+    for (int i = 0 ; i < keys_code.length ; i++)
+      if (keys_code[i] == c && keysUClick[i]) return true;
+    return false; }
+  
+  public sInput() {//PApplet app) {
+    //app.registerMethod("pre", this);
+    keysButtons = new boolean[keyNb];
+    keysClick = new boolean[keyNb]; keysJClick = new boolean[keyNb];
+    keysUClick = new boolean[keyNb]; keysJUClick = new boolean[keyNb];
+    
+    for (int i = keyNb-1; i >= 0; i--) {
+      keysButtons[i] = false;
+      keysClick[i] = false; keysJClick[i] = false;
+      keysUClick[i] = false; keysJUClick[i] = false;
+    }
+    
+    mouseButtons = new boolean[3];
+    mouseClick = new boolean[3]; mouseJClick = new boolean[3];
+    mouseUClick = new boolean[3]; mouseJUClick = new boolean[3];
+    
+    for (int i = 2; i >= 0; i--) {
+      mouseButtons[i] = false;
+      mouseClick[i] = false; mouseJClick[i] = false;
+      mouseUClick[i] = false; mouseJUClick[i] = false;
+    }
   }
-  if (e<0) {
-    mouseWheelDown = true; 
-    mouseWheelUp=false;
+  
+  public void update() {
+    mouseWheelUp = false; mouseWheelDown = false;
+    if (mouseX == pmouseX && mouseY == pmouseY) {mouseMove = false;}
+    for (int i = 2; i >= 0; i--) {
+      if (mouseClick[i] == true && mouseJClick[i] == false) {mouseJClick[i] = true;}
+      if (mouseClick[i] == true && mouseJClick[i] == true) {mouseClick[i] = false; mouseJClick[i] = false;}
+      if (mouseUClick[i] == true && mouseJUClick[i] == false) {mouseJUClick[i] = true;}
+      if (mouseUClick[i] == true && mouseJUClick[i] == true) {mouseUClick[i] = false; mouseJUClick[i] = false;}
+    }
+    for (int i = keyNb-1; i >= 0; i--) {
+      if (keysClick[i] == true) {keysJClick[i] = true;}
+      if (keysClick[i] == true && keysJClick[i] == true) {keysClick[i] = false; keysJClick[i] = false;}
+      if (keysUClick[i] == true) {keysJUClick[i] = true;}
+      if (keysUClick[i] == true && keysJUClick[i] == true) {keysUClick[i] = false; keysJUClick[i] = false;}
+    }
   }
-}  
-
-public void keyPressed()
-{
-  if(key==CODED) {
-  if(keyCode==UP) {
-    keysButtons[0]=true;
-    keysClick[0]=true; }
-  if(keyCode==DOWN) {
-    keysButtons[1]=true;
-    keysClick[1]=true; }
-  if(keyCode==LEFT) {
-    keysButtons[2]=true;
-    keysClick[2]=true; }
-  if(keyCode==RIGHT) {
-    keysButtons[3]=true;
-    keysClick[3]=true; } }
-  if(key=='w') {
-    keysButtons[4]=true;
-    keysClick[4]=true; }
-  if(key=='c') {
-    keysButtons[5]=true;
-    keysClick[5]=true; }
-  if(key==' ') {
-    keysButtons[6]=true;
-    keysClick[6]=true; }
-  if(key=='a') {
-    keysButtons[7]=true;
-    keysClick[7]=true; }
-  if(key=='p') {
-    keysButtons[8]=true;
-    keysClick[8]=true; }
-  if(key=='h') {
-    keysButtons[9]=true;
-    keysClick[9]=true; }
+  
+  public void mouseWheelEvent(MouseEvent event) {
+    float e = event.getAmount();
+    if (e>0) {
+      mouseWheelUp =true; 
+      mouseWheelDown =false;
+    }
+    if (e<0) {
+      mouseWheelDown = true; 
+      mouseWheelUp=false;
+    }
+  }  
+  
+  public void keyPressedEvent()
+  {
+    for (int i = 0; i < keyNb ; i++)
+      if (key==keys_code[i]) {
+        keysButtons[i]=true;
+        keysClick[i]=true;
+      }
+  }
+  
+  public void keyReleasedEvent()
+  {
+    for (int i = 0; i < keyNb ; i++)
+      if (key==keys_code[i]) {
+        keysButtons[0]=false;
+        keysUClick[0]=true; 
+      }
+  }
+  
+  public void mousePressedEvent()
+  {
+    if(mouseButton==LEFT) {
+      mouseButtons[0]=true;
+      mouseClick[0]=true; }
+    if(mouseButton==RIGHT) {
+      mouseButtons[1]=true;
+      mouseClick[1]=true; }
+    if(mouseButton==CENTER) {
+      mouseButtons[2]=true;
+      mouseClick[2]=true; }
+  }
+  
+  public void mouseReleasedEvent()
+  {
+    if(mouseButton==LEFT) {
+      mouseButtons[0]=false;
+      mouseUClick[0]=true; }
+    if(mouseButton==RIGHT) {
+      mouseButtons[1]=false;
+      mouseUClick[1]=true; }
+    if(mouseButton==CENTER) {
+      mouseButtons[2]=false;
+      mouseUClick[2]=true; }
+  }
+  
+  public void mouseDraggedEvent() { mouseMove = true; }
+  
+  public void mouseMovedEvent() { mouseMove = true; }
 }
-
-public void keyReleased()
-{
-  if(key==CODED) {
-  if(keyCode==UP) {
-    keysButtons[0]=false;
-    keysUClick[0]=true; }
-  if(keyCode==DOWN) {
-    keysButtons[1]=false;
-    keysUClick[1]=true; }
-  if(keyCode==LEFT) {
-    keysButtons[2]=false;
-    keysUClick[2]=true; }
-  if(keyCode==RIGHT) {
-    keysButtons[3]=false;
-    keysUClick[3]=true; } }
-  if(key=='w') {
-    keysButtons[4]=false;
-    keysUClick[4]=true; }
-  if(key=='c') {
-    keysButtons[5]=false;
-    keysUClick[5]=true; }
-  if(key==' ') {
-    keysButtons[6]=false;
-    keysUClick[6]=true; }
-  if(key=='a') {
-    keysButtons[7]=false;
-    keysUClick[7]=true; }
-  if(key=='p') {
-    keysButtons[8]=false;
-    keysUClick[8]=true; }
-  if(key=='h') {
-    keysButtons[9]=false;
-    keysUClick[9]=true; }
-}
-
-public void mousePressed()
-{
-  if(mouseButton==LEFT) {
-    mouseButtons[0]=true;
-    mouseClick[0]=true; }
-  if(mouseButton==RIGHT) {
-    mouseButtons[1]=true;
-    mouseClick[1]=true; }
-  if(mouseButton==CENTER) {
-    mouseButtons[2]=true;
-    mouseClick[2]=true; }
-}
-
-public void mouseReleased()
-{
-  if(mouseButton==LEFT) {
-    mouseButtons[0]=false;
-    mouseUClick[0]=true; }
-  if(mouseButton==RIGHT) {
-    mouseButtons[1]=false;
-    mouseUClick[1]=true; }
-  if(mouseButton==CENTER) {
-    mouseButtons[2]=false;
-    mouseUClick[2]=true; }
-}
-
-public void mouseDragged() { mouseMove = true; }
-
-public void mouseMoved() { mouseMove = true; }
 class BoxComu extends Community {
   
-  BoxComu(ComunityList _c) { super(_c, "Box", 1000); init();
+  BoxComu(Simulation _c) { super(_c, "Box", 1000); init();
     
     
   }
@@ -549,6 +538,7 @@ class Box extends Entity {
   public Box clear() { return this; }
   public BoxComu com() { return ((BoxComu)com); }
 }
+
 class FlocComu extends Community {
   
   sFlt POURSUITE = new sFlt(simval, 0.6f);
@@ -556,12 +546,12 @@ class FlocComu extends Community {
   sFlt SPACING = new sFlt(simval, 150);
   sFlt SPEED = new sFlt(simval, 2);
   sInt LIMIT = new sInt(simval, 400);
+  sInt AGE = new sInt(simval, 2000);
+  sFlt HALO_SIZE = new sFlt(simval, 20);
+  sFlt HALO_DENS = new sFlt(simval, 0.2f);
   
   sBoo DRAWMODE_DEF = new sBoo(simval, true);
   sBoo DRAWMODE_DEBUG = new sBoo(simval, false);
-  
-  sFlt HALO_SIZE = new sFlt(simval, 20);
-  sFlt HALO_DENS = new sFlt(simval, 0.2f);
   
   sBoo create_grower = new sBoo(simval, true);
   sBoo point_to_mouse = new sBoo(simval, false);
@@ -569,7 +559,12 @@ class FlocComu extends Community {
   
   int startbox = 400;
   
-  FlocComu(ComunityList _c) { super(_c, "Floc", 100); init();
+  FlocComu(Simulation _c) { super(_c, " Floc ", 100); init();
+    
+    init_canvas();
+  }
+  
+  public void custom_build() {
     panel.addSeparator(1)
       .addDrawer(20)
         .addText("Affichage:", 0, 0)
@@ -591,6 +586,8 @@ class FlocComu extends Community {
       .addValueController("LIMIT ", sMode.FACTOR, 2, 1.2f, LIMIT)
       .addSeparator(5)
       .addValueController("SPEED ", sMode.FACTOR, 2, 1.2f, SPEED)
+      .addSeparator(5)
+      .addValueController("AGE ", sMode.INCREMENT, 100, 10, AGE)
       .addSeparator(10)
       .addDrawer(20)
         .addSwitch("CREATE GROWER", 90, 0)
@@ -611,14 +608,118 @@ class FlocComu extends Community {
         .getPanel()
       .addSeparator(10)
       ;
+      
+    //creation de macro custom
+    plane.build_panel
+      .addDrawer(30)
+        .addButton("LIFE", 0, 0)
+          .setSize(120, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroFlocIN1(); } } )
+          .getDrawer()
+        .addButton("MOVE", 130, 0)
+          .setSize(120, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroFlocIN2(); } } )
+          .getDrawer()
+        .addButton("HALO", 260, 0)
+          .setSize(120, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroFlocIN3(); } } )
+          .getDrawer()
+        .getPanel()
+      .addSeparator(10)
+      ;
+  }
+  
+  //sFlt POURSUITE = new sFlt(simval, 0.6);
+  //sFlt FOLLOW = new sFlt(simval, 0.0036);
+  //sFlt SPACING = new sFlt(simval, 150);
+  //sFlt SPEED = new sFlt(simval, 2);
+  //sInt LIMIT = new sInt(simval, 400);
+  //sFlt HALO_SIZE = new sFlt(simval, 20);
+  //sFlt HALO_DENS = new sFlt(simval, 0.2);
+  
+  public void newMacroFlocIN1() {
+    new MacroCUSTOM(plane)
+      .setLabel("FLOC LIFE")
+      .setWidth(140)
+      .addMCsBooControl()
+        .setValue(create_grower)
+        .setText("create")
+        .getMacro()
+      .addMCsBooControl()
+        .setValue(point_to_mouse)
+        .setText(">mouse")
+        .getMacro()
+      .addMCsBooControl()
+        .setValue(point_to_center)
+        .setText(">center")
+        .getMacro()
+      .addMCsIntControl()
+        .setValue(AGE)
+        .setText("age")
+        .getMacro()
+      ;
     
   }
+  
+  public void newMacroFlocIN2() {
+    new MacroCUSTOM(plane)
+      .setLabel("FLOC MOVE")
+      .setWidth(160)
+      .addMCsFltControl()
+        .setValue(POURSUITE)
+        .setText("pursue")
+        .getMacro()
+      .addMCsFltControl()
+        .setValue(FOLLOW)
+        .setText("follow")
+        .getMacro()
+      .addMCsFltControl()
+        .setValue(SPACING)
+        .setText("space")
+        .getMacro()
+      .addMCsFltControl()
+        .setValue(SPEED)
+        .setText("speed")
+        .getMacro()
+      .addMCsIntControl()
+        .setValue(LIMIT)
+        .setText("limit")
+        .getMacro()
+      ;
+  }
+  
+  public void newMacroFlocIN3() {
+    new MacroCUSTOM(plane)
+      .setLabel("FLOC HALO")
+      .setWidth(160)
+      .addMCsFltControl()
+        .setValue(HALO_SIZE)
+        .setText("size")
+        .getMacro()
+      .addMCsFltControl()
+        .setValue(HALO_DENS)
+        .setText("density")
+        .getMacro()
+      ;
+  }
+  
   public void custom_tick() {
     for (Entity e1 : list)
       for (Entity e2 : list)
         if (e1.id < e2.id && e1 != e2 && e1.active && e2.active)
             ((Floc)e1).pair(((Floc)e2));
           
+  }
+  
+  public void custom_frame() {
+    can.drawHalo(this);
+  }
+  
+  public void custom_cam_draw_pre_entity() {
+    can.drawCanvas();
   }
   
   public Floc build() { return new Floc(this); }
@@ -636,6 +737,7 @@ class Floc extends Entity {
   float halo_density = 0;
   
   int age = 0;
+  int max_age = 2000;
   
   Floc(FlocComu c) { super(c); }
   
@@ -679,6 +781,7 @@ class Floc extends Entity {
   
   public Floc init() {
     age = 0;
+    max_age = com().AGE.get();
     halo_size = com().HALO_SIZE.get();
     halo_density = com().HALO_DENS.get();
     halo_size += random(com().HALO_SIZE.get());
@@ -692,10 +795,10 @@ class Floc extends Entity {
   }
   public Floc tick() {
     age++;
-    if (age > 2000) {
+    if (age > max_age) {
       if (com().create_grower.get()) {
         Grower ng = gcom.newEntity();
-        if (ng != null) ng.define(new PVector(pos.x, pos.y), new PVector(1, 0).rotate(random(2*PI)));
+        if (ng != null) ng.define(new PVector(pos.x, pos.y), new PVector(1, 0).rotate(mov.heading()));
       }
       destroy();
     }
@@ -729,6 +832,11 @@ class Floc extends Entity {
 
 
 
+//#######################################################################
+//##          ROTATING TO ANGLE CIBLE BY SHORTEST DIRECTION            ##
+//#######################################################################
+
+
 public float mapToCircularValues(float current, float cible, float increment, float start, float stop) {
   if (start > stop) {float i = start; start = stop; stop = i;}
   increment = abs(increment);
@@ -759,13 +867,179 @@ public float mapToCircularValues(float current, float cible, float increment, fl
   }
   return cible;
 }
-class RandomTryParam {
+
+
+
+//#######################################################################
+//##                              CANVAS                               ##
+//#######################################################################
+
+
+Canvas can;
+
+public void init_canvas() {
+  can = new Canvas(0, 0, PApplet.parseInt((width) / cam.cam_scale.get()), PApplet.parseInt((height) / cam.cam_scale.get()), 4);
+}
+
+class Canvas extends Callable {
+  PVector pos = new PVector(0, 0);
+  float canvas_scale = 1.0f;
+  PImage can1,can2;
+  
+  int active_can = 0;
+  int can_div = 4;
+  int can_st = can_div-1;
+  
+  sBoo show_canvas = new sBoo(simval, false);
+  sBoo show_canvas_bound = new sBoo(simval, true);
+  
+  sGrabable can_grab;
+  
+  Canvas() { construct(0, 0, width, height, 1); }
+  Canvas(float x, float y, int w, int h, float s) { construct(x, y, w, h, s); }
+  
+  public void construct(float x, float y, int w, int h, float s) {
+    w /= s; h /= s;
+    can1 = createImage(w, h, RGB);
+    init(can1);
+    can2 = createImage(w, h, RGB);
+    init(can2);
+    pos.x = x - PApplet.parseInt(w) / 2;
+    pos.y = y - PApplet.parseInt(h) / 2;
+    can_grab = new sGrabable(cp5, x, y + 20);
+    addChannel(frame_chan);
+    if (show_canvas.get()) can_grab.show(); else can_grab.hide();
+    canvas_scale = s;
+  }
+  
+  
+  public void answer(Channel chan, float value) {
+    if (chan == frame_chan) {
+      pos = cam.screen_to_cam(can_grab.getP());
+      pos.y -= 20 / cam.cam_scale.get();
+    }
+  }
+  
+  public void drawHalo(Community com) {
+    if (active_can == 0) {
+      for (int i = can_st ; i < com.list.size() ; i += can_div)
+        if (com.list.get(i).active) {
+          com.list.get(i).draw_halo(this, can2);
+      }
+      if (can_st == 0) {
+        active_can = 1;
+        clear(can1);
+        can_st = can_div - 1;
+      } else can_st--;
+    }
+    else if (active_can == 1) {
+      for (int i = can_st ; i < com.list.size() ; i += can_div)
+        if (com.list.get(i).active) {
+          com.list.get(i).draw_halo(this, can1);
+      }
+      if (can_st == 0) {
+        active_can = 0;
+        clear(can2);
+        can_st = can_div - 1;
+      } else can_st--;
+    }
+  }
+  
+  public void drawCanvas() {
+    if (show_canvas.get()) {
+      if (show_canvas_bound.get()) {
+        stroke(255);
+        strokeWeight(3 / cam.cam_scale.get());
+        noFill();
+        rect(pos.x, pos.y, can1.width * canvas_scale, can1.height * canvas_scale);
+      }
+      if (active_can == 0) draw(can1);
+      else if (active_can == 1) draw(can2);
+    }
+  }
+  
+  private void init(PImage canvas) {
+    for(int i = 0; i < canvas.pixels.length; i++) {
+      canvas.pixels[i] = color(0); 
+    }
+  }
+  
+  public void clear(PImage canvas) {
+    for (int i = 0 ; i < canvas.pixels.length ; i++) {
+      canvas.pixels[i] = color(0);
+    }
+  }
+  
+  public void draw(PImage canvas) {
+    canvas.updatePixels();
+    pushMatrix();
+    translate(pos.x, pos.y);
+    scale(canvas_scale);
+    image(canvas, 0, 0);
+    popMatrix();
+  }
+  
+  public void addpix(PImage canvas, float x, float y, int nc) {
+    x += canvas_scale/2;
+    y += canvas_scale/2;
+    x -= pos.x;
+    y -= pos.y;
+    x /= canvas_scale;
+    y /= canvas_scale;
+    if (x < 0 || y < 0 || x > canvas.width || y > canvas.height) return;
+    int pi = canvas.width * PApplet.parseInt(y) + PApplet.parseInt(x);
+    if (pi >= 0 && pi < canvas.pixels.length) {
+      int oc = canvas.pixels[pi];
+      canvas.pixels[pi] = color(min(255, red(oc) + red(nc)), min(255, green(oc) + green(nc)), min(255, blue(oc) + blue(nc)));
+    }
+  }
+  //color getpix(PImage canvas, PVector v) { return getpix(canvas, v.x, v.y); }
+  //color getpix(PImage canvas, float x, float y) {
+  //  color co = 0;
+  //  int pi = canvas.width * int(y + canvas.height / 2) + int(x + canvas.width/2);
+  //  if (pi >= 0 && pi < canvas.pixels.length) {
+  //    co = canvas.pixels[pi];
+  //  }
+  //  return co;
+  //}
+  //void setpix(PImage canvas, PVector v, color c) { setpix(canvas, v.x, v.y, c); }
+  //void setpix(PImage canvas, float x, float y, color c) {
+  //  int pi = canvas.width * int(y + canvas.height / 2) + int(x + canvas.width/2);
+  //  if (pi >= 0 && pi < canvas.pixels.length) {
+  //    canvas.pixels[pi] = c;
+  //  }
+  //}
+  
+  //void canvas_croix(PImage canvas, float x, float y, int c) {
+  //  color co = getpix(canvas, x, y);
+  //  setpix(canvas, x, y, color(c + red(co)) );
+  //  setpix(canvas, x + 1, y, color(c/2 + red(co)) );
+  //  setpix(canvas, x - 1, y, color(c/2 + red(co)) );
+  //  setpix(canvas, x, y + 1, color(c/2 + red(co)) );
+  //  setpix(canvas, x, y - 1, color(c/2 + red(co)) );
+  //}
+  
+  //void canvas_line(PImage canvas, PVector v1, PVector v2, int c) {
+  //  PVector m = new PVector(v1.x - v2.x, v1.y - v2.y);
+  //  int l = int(m.mag());
+  //  m.setMag(-1);
+  //  PVector p = new PVector(v1.x, v1.y);
+  //  for (int i = 0 ; i < l ; i++) {
+  //    color co = getpix(canvas, p.x, p.y);
+  //    setpix(canvas, p.x, p.y, color(c + red(co)) );
+  //    p.add(m);
+  //  }
+  //}
+}
+class RandomTryParam extends Callable {
   //constructeur avec param values
   sFlt DIFFICULTY = new sFlt(simval, 4);
   sBoo ON = new sBoo(simval, true);
-  RandomTryParam(float d, boolean b) {
-    DIFFICULTY.set(d); ON.set(b);
-  }
+  sFlt test_by_tick = new sFlt(simval, 0);
+  int count = 0;
+  RandomTryParam(float d, boolean b) { DIFFICULTY.set(d); ON.set(b); addChannel(frameend_chan); }
+  public boolean test() { if(ON.get()) count++; test_by_tick.set(count / sim.tick_by_frame.get()); return ON.get() && crandom(DIFFICULTY.get()) > 0.5f; }
+  public void answer(Channel chan, float v) { count = 0; test_by_tick.set(0); }
 }
 
 class GrowerComu extends Community {
@@ -791,7 +1065,14 @@ class GrowerComu extends Community {
   
   sInt activeGrower = new sInt(simval, 0);
   
-  GrowerComu(ComunityList _c) { super(_c, "Grower", 500); init();
+  sGraph graph = new sGraph();
+  
+  GrowerComu(Simulation _c) { super(_c, "Grower", 500); init();
+    
+    graph.init();
+    
+  }
+  public void custom_build() {
     //creation du menu
     panel.addText("Shape", 150, 0, 22)
       .addSeparator(8)
@@ -824,6 +1105,24 @@ class GrowerComu extends Community {
           .getDrawer()
         .getPanel()
       .addSeparator(10)
+      .addDrawer(30)
+        .addText("test by tick: ", 140, 0)
+          .getDrawer()
+        .getPanel()
+      .addDrawer(60)
+        .addText("grow try: ", 30, 0)
+          .setValue(growP.test_by_tick)
+          .getDrawer()
+        .addText("sprout try: ", 200, 0)
+          .setValue(sproutP.test_by_tick)
+          .getDrawer()
+        .addText("stop try: ", 30, 30)
+          .setValue(stopP.test_by_tick)
+          .getDrawer()
+        .addText("leaf try: ", 200, 30)
+          .setValue(leafP.test_by_tick)
+          .getDrawer()
+        .getPanel()
       ;
     grower_nb_label = new sLabel(cp5) { 
         public void answer(Channel channel, float value) {
@@ -841,23 +1140,20 @@ class GrowerComu extends Community {
       ;
     
     //creation de macro custom
-    macro_build_panel
+    plane.build_panel
       .addDrawer(30)
-        .addButton("GROWER SHAPE", 30, 0)
-          .setSize(150, 30)
+        .addButton("SHAPE", 260, 0)
+          .setSize(120, 30)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { newMacroGrowerINShape(); } } )
           .getDrawer()
-        .addButton("GROWER MOUV", 200, 0)
-          .setSize(150, 30)
+        .addButton("BEHAVIOR", 130, 0)
+          .setSize(120, 30)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { newMacroGrowerINMove(); } } )
           .getDrawer()
-        .getPanel()
-      .addSeparator(10)
-      .addDrawer(30)
-        .addButton(" GROWER OUT", 30, 0)
-          .setSize(150, 30)
+        .addButton("LIFE", 0, 0)
+          .setSize(120, 30)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { newMacroGrowerOUT(); } } )
           .getDrawer()
@@ -867,8 +1163,8 @@ class GrowerComu extends Community {
   }
   
   public void newMacroGrowerINShape() {
-    new MacroCUSTOM(mList)
-      .setLabel("GROWER IN")
+    new MacroCUSTOM(plane)
+      .setLabel("GROWER Shape")
       .setWidth(150)
       .addMCsFltControl()
         .setValue(DEVIATION)
@@ -890,8 +1186,8 @@ class GrowerComu extends Community {
   }
   
   public void newMacroGrowerINMove() {
-    MacroCUSTOM m = new MacroCUSTOM(mList)
-      .setLabel("GROWER IN")
+    MacroCUSTOM m = new MacroCUSTOM(plane)
+      .setLabel("GROWER Move")
       .setWidth(150)
       ;
     addRngTry(m, growP, "grow");
@@ -902,28 +1198,28 @@ class GrowerComu extends Community {
   }
   
   public void addRngTry(MacroCUSTOM m, RandomTryParam r, String s) {
-    m.addMCsFltControl()
-        .setValue(r.DIFFICULTY)
+    m.addMCsBooControl()
+        .setValue(r.ON)
         .setText(s)
         .getMacro()
-      .addMCsBooControl()
-        .setValue(r.ON)
+      .addMCsFltControl()
+        .setValue(r.DIFFICULTY)
         .setText("")
         .getMacro()
       ;
   }
   
   public void newMacroGrowerOUT() {
-    new MacroCUSTOM(mList)
-      .setLabel("GROWER OUT")
-      .setWidth(150)
-      .addMCsIntWatcher()
-        .addValue(activeEntity)
-        .setText("  active")
-        .getMacro()
+    new MacroCUSTOM(plane)
+      .setLabel("GROWER LIFE")
+      .setWidth(280)
       .addMCsIntWatcher()
         .addValue(activeGrower)
-        .setText("  grover")
+        .setText("   growing")
+        .getMacro()
+      .addMCsBooControl()
+        .setValue(create_floc)
+        .setText("create floc")
         .getMacro()
       ;
   }
@@ -940,8 +1236,14 @@ class GrowerComu extends Community {
       if (!e.active && ng == null) { ng = (Grower)e; e.activate(); }
     return ng;
   }
+  public void custom_frame() {
+    graph.update(activeEntity.get(), activeGrower.get());
+  }
   public void custom_tick() {
     activeGrower.set(grower_Nb());
+  }
+  public void custom_screen_draw() {
+    graph.draw();
   }
   public int grower_Nb() {
     int n = 0;
@@ -991,7 +1293,7 @@ class Grower extends Entity {
     } else start = 1;
     
     //grow
-    if (com().growP.ON.get() && start == 1 && !end && sprouts == 0 && crandom(com().growP.DIFFICULTY.get()) > 0.5f) {
+    if (start == 1 && !end && sprouts == 0 && com().growP.test()) {
       Grower n = com().newEntity();
       if (n != null) {
         n.define(grows, dir);
@@ -1000,7 +1302,7 @@ class Grower extends Entity {
     }
     
     // sprout
-    if (com().sproutP.ON.get() && start == 1 && !end && crandom(com().sproutP.DIFFICULTY.get()) > 0.5f) {
+    if (start == 1 && !end && com().sproutP.test()) {
       Grower n = com().newEntity();
       if (n != null) {
         PVector _p = new PVector(0, 0);
@@ -1018,7 +1320,7 @@ class Grower extends Entity {
     }
     
     // leaf
-    if (com().leafP.ON.get() && start == 1 && !end && crandom(com().leafP.DIFFICULTY.get()) > 0.5f) {
+    if (start == 1 && !end && com().leafP.test()) {
       PVector _p = new PVector(0, 0);
       PVector _d = new PVector(0, 0);
       _d.add(grows).sub(pos);
@@ -1033,7 +1335,7 @@ class Grower extends Entity {
     }
     
     // stop growing
-    if (com().stopP.ON.get() && start == 1 && !end && sprouts == 0 && crandom(com().stopP.DIFFICULTY.get()) > 0.5f) {
+    if (start == 1 && !end && sprouts == 0 && com().stopP.test()) {
       if (com().create_floc.get()) {
         Floc f = fcom.newEntity();
         if (f != null) {
@@ -1100,15 +1402,34 @@ ici on definie les objet de structure
 */
 
 
-class ComunityList {
+class Simulation {
   ArrayList<Community> list = new ArrayList<Community>();
   sPanel panel;
   sTextfield file_path_tf;
   
-  ComunityList() {
+  sFlt tick = new sFlt(simval, 0); //conteur de tour depuis le dernier reset ou le debut
+  sBoo pause = new sBoo(simval, false); //permet d'interompre le defilement des tour
+  sFlt tick_by_frame = new sFlt(simval, 16); //nombre de tour a executé par frame
+  float tick_pile = 0; //pile des tour
+  sInt SEED = new sInt(simval, 548651008); //seed pour l'aleatoire
+  sBoo auto_reset = new sBoo(simval, true);
+  sBoo auto_reset_rng_seed = new sBoo(simval, true);
+  sInt auto_reset_turn = new sInt(simval, 4000);
+  sBoo auto_screenshot = new sBoo(simval, false);
+  
+  Channel tick_chan = new Channel();
+  Channel unpaused_frame_chan = new Channel();
+  
+  boolean next_tick = false;
+  
+  Simulation() {
+    
+  }
+  
+  public void building() {
     //menu principale de la sim
-    panel = new sPanel(cp5, 1190, 500)
-      .addText("SIMULATION CONTROL", 28, 0, 28)
+    panel = new sPanel(cp5, 1190, 430)
+      .addTitle("SIMULATION CONTROL", 28, 0, 28)
       .addLine(10)
       .addDrawer(30)
         .addText("SEED: ", 50, 4)
@@ -1118,40 +1439,55 @@ class ComunityList {
           .setSize(200, 20)
           .getDrawer()
         .getPanel()
-      .addDrawer(30)
+      .addDrawer(60)
         .addText("framerate: ", 30, 0)
-          .setValue(framerate)
+          .setValue(fr.value)
           .getDrawer()
-        .addText("turn: ", 200, 0)
+        .addText("time (s): ", 200, 0)
+          .setValue(fr.time)
+          .getDrawer()
+        .addText("tickrate: ", 30, 30)
+          .setValue(fr.tickrate)
+          .getDrawer()
+        .addText("tick: ", 200, 30)
           .setValue(tick)
           .getDrawer()
         .getPanel()
-      .addValueController("SPEED: ", sMode.FACTOR, 2, 1.2f, tick_by_frame)
+      .addValueController("tick / frame:", sMode.FACTOR, 2, 1.2f, tick_by_frame)
       .addSeparator(10)
       .addDrawer(30)
-        .addSwitch("P", 20, 0)
+        .addSwitch("PAUSE", 20, 0)
           .setValue(pause)
-          .setSize(40, 30)
+          .setSize(170, 30)
           .getDrawer()
-        .addButton("R", 80, 0)
-          .setSize(100, 30)
+        .addButton("NEXT TICK", 200, 0)
+          .setSize(160, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { next_tick = true; } } )
+          .getDrawer()
+        .getPanel()
+        .addSeparator(10)
+      .addDrawer(30)
+        
+        .addButton("RESET", 20, 0)
+          .setSize(80, 30)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { reset(); } } )
           .getDrawer()
-        .addButton("RNG", 200, 0)
-          .setSize(100, 30)
+        .addButton("RNG", 110, 0)
+          .setSize(80, 30)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { SEED.set(PApplet.parseInt(random(1000000000))); reset(); } } )
           .getDrawer()
-        .addButton("I", 320, 0)
-          .setSize(20, 30)
+        .addButton("NEXT FRAME", 200, 0)
+          .setSize(160, 30)
           .addListener(new ControlListener() {
-            public void controlEvent(final ControlEvent ev) { cam.screenshot = true; } } )
+            public void controlEvent(final ControlEvent ev) {
+              for (int i = 0; i < tick_by_frame.get()-1; i++) tick();
+              next_tick = true;
+            } } )
           .getDrawer()
-        .addSwitch("A", 340, 0)
-          .setValue(auto_screenshot)
-          .setSize(20, 30)
-          .getDrawer()
+        
         .getPanel()
       .addSeparator(10)
       .addDrawer(30)
@@ -1200,50 +1536,74 @@ class ComunityList {
           .setSize(100, 30)
           .setFont(18)
           .getDrawer()
-        .getPanel()
-      .addSeparator(10)
+        .getPanel().addSeparator(10)
       .addDrawer(30)
         .addButton("S", 0, 0)
           .setSize(60, 30)
           .addListener(new ControlListener() {
-            public void controlEvent(final ControlEvent ev) { saving(simval, file_path_tf.getText()); } } )
+            public void controlEvent(final ControlEvent ev) { 
+              saving(simval, file_path_tf.getText()); } } )
           .getDrawer()
-        .addButton("L", 320, 0)
+        .addButton("L", 270, 0)
           .setSize(60, 30)
           .addListener(new ControlListener() {
-            public void controlEvent(final ControlEvent ev) { loading(simval, file_path_tf.getText()); } } )
+            public void controlEvent(final ControlEvent ev) { 
+              loading(simval, file_path_tf.getText()); 
+              reset(); } } )
+          .getDrawer()
+        .addButton("I", 340, 0)
+          .setSize(20, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { cam.screenshot = true; } } )
+          .getDrawer()
+        .addSwitch("A", 360, 0)
+          .setValue(auto_screenshot)
+          .setSize(20, 30)
           .getDrawer()
         .getPanel()
       ;
     file_path_tf = panel.lastDrawer().addTextfield(70, 0)
       .setText("save.txt")
-      .setSize(240, 30)
+      .setSize(190, 30)
+      
       ;
+    //file_path_tf.setColor(color(255));
     panel.addSeparator(10);
     
     //macro custom et menu d'ajout
-    macro_build_panel
-      .addText("SIMULATION :", 0, 0, 18)
+    plane.build_panel
+      .addText("Simulation :", 0, 0, 18)
       .addSeparator(8)
       .addDrawer(30)
-        .addButton("SIM IN", 30, 0)
-          .setSize(150, 30)
+        .addButton("RESET", 20, 0)
+          .setSize(80, 30)
           .addListener(new ControlListener() {
-            public void controlEvent(final ControlEvent ev) { newMacroSimIN(); } } )
+            public void controlEvent(final ControlEvent ev) { newMacroSimIN1(); } } )
           .getDrawer()
-        .addButton("SIM OUT", 200, 0)
-          .setSize(150, 30)
+        .addButton("RUN", 110, 0)
+          .setSize(80, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroSimIN2(); } } )
+          .getDrawer()
+        .addButton("AUTO", 200, 0)
+          .setSize(80, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroSimIN3(); } } )
+          .getDrawer()
+        .addButton("OUT", 290, 0)
+          .setSize(80, 30)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { newMacroSimOUT(); } } )
           .getDrawer()
         .getPanel()
       .addSeparator(10)
       ;
+    for (Community c : list) c.building();
   }
   
-  public void newMacroSimIN() {
-    new MacroCUSTOM(mList)
-      .setLabel("SIM IN")
+  public void newMacroSimIN1() {
+    new MacroCUSTOM(plane)
+      .setLabel("SIM RESET")
       .setWidth(170)
       .addMCRun()
         .addRunnable(new Runnable() { public void run() { reset(); }})
@@ -1253,9 +1613,24 @@ class ComunityList {
         .addRunnable(new Runnable() { public void run() { SEED.set(PApplet.parseInt(random(1000000000))); reset(); }})
         .setText("rng")
         .getMacro()
+      ;
+  }
+  
+  public void newMacroSimIN2() {
+    new MacroCUSTOM(plane)
+      .setLabel("SIM RUN")
+      .setWidth(155)
+      .addMCsBooWatcher()
+        .addValue(pause)
+        .setText("pause")
+        .getMacro()
       .addMCsBooControl()
         .setValue(pause)
-        .setText("pause")
+        .setText("")
+        .getMacro()
+      .addMCRun()
+        .addRunnable(new Runnable() { public void run() { next_tick = true; }})
+        .setText("tick")
         .getMacro()
       .addMCsFltControl()
         .setValue(tick_by_frame)
@@ -1264,14 +1639,25 @@ class ComunityList {
       ;
   }
   
-  public void newMacroSimOUT() {
-    new MacroCUSTOM(mList)
-      .setLabel("SIM OUT")
-      .setWidth(150)
-      .addMCsBooWatcher()
-        .addValue(pause)
-        .setText("pause")
+  public void newMacroSimIN3() {
+    new MacroCUSTOM(plane)
+      .setLabel("SIM AUTO")
+      .setWidth(170)
+      .addMCsBooControl()
+        .setValue(auto_reset)
+        .setText("auto reset")
         .getMacro()
+      .addMCsIntControl()
+        .setValue(auto_reset_turn)
+        .setText("reset tick")
+        .getMacro()
+      ;
+  }
+  
+  public void newMacroSimOUT() {
+    new MacroCUSTOM(plane)
+      .setLabel("SIM OUT")
+      .setWidth(170)
       .align()
       .addMCsFltWatcher()
         .addValue(tick)
@@ -1281,30 +1667,81 @@ class ComunityList {
         .addValue(tick_by_frame)
         .setText("   speed")
         .getMacro()
+      .addMCsIntWatcher()
+        .addValue(fr.value)
+        .setText("framerate")
+        .getMacro()
+      .addMCsIntWatcher()
+        .addValue(fr.time)
+        .setText("time s")
+        .getMacro()
       ;
   }
   
-  public void tick() {
-    for (Community c : list) c.tick();
-  }
-  
-  public void draw() {
-    for (Community c : list) if (c.show_entity.get()) c.draw_All();
-  }
-  
-  public void comunity_reset() {
+  public void reset() {
     randomSeed(SEED.get());
     for (Community c : list) c.reset();
+    tick.set(0);
+    fr.reset();
   }
+  
+  public void frame() {
+    if (!pause.get()) {
+      tick_pile += tick_by_frame.get();
+      
+      //auto screenshot before reset
+      if (auto_reset.get() && auto_reset_turn.get() == tick.get() + tick_by_frame.get() + tick_by_frame.get() && auto_screenshot.get()) {
+          cam.screenshot = true; }
+      
+      while (tick_pile >= 1) {
+        tick();
+        tick_pile--;
+      }
+      
+      //run_each_unpaused_frame
+      callChannel(unpaused_frame_chan);
+    }
+    
+    if (next_tick) { tick(); next_tick = false; }
+    
+    //run custom frame methods
+    for (Community c : list) c.frame();
+  }
+  
+  public void tick() {
+    
+    //auto reset
+    if (auto_reset.get() && auto_reset_turn.get() <= tick.get()) {
+      if (auto_reset_rng_seed.get()) {
+        SEED.set(PApplet.parseInt(random(1000000000)));
+      }
+      reset();
+    }
+    
+    //tick communitys
+    for (Community c : list) c.tick();
+    
+    //tick call
+    callChannel(tick_chan);
+    
+    tick.set(tick.get()+1);
+  }
+  
+  public void draw_to_cam() {
+    for (Community c : list) if (c.show_entity.get()) c.custom_cam_draw_pre_entity();
+    for (Community c : list) if (c.show_entity.get()) c.draw_Cam();
+    for (Community c : list) if (c.show_entity.get()) c.custom_cam_draw_post_entity();
+  }
+  public void draw_to_screen() { for (Community c : list) if (c.show_entity.get()) c.draw_Screen(); }
 }
 
 abstract class Community {
   ArrayList<Entity> list = new ArrayList<Entity>(); //contien les objet
-  int MAX_ENT = 5000; //longueur max de l'array d'objet
+  sInt MAX_ENT = new sInt(simval, 500); //longueur max de l'array d'objet
   sInt initial_entity = new sInt(simval, 0);
   int id; //index dans comu list
   sInt activeEntity = new sInt(simval, 0);
-  ComunityList comList;
+  Simulation comList;
   sPanel panel;
   sBoo adding_type = new sBoo(simval, true);
   int adding_pile = 0;
@@ -1314,15 +1751,9 @@ abstract class Community {
   sBoo show_menu = new sBoo(simval, true);
   String name = "";
   
-  Community(ComunityList _c, String n, int max) { comList = _c; name = n; MAX_ENT = max; }
-    
-  public void init() {
-    id = comList.list.size();
-    comList.list.add(this);
-    list.clear();
-    for (int i = 0; i < MAX_ENT ; i++)
-      list.add(build());
-      
+  Community(Simulation _c, String n, int max) { comList = _c; name = n; MAX_ENT.set(max); }
+  
+  public void building() {
     comList.panel.addDrawer(20)
         .addText("Community: "+name, 0, 0)
           .setFont(18)
@@ -1332,9 +1763,9 @@ abstract class Community {
           .setSize(50, 20).setFont(18)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { 
-              if (show_menu.get()) panel.g.hide(); else panel.g.show(); } } )
+              if (show_menu.get()) panel.big.hide(); else panel.big.show(); } } )
           .getDrawer()
-        .addSwitch("E", 330, 0)
+        .addSwitch("D", 330, 0)
           .setValue(show_entity)
           .setSize(50, 20).setFont(18)
           .getDrawer()
@@ -1342,8 +1773,8 @@ abstract class Community {
       .addSeparator(10)
       ;
     
-    panel = new sPanel(cp5, 30 + id*50, 50 + id*30)
-      .addText("COMUNITY CONTROL", 38, 0, 28)
+    panel = new sPanel(cp5, 20 + id*50, 20 + id*30)
+      .addTitle(name+" Control", 90, 0, 28)
       .addLine(10)
       .addText("Utilities", 140, 0, 22)
       .addSeparator(8)
@@ -1351,6 +1782,14 @@ abstract class Community {
         .addText("Active Entity: ", 0, 0)
           .setValue(activeEntity)
           .setFont(18)
+          .getDrawer()
+        .getPanel()
+      .addSeparator(10)
+      .addValueController("Max Entity: ", sMode.INCREMENT, 100, 10, MAX_ENT).lastDrawer()
+        .addButton("i", 80, 5)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { init_array(); reset(); } } )
+          .setSize(20, 20).setFont(18)
           .getDrawer()
         .getPanel()
       .addSeparator(10)
@@ -1372,43 +1811,76 @@ abstract class Community {
         .getPanel()
       .addLine(22)
       ;
-    if (!show_menu.get()) panel.g.hide();
+    if (!show_menu.get()) panel.big.hide();
     
-    macro_build_panel
+    plane.build_panel
       .addText("Community: " + name, 0, 0, 18)
       .addSeparator(8)
       .addDrawer(30)
-        .addButton("COM IN", 30, 0)
-          .setSize(150, 30)
+        .addButton("INIT", 0, 0)
+          .setSize(120, 30)
           .addListener(new ControlListener() {
-            public void controlEvent(final ControlEvent ev) { newMacroComuIN(); } } )
+            public void controlEvent(final ControlEvent ev) { newMacroComuINIT(); } } )
           .getDrawer()
-        .addButton("COM OUT", 200, 0)
-          .setSize(150, 30)
+        .addButton("ADD", 130, 0)
+          .setSize(120, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroComuADD(); } } )
+          .getDrawer()
+        .addButton("POP", 260, 0)
+          .setSize(120, 30)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { newMacroComuOUT(); } } )
           .getDrawer()
         .getPanel()
       .addSeparator(10)
       ;
+    custom_build();
   }
   
-  public void newMacroComuIN() {
-    new MacroCUSTOM(mList)
-      .setLabel("COMU IN " + name)
-      .setWidth(200)
+  public void newMacroComuINIT() {
+    new MacroCUSTOM(plane)
+      .setLabel(name + " INIT")
+      .setWidth(250)
+      .addMCsIntControl()
+        .setValue(MAX_ENT)
+        .setText("")
+        .getMacro()
       .addMCsIntControl()
         .setValue(initial_entity)
-        .setText("init")
+        .setText("")
         .getMacro()
       .addMCsIntControl()
         .setValue(adding_step)
-        .setText("step")
+        .setText("")
         .getMacro()
       .addMCsBooControl()
         .setValue(adding_type)
-        .setText("step")
+        .setText("              do step")
         .getMacro()
+      .addMCsIntWatcher()
+        .addValue(MAX_ENT)
+        .setText("     max")
+        .getMacro()
+      .addMCsIntWatcher()
+        .addValue(initial_entity)
+        .setText("     add")
+        .getMacro()
+      .addMCsIntWatcher()
+        .addValue(adding_step)
+        .setText("    step")
+        .getMacro()
+      .addMCsBooWatcher()
+        .addValue(adding_type)
+        .setText("")
+        .getMacro()
+      ;
+  }
+  
+  public void newMacroComuADD() {
+    new MacroCUSTOM(plane)
+      .setLabel("ADD " + name)
+      .setWidth(120)
       .addMCRun()
         .addRunnable(new Runnable() { public void run() { adding_pile += initial_entity.get(); }})
         .setText("add")
@@ -1417,24 +1889,12 @@ abstract class Community {
   }
   
   public void newMacroComuOUT() {
-    new MacroCUSTOM(mList)
-      .setLabel("COMU OUT " + name)
-      .setWidth(200)
+    new MacroCUSTOM(plane)
+      .setLabel(name + " POP")
+      .setWidth(160)
       .addMCsIntWatcher()
         .addValue(activeEntity)
         .setText("  active")
-        .getMacro()
-      .addMCsIntWatcher()
-        .addValue(initial_entity)
-        .setText("  init")
-        .getMacro()
-      .addMCsIntWatcher()
-        .addValue(adding_step)
-        .setText("  step")
-        .getMacro()
-      .addMCsBooWatcher()
-        .addValue(adding_type)
-        .setText("  step")
         .getMacro()
       ;
   }
@@ -1444,12 +1904,29 @@ abstract class Community {
   public Community show_entity() { show_entity.set(true); return this; }
   public Community hide_entity() { show_entity.set(false); return this; }
   
+  public void init_array() {
+    list.clear();
+    for (int i = 0; i < MAX_ENT.get() ; i++)
+      list.add(build());
+  }
+  
+  public void init() {
+    id = comList.list.size();
+    comList.list.add(this);
+    init_array();
+  }
+  
   public void reset() { //deactivate all then create starting situation from parameters
     this.destroy_All();
+    if (MAX_ENT.get() != list.size()) init_array();
     if (!adding_type.get()) 
       for (int j = 0; j < initial_entity.get(); j++)
         initialEntity();
     if (adding_type.get()) adding_pile = initial_entity.get();
+  }
+  
+  public void frame() {
+    custom_frame();
   }
   
   public void tick() {
@@ -1462,12 +1939,21 @@ abstract class Community {
       }
     }
     for (Entity e : list) if (e.active) e.tick();
-    custom_tick();
     activeEntity.set(active_Entity_Nb());
+    custom_tick();
   }
+  
+  public void custom_build() {}
+  public void custom_frame() {}
   public void custom_tick() {}
-  public void draw_All() {
+  public void custom_cam_draw_pre_entity() {}
+  public void custom_cam_draw_post_entity() {}
+  public void custom_screen_draw() {}
+  
+  public void draw_Cam() {
     for (Entity e : list) if (e.active) e.drawing(); }
+  public void draw_Screen() {
+    custom_screen_draw(); }
   public void destroy_All() {
     for (Entity e : list) e.destroy(); }
   
@@ -1509,42 +1995,47 @@ abstract class Entity {
  //la lib pour les menu
 
 
-public void init_panel(String s) {
-  cp5 = new ControlP5(this);
+public void init_Tabs(String s) {
   
   int c = color(190);
-  int c2 = color(10, 100, 180);
   cp5.addTab("Menu")
     .setSize(100,30)
     .setHeight(30)
-    .setColorActive(c2)
+    .setLabel("  Menu")
     .getCaptionLabel().setFont(getFont(18)).setColor(c);
     ;
   cp5.addTab("Macros")
     .setSize(100,30)
     .setHeight(30)
-    .setColorActive(c2)
+    .setLabel("  Macros")
     .getCaptionLabel().setFont(getFont(18)).setColor(c);
     ;
 
   cp5.getTab("default")
     .setSize(100,30)
     .setHeight(30)
-    .setColorActive(c2)
-    .setLabel("Main")
+    .setLabel("  View")
     .getCaptionLabel().setFont(getFont(18)).setColor(c);
     ;
   cp5.getTab(s).bringToFront();
   
-  cp5.getWindow().setPositionOfTabs(35, height-30);
+  cp5.getWindow()
+    .setPositionOfTabs(35, height-30)
+    .setColorBackground(color(5, 55, 99, 255))
+    .setColorForeground(color(13, 130, 240, 255))
+    .setColorActive(color(10, 100, 180, 255))
+    ;
 
-  init_macro();
 }
 
 class sGrabable extends Callable {
   float mx = 0; float my = 0;
   Group g;
   PVector pos = new PVector(0, 0);
+  boolean pos_loaded = false;
+  
+  sFlt pos_x = new sFlt(simval, 0);
+  sFlt pos_y = new sFlt(simval, 0);
   
   sGrabable(ControlP5 c, float x, float y) {
     g = new Group(c, "panel" + get_free_id());
@@ -1574,26 +2065,36 @@ class sGrabable extends Callable {
   
   public void answer(Channel chan, float value) {
     if (chan == frame_chan) {
-      if (g.isMouseOver()) {
-        if (mouseClick[0]) {
-          mx = g.getPosition()[0] - mouseX;
-          my = g.getPosition()[1] - mouseY;
-          cam.GRAB = false; //deactive le deplacement camera
-        } else if (mouseUClick[0]) {
-          cam.GRAB = true;
-        }
-        if (mouseButtons[0]) {
-          g.setPosition(mouseX + mx,mouseY + my);
-          pos = cam.screen_to_cam(new PVector(mouseX + mx, mouseY + my));
-        }
+      if (!pos_loaded) {
+        g.setPosition(pos_x.get(),pos_y.get());
+        pos = cam.screen_to_cam(new PVector(pos_x.get(),pos_y.get()));
+        pos_loaded = true;
       } else {
-        if (mouseClick[0] && cam.GRAB == true) {
-          mx = g.getPosition()[0] - mouseX;
-          my = g.getPosition()[1] - mouseY;
-        }
-        if (mouseButtons[0] && cam.GRAB == true) {
-          g.setPosition(mouseX + mx,mouseY + my);
-          pos = cam.screen_to_cam(new PVector(mouseX + mx, mouseY + my));
+        if (g.isMouseOver()) {
+          if (kb.mouseClick[0]) {
+            mx = g.getPosition()[0] - mouseX;
+            my = g.getPosition()[1] - mouseY;
+            cam.GRAB = false; //deactive le deplacement camera
+          } else if (kb.mouseUClick[0]) {
+            cam.GRAB = true;
+          }
+          if (kb.mouseButtons[0]) {
+            g.setPosition(mouseX + mx,mouseY + my);
+            pos = cam.screen_to_cam(new PVector(mouseX + mx, mouseY + my));
+            pos_x.set(mouseX + mx);
+            pos_y.set(mouseY + my);
+          }
+        } else {
+          if (kb.mouseClick[0] && cam.GRAB == true) {
+            mx = g.getPosition()[0] - mouseX;
+            my = g.getPosition()[1] - mouseY;
+          }
+          if (kb.mouseButtons[0] && cam.GRAB == true) {
+            g.setPosition(mouseX + mx,mouseY + my);
+            pos = cam.screen_to_cam(new PVector(mouseX + mx, mouseY + my));
+            pos_x.set(mouseX + mx);
+            pos_y.set(mouseY + my);
+          }
         }
       }
     }
@@ -1610,9 +2111,12 @@ class sPanel extends Callable {
   int drawer_height = 0;
   sDrawer last_drawer = null;
   float mx = 0; float my = 0;
+  Group big;
   Group g;
+  Button hideButton;
   boolean pos_loaded = false;
   
+  sBoo closed = new sBoo(simval, false);
   sInt pos_x = new sInt(simval, 100);
   sInt pos_y = new sInt(simval, 100);
   
@@ -1627,37 +2131,58 @@ class sPanel extends Callable {
         super.onLeave();
       }
     };
+    big = new Group(c, "panel" + get_free_id());
     
     pos_x.set(PApplet.parseInt(x));
     pos_y.set(PApplet.parseInt(y));
     
-    g.setPosition(x, y)
+    g.setPosition(0, 0)
         .setSize(PANEL_WIDTH, 0)
         .setBackgroundHeight(0)
+        .setBarHeight(0)
         .setBackgroundColor(color(60, 200))
         .disableCollapse()
         .moveTo("Menu")
+        .setGroup(big)
         .getCaptionLabel().setText("");
-        
+    big.setPosition(x, y)
+        .setSize(PANEL_WIDTH, 0)
+        .setBackgroundHeight(35)
+        .setBackgroundColor(color(60))
+        .setBarHeight(12)
+        .disableCollapse()
+        .moveTo("Menu")
+        .getCaptionLabel().setText("");
+    hideButton = new Button(c, "button"+get_free_id());
+    hideButton.setPosition(PANEL_WIDTH-20, 0)
+        .setSize(20, 20)
+        .setGroup(big)
+        .setSwitch(true)
+        .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { 
+              if (g.isVisible()) { closed.set(true); g.hide(); hideButton.getCaptionLabel().setText("v"); }
+              else { closed.set(false); g.show(); hideButton.getCaptionLabel().setText("-"); } } } )
+        .getCaptionLabel().setText("-").setFont(getFont(18));
     this.addChannel(frame_chan);
   }
   
   public void answer(Channel channel, float value) {
     if (!pos_loaded) {
-      g.setPosition(pos_x.get(),pos_y.get());
+      big.setPosition(pos_x.get(),pos_y.get());
+      if (closed.get()) { hideButton.setOn(); }
       pos_loaded = true;
     } else {
       //moving control panel
-      if (g.isMouseOver()) {
-        if (mouseClick[0]) {
-          mx = g.getPosition()[0] - mouseX;
-          my = g.getPosition()[1] - mouseY;
+      if (big.isMouseOver()) {
+        if (kb.mouseClick[0]) {
+          mx = big.getPosition()[0] - mouseX;
+          my = big.getPosition()[1] - mouseY;
           cam.GRAB = false; //deactive le deplacement camera
-        } else if (mouseUClick[0]) {
+        } else if (kb.mouseUClick[0]) {
           cam.GRAB = true;
         }
-        if (mouseButtons[0]) {
-          g.setPosition(mouseX + mx,mouseY + my);
+        if (kb.mouseButtons[0]) {
+          big.setPosition(mouseX + mx,mouseY + my);
           pos_x.set(PApplet.parseInt(mouseX+mx));
           pos_y.set(PApplet.parseInt(mouseY+my));
         }
@@ -1665,7 +2190,7 @@ class sPanel extends Callable {
     }
   }
   
-  public sPanel setTab(String s) { g.moveTo(s); return this; }
+  public sPanel setTab(String s) { big.moveTo(s); return this; }
   
   public sDrawer addDrawer(int h) { return new sDrawer(this, h); }
   public sDrawer lastDrawer() { return last_drawer; }
@@ -1678,7 +2203,13 @@ class sPanel extends Callable {
       ;
     return this;
   }
-  
+  public sPanel addTitle(String title, int x, int y, int s) {
+    addDrawer(s + y)
+      .addText(title, x, y)
+        .setFont(s)
+        .setGroup(big);
+    return this;
+  }
   public sPanel addText(String title, int x, int y, int s) {
     addDrawer(s + y)
       .addText(title, x, y)
@@ -1704,14 +2235,17 @@ class sPanel extends Callable {
       signe1 = "/"; signe2 = "x";
       f1a = 1/f1; f2a = 1/f2; f1b = f1; f2b = f2;
     }
+    String s1,s2;
+    if (f1%1 == 0) s1 = str(PApplet.parseInt(f1)); else s1 = str(f1);
+    if (f2%1 == 0) s2 = str(PApplet.parseInt(f2)); else s2 = str(f2);
     addDrawer(30)
-      .addIntModifier(signe1+str(f1), 0, 0)
+      .addIntModifier(signe1+s1, 0, 0)
         .setMode(mode, f1a)
         .setValue(i)
         .setSize(30, 30)
         .setFont(16)
       .getDrawer()
-      .addIntModifier(signe1+str(f2), 40, 0)
+      .addIntModifier(signe1+s2, 40, 0)
         .setMode(mode, f2a)
         .setValue(i)
         .setSize(30, 30)
@@ -1720,17 +2254,17 @@ class sPanel extends Callable {
       .addText(label, 110, 5)
         .setFont(18)
       .getDrawer()
-      .addText("", 200, 5)
+      .addText("", 210, 5)
         .setValue(i)
         .setFont(18)
       .getDrawer()
-      .addIntModifier(signe2+str(f2), 310, 0)
+      .addIntModifier(signe2+s2, 310, 0)
         .setMode(mode, f2b)
         .setValue(i)
         .setSize(30, 30)
         .setFont(16)
       .getDrawer()
-      .addIntModifier(signe2+str(f1), 350, 0)
+      .addIntModifier(signe2+s1, 350, 0)
         .setMode(mode, f1b)
         .setValue(i)
         .setSize(30, 30)
@@ -1747,14 +2281,17 @@ class sPanel extends Callable {
       signe1 = "/"; signe2 = "x";
       f1a = 1/f1; f2a = 1/f2; f1b = f1; f2b = f2;
     }
+    String s1,s2;
+    if (f1%1 == 0) s1 = str(PApplet.parseInt(f1)); else s1 = str(f1);
+    if (f2%1 == 0) s2 = str(PApplet.parseInt(f2)); else s2 = str(f2);
     addDrawer(30)
-      .addFltModifier(signe1+str(f1), 0, 0)
+      .addFltModifier(signe1+s1, 0, 0)
         .setMode(mode, f1a)
         .setValue(i)
         .setSize(30, 30)
         .setFont(16)
       .getDrawer()
-      .addFltModifier(signe1+str(f2), 40, 0)
+      .addFltModifier(signe1+s2, 40, 0)
         .setMode(mode, f2a)
         .setValue(i)
         .setSize(30, 30)
@@ -1763,17 +2300,17 @@ class sPanel extends Callable {
       .addText(label, 110, 5)
         .setFont(18)
       .getDrawer()
-      .addText("", 200, 5)
+      .addText("", 210, 5)
         .setValue(i)
         .setFont(18)
       .getDrawer()
-      .addFltModifier(signe2+str(f2), 310, 0)
+      .addFltModifier(signe2+s2, 310, 0)
         .setMode(mode, f2b)
         .setValue(i)
         .setSize(30, 30)
         .setFont(16)
       .getDrawer()
-      .addFltModifier(signe2+str(f1), 350, 0)
+      .addFltModifier(signe2+s1, 350, 0)
         .setMode(mode, f1b)
         .setValue(i)
         .setSize(30, 30)
@@ -1870,6 +2407,10 @@ class sDrawer {
     return this;
   }
 }
+
+
+
+
 
 
 
@@ -2135,10 +2676,11 @@ class sLabel extends Callable {
   }
   public void print() {
     if (ival != null) t.setText(text_start + str(ival.get()) + text_end);
-    else if (fval != null) t.setText(text_start + str(fval.get()) + text_end);
+    else if (fval != null) {t.setText(text_start + trimStringFloat(fval.get()) + text_end); }
     else t.setText(text_start + text_end);
   }
   public sLabel setPanel(sPanel p) { t.setGroup(p.g); return this; }
+  public sLabel setGroup(Group p) { t.setGroup(p); return this; }
   public sLabel setValue(sFlt i) {
     this.addChannel(frame_chan);
     fval = i;
@@ -2186,170 +2728,12 @@ class sLine extends Controller<sLine> {
     } );
   }
 }
-//#######################################################################
-//##                              CANVAS                               ##
-//#######################################################################
-
-Canvas can;
-
-public void init_canvas() {
-  can = new Canvas(0, 0, PApplet.parseInt((width) / cam.cam_scale.get()), PApplet.parseInt((height) / cam.cam_scale.get()), 4);
-}
-
-class Canvas extends Callable {
-  PVector pos = new PVector(0, 0);
-  float canvas_scale = 1.0f;
-  PImage can1,can2;
-  
-  int active_can = 0;
-  int can_div = 4;
-  int can_st = can_div-1;
-  
-  sBoo show_canvas = new sBoo(simval, false);
-  sBoo show_canvas_bound = new sBoo(simval, true);
-  
-  sGrabable can_grab;
-  
-  Canvas() { construct(0, 0, width, height, 1); }
-  Canvas(float x, float y, int w, int h, float s) { construct(x, y, w, h, s); }
-  
-  public void construct(float x, float y, int w, int h, float s) {
-    w /= s; h /= s;
-    can1 = createImage(w, h, RGB);
-    init(can1);
-    can2 = createImage(w, h, RGB);
-    init(can2);
-    pos.x = x - PApplet.parseInt(w) / 2;
-    pos.y = y - PApplet.parseInt(h) / 2;
-    can_grab = new sGrabable(cp5, x, y + 20);
-    addChannel(frame_chan);
-    if (show_canvas.get()) can_grab.show(); else can_grab.hide();
-    canvas_scale = s;
-  }
-  
-  
-  public void answer(Channel channel, float value) {
-    pos = cam.screen_to_cam(can_grab.getP());
-    pos.y -= 20 / cam.cam_scale.get();
-  }
-  
-  public void drawHalo(Community com) {
-    if (active_can == 0) {
-      for (int i = can_st ; i < com.list.size() ; i += can_div)
-        if (com.list.get(i).active) {
-          com.list.get(i).draw_halo(this, can2);
-      }
-      if (can_st == 0) {
-        active_can = 1;
-        clear(can1);
-        can_st = can_div - 1;
-      } else can_st--;
-    }
-    else if (active_can == 1) {
-      for (int i = can_st ; i < com.list.size() ; i += can_div)
-        if (com.list.get(i).active) {
-          com.list.get(i).draw_halo(this, can1);
-      }
-      if (can_st == 0) {
-        active_can = 0;
-        clear(can2);
-        can_st = can_div - 1;
-      } else can_st--;
-    }
-  }
-  
-  public void drawCanvas() {
-    if (show_canvas.get()) {
-      if (show_canvas_bound.get()) {
-        stroke(255);
-        strokeWeight(3 / cam.cam_scale.get());
-        noFill();
-        rect(pos.x, pos.y, can1.width * canvas_scale, can1.height * canvas_scale);
-      }
-      if (active_can == 0) draw(can1);
-      else if (active_can == 1) draw(can2);
-    }
-  }
-  
-  private void init(PImage canvas) {
-    for(int i = 0; i < canvas.pixels.length; i++) {
-      canvas.pixels[i] = color(0); 
-    }
-  }
-  
-  public void clear(PImage canvas) {
-    for (int i = 0 ; i < canvas.pixels.length ; i++) {
-      canvas.pixels[i] = color(0);
-    }
-  }
-  
-  public void draw(PImage canvas) {
-    canvas.updatePixels();
-    pushMatrix();
-    translate(pos.x, pos.y);
-    scale(canvas_scale);
-    image(canvas, 0, 0);
-    popMatrix();
-  }
-  
-  public void addpix(PImage canvas, float x, float y, int nc) {
-    x += canvas_scale/2;
-    y += canvas_scale/2;
-    x -= pos.x;
-    y -= pos.y;
-    x /= canvas_scale;
-    y /= canvas_scale;
-    if (x < 0 || y < 0 || x > canvas.width || y > canvas.height) return;
-    int pi = canvas.width * PApplet.parseInt(y) + PApplet.parseInt(x);
-    if (pi >= 0 && pi < canvas.pixels.length) {
-      int oc = canvas.pixels[pi];
-      canvas.pixels[pi] = color(min(255, red(oc) + red(nc)), min(255, green(oc) + green(nc)), min(255, blue(oc) + blue(nc)));
-    }
-  }
-  //color getpix(PImage canvas, PVector v) { return getpix(canvas, v.x, v.y); }
-  //color getpix(PImage canvas, float x, float y) {
-  //  color co = 0;
-  //  int pi = canvas.width * int(y + canvas.height / 2) + int(x + canvas.width/2);
-  //  if (pi >= 0 && pi < canvas.pixels.length) {
-  //    co = canvas.pixels[pi];
-  //  }
-  //  return co;
-  //}
-  //void setpix(PImage canvas, PVector v, color c) { setpix(canvas, v.x, v.y, c); }
-  //void setpix(PImage canvas, float x, float y, color c) {
-  //  int pi = canvas.width * int(y + canvas.height / 2) + int(x + canvas.width/2);
-  //  if (pi >= 0 && pi < canvas.pixels.length) {
-  //    canvas.pixels[pi] = c;
-  //  }
-  //}
-  
-  //void canvas_croix(PImage canvas, float x, float y, int c) {
-  //  color co = getpix(canvas, x, y);
-  //  setpix(canvas, x, y, color(c + red(co)) );
-  //  setpix(canvas, x + 1, y, color(c/2 + red(co)) );
-  //  setpix(canvas, x - 1, y, color(c/2 + red(co)) );
-  //  setpix(canvas, x, y + 1, color(c/2 + red(co)) );
-  //  setpix(canvas, x, y - 1, color(c/2 + red(co)) );
-  //}
-  
-  //void canvas_line(PImage canvas, PVector v1, PVector v2, int c) {
-  //  PVector m = new PVector(v1.x - v2.x, v1.y - v2.y);
-  //  int l = int(m.mag());
-  //  m.setMag(-1);
-  //  PVector p = new PVector(v1.x, v1.y);
-  //  for (int i = 0 ; i < l ; i++) {
-  //    color co = getpix(canvas, p.x, p.y);
-  //    setpix(canvas, p.x, p.y, color(c + red(co)) );
-  //    p.add(m);
-  //  }
-  //}
-}
 class LinkList {
   ArrayList<LinkB> linkBList = new ArrayList<LinkB>(0);
   ArrayList<LinkF> linkFList = new ArrayList<LinkF>(0);
-  MacroList macroList;
+  MacroPlane macroList;
   
-  LinkList(MacroList m) {
+  LinkList(MacroPlane m) {
     macroList = m;
   }
   
@@ -2366,23 +2750,23 @@ class LinkList {
   //}
   
   public LinkB createLinkB() {
-    LinkB l = new LinkB(macroList);
+    LinkB l = new LinkB(plane);
     linkBList.add(l);
     return l;
   }
 
   public LinkF createLinkF() {
-    LinkF l = new LinkF(macroList);
+    LinkF l = new LinkF(plane);
     linkFList.add(l);
     return l;
   }
 }
 
 class LinkB {
-  MacroList macroList;
+  MacroPlane macroList;
   InputB in;
   OutputB out;
-  LinkB(MacroList m) {
+  LinkB(MacroPlane m) {
     macroList = m;
   }
   //void to_strings() {
@@ -2393,13 +2777,15 @@ class LinkB {
   //  }
   //}
   public boolean collision(int x, int y) {
-    if (this != macroList.NOTB && in != macroList.NOTBI && out != macroList.NOTBO) {
+    if (macroList != null && this != macroList.NOTB && in != macroList.NOTBI && out != macroList.NOTBO) {
       return distancePointToLine(x, y, in.x, in.y, out.x, out.y) < 3;
     }
     return false;
   }
   public void drawing() {
-    if (this != macroList.NOTB && in != macroList.NOTBI && out != macroList.NOTBO) {
+    if (macroList != null && 
+        macroList.NOTB != null && macroList.NOTBI != null && macroList.NOTBO != null && 
+        this != macroList.NOTB && in != macroList.NOTBI && out != macroList.NOTBO) {
       if (distancePointToLine(mouseX, mouseY, in.x, in.y, out.x, out.y) < 3) {
         if (out.bang) {stroke(255,255,0,180); fill(255,255,0);} else {stroke(182,182,0,180); fill(182,182,0);}
       } else {
@@ -2427,11 +2813,11 @@ class LinkB {
 }
 
 class LinkF {
-  MacroList macroList;
+  MacroPlane macroList;
   InputF in;
   OutputF out;
   float value = 0;
-  LinkF(MacroList m) {
+  LinkF(MacroPlane m) {
     macroList = m;
   }
   //void to_strings() {
@@ -2442,13 +2828,15 @@ class LinkF {
   //  }
   //}
   public boolean collision(int x, int y) {
-    if (this != macroList.NOTF && in != macroList.NOTFI && out != macroList.NOTFO) {
+    if (macroList != null && this != macroList.NOTF && in != macroList.NOTFI && out != macroList.NOTFO) {
       return distancePointToLine(x, y, in.x, in.y, out.x, out.y) < 3;
     }
     return false;
   }
   public void drawing() {
-    if (this != macroList.NOTF && in != macroList.NOTFI && out != macroList.NOTFO) {
+    if (macroList != null && 
+        macroList.NOTB != null && macroList.NOTBI != null && macroList.NOTBO != null && 
+        this != macroList.NOTF && in != macroList.NOTFI && out != macroList.NOTFO) {
       if (distancePointToLine(mouseX, mouseY, in.x, in.y, out.x, out.y) < 3) {
         if (out.bang) {stroke(255,255,0,180); fill(255,255,0);} else {stroke(182,182,0,180); fill(182,182,0);}
       } else {
@@ -2475,14 +2863,14 @@ class LinkF {
   }
 }
 
-abstract class InputA {
-  MacroList macroList;
+abstract class InputA extends Callable {
+  MacroPlane macroList;
   int x,y,n;
   int id = 0;
   Group g;
   Button in;
   boolean bang = false;
-  InputA(MacroList m, String s_, int _id, Group g_, int n_) {
+  InputA(MacroPlane m, String s_, int _id, Group g_, int n_) {
     macroList = m;
     id = _id;
     g = g_;
@@ -2495,6 +2883,7 @@ abstract class InputA {
        .setGroup(g)
        ;
     x = PApplet.parseInt(g.getPosition()[0]); y = PApplet.parseInt(g.getPosition()[1] + 12 + (n*26));
+    addChannel(frame_chan);
   }
   public void clear() {
     in.remove();
@@ -2512,7 +2901,7 @@ abstract class InputA {
 class InputB extends InputA {
   ArrayList<LinkB> l = new ArrayList<LinkB>(0);
   Textlabel t;
-  InputB(MacroList m, int id, Group g_, int i, String text, int n_) {
+  InputB(MacroPlane m, int id, Group g_, int i, String text, int n_) {
     super(m, "inB", id, g_, n_);
     t = cp5.addTextlabel("Ctrl" + str(i) + "inBText" + str(n))
                     .setText(text)
@@ -2523,6 +2912,7 @@ class InputB extends InputA {
                     ;
   }
   public void clear() {
+    for (LinkB t : l) macroList.linkList.linkBList.remove(t);
     t.remove();
     super.clear();
   }
@@ -2530,8 +2920,13 @@ class InputB extends InputA {
   //  super.to_strings();
   //  file.append("B");
   //}
+  public void answer(Channel chan, float v) {
+    if (in.isMouseOver() && kb.mouseClick[0] && macroList.creatingLinkB) {macroList.addLinkSelectInB(this);}
+    x = PApplet.parseInt(g.getPosition()[0]); y = PApplet.parseInt(g.getPosition()[1] + 14 + (n*26));
+    
+  }
   public boolean getUpdate() {
-    if (in.isMouseOver() && mouseClick[0] && macroList.creatingLinkB) {macroList.addLinkSelectInB(this);}
+    if (in.isMouseOver() && kb.mouseClick[0] && macroList.creatingLinkB) {macroList.addLinkSelectInB(this);}
     x = PApplet.parseInt(g.getPosition()[0]); y = PApplet.parseInt(g.getPosition()[1] + 14 + (n*26));
     bang = false;
     for (LinkB b : l) {
@@ -2553,7 +2948,9 @@ class InputF extends InputA {
   float value;
   Textfield textf;
   Textlabel t;
-  InputF(MacroList m, int id, Group g_, int i, String text, int n_, float d) {
+  Button ch;
+  boolean auto_reset = false;
+  InputF(MacroPlane m, int id, Group g_, int i, String text, int n_, float d) {
     super(m, "inF", id, g_, n_);
     value = d;
     t = cp5.addTextlabel("Ctrl" + str(id) + "inFText" + str(n))
@@ -2582,25 +2979,43 @@ class InputF extends InputA {
         }) 
        ;
     textf.getValueLabel().setFont(createFont("Arial",18));
+    ch = cp5.addButton("button" + get_free_id())
+      .setGroup(g)
+      .setSize(12, 22)
+      .setSwitch(true)
+      .setPosition(in.getPosition()[0] + 14, in.getPosition()[1])
+      .addListener(new ControlListener() {
+          public void controlEvent(final ControlEvent ev) { auto_reset = ch.isOn(); } } )
+      ;
+    ch.getCaptionLabel().setText("R").setFont(getFont(12));
   }
   public void clear() {
     textf.remove();
     t.remove();
+    for (LinkF t : l) macroList.linkList.linkFList.remove(t);
     super.clear();
   }
-  public boolean getUpdate() {
-    if (in.isMouseOver() && mouseClick[0] && macroList.creatingLinkF) {macroList.addLinkSelectInF(this);}
+  public void answer(Channel chan, float v) {
+    if (in.isMouseOver() && kb.mouseClick[0] && macroList.creatingLinkF) {macroList.addLinkSelectInF(this);}
     x = PApplet.parseInt(g.getPosition()[0]); y = PApplet.parseInt(g.getPosition()[1] + 14 + (n*26));
+  }
+  public boolean getUpdate() {
+    
     bang = false;
     for (LinkF f : l) {
       if (!f.out.updated) {return false;}
     }
+    //
     for (LinkF f : l) {
       bang |= f.out.bang;
       if (f.out.bang) {value = f.out.value;}
     }
     if (bang) { textf.setFocus(true); textf.setText(str(value)); textf.setFocus(false); }
-    
+    if (!bang && auto_reset && value != 0) {
+      value = 0;
+      bang = true;
+      textf.setFocus(true); textf.setText(str(value)); textf.setFocus(false);
+    }
     if (!bang && PApplet.parseFloat(textf.getText()) != value) {
       value = PApplet.parseFloat(textf.getText());
       bang = true;
@@ -2630,8 +3045,8 @@ class InputF extends InputA {
   //}
 }
 
-abstract class OutputA {
-  MacroList macroList;
+abstract class OutputA extends Callable {
+  MacroPlane macroList;
   boolean updated = false;
   int x = -100; int y = -100;
   int n = 0;
@@ -2640,7 +3055,7 @@ abstract class OutputA {
   Button out;
   boolean bang = false;
 
-  OutputA(MacroList m, String s_, int _id, Group g_, int n_) {
+  OutputA(MacroPlane m, String s_, int _id, Group g_, int n_) {
     g = g_;
     n = n_;
     id = _id;
@@ -2653,6 +3068,7 @@ abstract class OutputA {
        .setGroup(g)
        ;
     x = PApplet.parseInt(g.getPosition()[0] + g.getWidth()); y = PApplet.parseInt(g.getPosition()[1] + 14 + (n*26));
+    addChannel(frame_chan);
   }
   
   public void clear() {
@@ -2671,7 +3087,7 @@ abstract class OutputA {
 class OutputB extends OutputA {
   ArrayList<LinkB> l = new ArrayList<LinkB>(0);
   Textlabel t;
-  OutputB(MacroList m, int id, Group g_, int i, String text, int n_) {
+  OutputB(MacroPlane m, int id, Group g_, int i, String text, int n_) {
     super(m, "outB", id, g_, n_);
     t = cp5.addTextlabel("Ctrl" + str(i) + "outBText" + str(n))
                     .setText(text)
@@ -2683,6 +3099,7 @@ class OutputB extends OutputA {
   }
   public void clear() {
     t.remove();
+    for (LinkB t : l) macroList.linkList.linkBList.remove(t);
     super.clear();
   }
   //void to_strings() {
@@ -2696,15 +3113,15 @@ class OutputB extends OutputA {
         b.in.bang = bang;
       }
     }
-    update();
+    //update();
   }
   public void bang() { set(true); }
   public void unBang() { set(false); }
   public boolean get() {
     return bang;
   }
-  public void update() {
-    if (out.isMouseOver() && mouseClick[0]) {macroList.addLinkSelectOutB(this);}
+  public void answer(Channel chan, float v) {
+    if (out.isMouseOver() && kb.mouseClick[0]) {macroList.addLinkSelectOutB(this);}
     updated = true;
     x = PApplet.parseInt(g.getPosition()[0] + g.getWidth()); y = PApplet.parseInt(g.getPosition()[1] + 14 + (n*26));
     if (bang) {out.setOn();} else {out.setOff();}
@@ -2722,7 +3139,7 @@ class OutputF extends OutputA {
   float value;
   Textfield textf;
   Textlabel t;
-  OutputF(MacroList m, int id, Group g_, int i, String text, int n_, float d) {
+  OutputF(MacroPlane m, int id, Group g_, int i, String text, int n_, float d) {
     super(m, "outF", id, g_, n_);
     value = d;
     t = cp5.addTextlabel("Ctrl" + str(i) + "outFText" + str(n_))
@@ -2745,10 +3162,12 @@ class OutputF extends OutputA {
        .setFocus(false)
        ;
     textf.getValueLabel().setFont(createFont("Arial",18));
+    
   }
   public void clear() {
     t.remove();
     textf.remove();
+    for (LinkF t : l) macroList.linkList.linkFList.remove(t);
     super.clear();
   }
   //void to_strings() {
@@ -2763,7 +3182,7 @@ class OutputF extends OutputA {
     if (value != v) { value = v; bang(); return; }
     value = v;
   }
-  public void unBang() {bang = false;}
+  public void unBang() { bang = false; update(); }
   public void bang() {
     bang = true;
     for (LinkF f : l) {
@@ -2772,13 +3191,16 @@ class OutputF extends OutputA {
     update();
   }
   public float get() {return value;}
-  public void update() {
-    if (out.isMouseOver() && mouseClick[0]) {macroList.addLinkSelectOutF(this);}
+  public void answer(Channel chan, float v) {
+    if (out.isMouseOver() && kb.mouseClick[0]) {macroList.addLinkSelectOutF(this);}
     updated = true;
     x = PApplet.parseInt(g.getPosition()[0] + g.getWidth()); y = PApplet.parseInt(g.getPosition()[1] + 12 + (n*26));
-    if (value < 0.000001f) {value = 0;}
-    if (bang) {out.setOn(); textf.setFocus(true); textf.setText(str(value).trim()); textf.setFocus(false);} else {out.setOff();}
     //bang = false;
+    update();
+  }
+  public void update() {
+    //if (value < 0.000001) {value = 0;}
+    if (bang) {out.setOn(); textf.setFocus(true); textf.setText(str(value).trim()); textf.setFocus(false);} else {out.setOff();}
   }
   public OutputF linkTo(InputF in) {
     LinkF nl = macroList.linkList.createLinkF();
@@ -2816,11 +3238,11 @@ Macro Custom Connexions:
   
   >MCsValueWatcher(sFlt) outF value
   >MCsValueWatcher(sBoo) outB value
-  MCsValueController(sFlt) inF value      BEUG!!!!
+  >MCsValueController(sFlt) inF value      BEUG!!!!
   >MCsValueController(sBoo) inB value
   
   >MCRun( code ) inB bang
-  MCKeyboard(key) outB bang
+  >MCKeyboard(key) outB bang
   
   MCsValueModifier(sFlt)
     inB bang, inF value, select : 'x' / '/' / '+' / '-'
@@ -2828,12 +3250,10 @@ Macro Custom Connexions:
 */
 
 
-
-
 class MacroCUSTOM extends Macro {
   ArrayList<MCConnexion> connexions = new ArrayList<MCConnexion>();
   
-  MacroCUSTOM(MacroList l_) {
+  MacroCUSTOM(MacroPlane l_) {
     super(l_, l_.macroList.size(), l_.adding_pos, l_.adding_pos);
     g.setLabel("custom");
     g.setWidth(300);
@@ -2854,9 +3274,9 @@ class MacroCUSTOM extends Macro {
   public MCsFltControl addMCsFltControl() { return new MCsFltControl(this); }
   public MCsIntControl addMCsIntControl() { return new MCsIntControl(this); }
   
-  public void update() {
+  public void update() { //tick
     super.update();
-    for (MCConnexion c : connexions) c.update();
+    for (MCConnexion c : connexions) c.tick();
     updated = true;
   }
   
@@ -2865,13 +3285,14 @@ class MacroCUSTOM extends Macro {
   //void to_strings() { super.to_strings(); file.append(""); }
 }
 
-abstract class MCConnexion {
+abstract class MCConnexion extends Callable {
   MacroCUSTOM macro;
   MCConnexion(MacroCUSTOM m) {
     macro = m; macro.connexions.add(this); }
   public MacroCUSTOM getMacro() { return macro; }
-  public abstract void update();
+  public abstract void tick();
   public abstract MCConnexion setText(String s);
+  public void answer(Channel c, float f) {}
 }
 
 
@@ -2886,7 +3307,7 @@ class MCsFltControl extends MCConnexion {
   public MCsFltControl setText(String s) { in.t.setText(s); return this; }
   public MCsFltControl setValue(sFlt b) { flt = b; in.set(flt.get()); return this; }
   
-  public void update() {
+  public void tick() {
     if (in.getUpdate()) {
       if (in.bang()) {
         //print("b" + flt.get() + " ");
@@ -2910,7 +3331,7 @@ class MCsIntControl extends MCConnexion {
   public MCsIntControl setText(String s) { in.t.setText(s); return this; }
   public MCsIntControl setValue(sInt b) { i = b; in.set(i.get()); return this; }
   
-  public void update() {
+  public void tick() {
     if (in.getUpdate()) {
       if (in.bang()) {
         //print("b" + flt.get() + " ");
@@ -2946,7 +3367,7 @@ class MCsBooControl extends MCConnexion {
   public MCsBooControl setText(String s) { in.t.setText(s); return this; }
   public MCsBooControl setValue(sBoo b) { boo = b;; return this; }
   
-  public void update() {
+  public void tick() {
     if (in.getUpdate()) {
       if (in.get()) {
         if (swtch) { boo.set(!boo.get()); }  //change l'etat de la cicle quand bang
@@ -2964,21 +3385,37 @@ class MCsFltWatcher extends MCConnexion {
   OutputF out;
   float v = 0;
   sFlt flt;
+  Button ch;
+  boolean onchange = true;
   
   MCsFltWatcher(MacroCUSTOM m) { super(m);
-    out =  macro.createOutputF("WatchF", 0); }
+    out =  macro.createOutputF("WatchF", 0);
+    ch = cp5.addButton("button" + get_free_id())
+      .setGroup(macro.g)
+      .setSize(12, 22)
+      .setSwitch(true)
+      .setPosition(out.out.getPosition()[0] - 14, out.out.getPosition()[1])
+      .addListener(new ControlListener() {
+        public void controlEvent(final ControlEvent ev) { onchange = !ch.isOn(); } } )
+      ;
+    ch.getCaptionLabel().setText("A").setFont(getFont(12));
+    addChannel(frame_chan);
+  }
   
   public MCsFltWatcher setText(String s) { out.t.setText(s); return this; }
   
   public MCsFltWatcher addValue(sFlt f) {
     flt = f;
     v = f.get();
-    out.set(v);
+    out.setBang(v);
     return this; }
-  public void update() {
-    if (v != flt.get()) out.set(flt.get());
-    out.bang();                                    // !! ou seulement si changement !!
-    v = flt.get(); }
+  public void answer(Channel c, float f) { out.set(flt.get()); out.update(); }
+  public void tick() {
+    float t = flt.get();
+    out.set(t);
+    if (v != t || !onchange) out.bang(); else out.unBang();
+    v = t;
+  }
 }
 
 
@@ -2987,21 +3424,37 @@ class MCsIntWatcher extends MCConnexion {
   OutputF out;
   float v = 0;
   sInt i;
+  Button ch;
+  boolean onchange = true;
   
   MCsIntWatcher(MacroCUSTOM m) { super(m);
-    out =  macro.createOutputF("WatchI", 0); }
+    out =  macro.createOutputF("WatchI", 0);
+    ch = cp5.addButton("button" + get_free_id())
+      .setGroup(macro.g)
+      .setSize(12, 22)
+      .setSwitch(true)
+      .setPosition(out.out.getPosition()[0] - 14, out.out.getPosition()[1])
+      .addListener(new ControlListener() {
+          public void controlEvent(final ControlEvent ev) { onchange = !ch.isOn(); } } )
+      ;
+    ch.getCaptionLabel().setText("A").setFont(getFont(12));
+    addChannel(frame_chan);
+  }
   
   public MCsIntWatcher setText(String s) { out.t.setText(s); return this; }
   
   public MCsIntWatcher addValue(sInt f) {
     i = f;
     v = f.get();
-    out.set(v);
+    out.setBang(v);
     return this; }
-  public void update() {
-    if (v != i.get()) out.set(i.get());
-    out.bang();                                    // !! ou seulement si changement !!
-    v = i.get(); }
+  public void answer(Channel c, float f) { out.set(i.get()); out.update(); }
+  public void tick() {
+    int a = i.get();
+    out.set(a);
+    //
+    if (v != a || !onchange) out.bang(); else out.unBang();
+    v = a; }
 }
 
 
@@ -3020,7 +3473,7 @@ class MCsBooWatcher extends MCConnexion {
     boo = b;
     v = boo.get();
     return this; }
-  public void update() {
+  public void tick() {
     out.set(boo.get());
     v = boo.get(); }
 }
@@ -3037,7 +3490,7 @@ class MCRun extends MCConnexion {
   public MCRun setText(String s) { in.t.setText(s); return this; }
   public MCRun addRunnable(Runnable r) { runs.add(r); return this; }
   
-  public void update() { if (in.getUpdate() && in.get()) for (Runnable r : runs) r.run(); }
+  public void tick() { if (in.getUpdate() && in.get()) for (Runnable r : runs) r.run(); }
 }
 
 //#############    RUNNABLE    #############
@@ -3054,10 +3507,10 @@ class MCListen extends MCConnexion {
     
   public MCListen setText(String s) { out.t.setText(s); return this; }
   
-  public MCListen addChannel(Channel chan) {
+  public MCListen listenTo(Channel chan) {
     new Callable(chan) { public void answer(Channel channel, float value) { v = true; }};
     return this; }
-  public void update() {
+  public void tick() {
     if (v) out.set(true); else out.set(false);
     v = false; }
 }
@@ -3072,8 +3525,8 @@ class MCCall extends MCConnexion {
     in =  macro.createInputB("call"); }
   
   public MCCall setText(String s) { in.t.setText(s); return this; }
-  public MCCall addChannel(Channel chan) { chans.add(chan); return this; }
-  public void update() { if (in.getUpdate() && in.get()) for (Channel c : chans) callChannel(c); }
+  public MCCall callTo(Channel chan) { chans.add(chan); return this; }
+  public void tick() { if (in.getUpdate() && in.get()) for (Channel c : chans) callChannel(c); }
 }
 
 
@@ -3085,21 +3538,121 @@ class MCCall extends MCConnexion {
 //#######################################################################
 
 
-class Pulse extends Macro {
+
+class MacroKey extends Macro {
+  OutputB out;
+  boolean b;
+  char c = 'a';
+  Textfield txtf;
+  MacroKey(MacroPlane l_, int i_, int x_, int y_) {
+    super(l_, i_, x_, y_);
+    g.setLabel("key a");
+    g.setWidth(70);
+    out = createOutputB("");
+    txtf = cp5.addTextfield("textDel" + str(id))
+       .setLabel("").setPosition(16,3).setSize(22,22)
+       .setAutoClear(false).setGroup(g).setText("a") ;
+    txtf.getValueLabel().setFont(createFont("Arial",18));
+  }
+  public void clear() { super.clear(); }
+  public MacroKey setChar(char _c) { c = _c; g.setLabel("key " + c); return this; }
+  //void to_strings() {
+  //  super.to_strings();
+  //  file.append("pulse");
+  //}
+  public void custom_frame() {
+    String s = txtf.getText();
+    if (s.length() == 1) {
+      setChar(s.charAt(0));
+    }
+    if (kb.getClick(c)) b = true; }
+  public void update() {
+    if (b) { out.set(true); b = false; }
+    else out.set(false);
+    super.update();
+    updated = true; }
+}
+
+
+class MacroBang extends Macro {
+  OutputB out;
+  Button b;
+  boolean v,flag = false;
+  MacroBang(MacroPlane l_, int i_, int x_, int y_) {
+    super(l_, i_, x_, y_);
+    g.setLabel("bang");
+    g.setWidth(70);
+    out = createOutputB("");
+    b = cp5.addButton("button" + get_free_id())
+        .setSize(35, 22)
+        .setPosition(11, 2)
+        .setGroup(g)
+        ;
+    b.getCaptionLabel().setText("");
+  }
+  public void clear() { super.clear(); }
+  //void to_strings() {
+  //  super.to_strings();
+  //  file.append("pulse");
+  //}
+  public void custom_frame() {
+    if (b.isPressed() && !flag) { flag = true; v = true; sim.next_tick = true; }
+    if (!b.isPressed()) { flag = false; } }
+  public void update() {
+    if (v) { out.set(true); v = false; } 
+    else out.set(false);
+    super.update();
+    updated = true; }
+}
+
+
+class MacroToggle extends Macro {
+  OutputB out;
+  Button b;
+  boolean flag = false;
+  MacroToggle(MacroPlane l_, int i_, int x_, int y_) {
+    super(l_, i_, x_, y_);
+    g.setLabel("toggle");
+    g.setWidth(70);
+    out = createOutputB("");
+    b = cp5.addButton("button" + get_free_id())
+        .setSize(35, 22)
+        .setPosition(11, 2)
+        .setGroup(g)
+        .setSwitch(true)
+        ;
+    b.getCaptionLabel().setText("");
+  }
+  public void clear() { super.clear(); }
+  //void to_strings() {
+  //  super.to_strings();
+  //  file.append("pulse");
+  //}
+  public void custom_frame() {
+    if (b.isPressed() && !flag) {
+      flag = true; sim.next_tick = true; if (!out.get()) out.set(true); else out.set(false); }
+    if (!b.isPressed()) { flag = false; } }
+  public void update() {
+    super.update();
+    updated = true; }
+}
+
+
+class MacroPulse extends Macro {
   OutputB out;
   InputF in;
   int turn = 0;
   int freq = 100;
   int cnt = 0;
   
-  Pulse(MacroList l_, int i_, int x_, int y_) {
+  MacroPulse(MacroPlane l_, int i_, int x_, int y_) {
     super(l_, i_, x_, y_);
     g.setLabel("pulse");
     g.setWidth(150);
-    out = createOutputB("");
+    out = createOutputB("            O");
     in = createInputF("", freq);
     turn = freq;
-    cnt = PApplet.parseInt(tick.get());
+    cnt = PApplet.parseInt(sim.tick.get());
   }
   public void clear() {
     super.clear();
@@ -3113,13 +3666,13 @@ class Pulse extends Macro {
     if (in.getUpdate()) {
       int m = PApplet.parseInt(in.get());
       if (m != freq) {
-        turn = PApplet.parseInt(tick.get()) + m;
+        turn = PApplet.parseInt(sim.tick.get()) + m;
         freq = m;
       }
     }
-    if (tick.get() < cnt) turn = freq;
-    cnt = PApplet.parseInt(tick.get());
-    if (tick.get() >= turn) {
+    if (sim.tick.get() < cnt) turn = freq;
+    cnt = PApplet.parseInt(sim.tick.get());
+    if (sim.tick.get() >= turn) {
       out.set(true);
       turn += freq;
     } else out.set(false);
@@ -3137,24 +3690,26 @@ class MacroVAL extends Macro {
   InputB in;
   InputF inV;
   float value;
-  //Textfield txtf;
+  boolean flag = false;
   
-  MacroVAL(MacroList ml, float v_, int i_, int x_, int y_) {
+  MacroVAL(MacroPlane ml, float v_, int i_, int x_, int y_) {
     super(ml, i_, x_, y_);
     value = v_;
     g.setLabel("Value");
-    in =  createInputB("IN");
+    g.setSize(180, 22);
+    in =  createInputB(">");
     inV =  createInputF("  VAL",value);
-    out = createOutputF("    OUT",v_);
-    //txtf = cp5.addTextfield("textVal" + str(id))
-    //   .setLabel("")
-    //   .setPosition(100,2)
-    //   .setSize(70,22)
-    //   .setAutoClear(false)
-    //   .setGroup(g)
-    //   .setText(str(value))
-    //   ;
-    //txtf.getValueLabel().setFont(createFont("Arial",18));
+    out = createOutputF("",v_);
+    new Button(cp5, "button"+get_free_id())
+      .setPosition(50, 3)
+      .setSize(45, 22)
+      .setGroup(g)
+      .addListener(new ControlListener() {
+        public void controlEvent(final ControlEvent ev) { 
+          flag = true;
+        } } )
+      .getCaptionLabel().setText(">").setFont(getFont(18))
+      ;
   }
   public void clear() {
     //txtf.remove();
@@ -3173,8 +3728,8 @@ class MacroVAL extends Macro {
       //if (inV.bang()) {value = inV.get(); }//txtf.setText(str(value));}
       value = inV.get();
       out.set(value);
-      if (in.get()) {out.bang();} else {out.unBang();}
-      out.update();
+      if (in.get() || flag) {out.bang();} else {out.unBang();}
+      flag = false;
       updated = true;
     }
   }
@@ -3189,15 +3744,16 @@ class MacroDELAY extends Macro {
   Textfield txtf;
   boolean temp = false;
   
-  MacroDELAY(MacroList ml, int v_, int i_, int x_, int y_) {
+  MacroDELAY(MacroPlane ml, int v_, int i_, int x_, int y_) {
     super(ml, i_, x_, y_);
     count = v_;
     g.setLabel("Delay");
-    in =  createInputB("IN");
-    out = createOutputB("    OUT");
+    g.setWidth(200);
+    in =  createInputB(">");
+    out = createOutputB("           >");
     txtf = cp5.addTextfield("textDel" + str(id))
        .setLabel("")
-       .setPosition(100,2)
+       .setPosition(65,2)
        .setSize(70,22)
        .setAutoClear(false)
        .setGroup(g)
@@ -3253,7 +3809,7 @@ class MacroCOMP extends Macro {
   RadioButton r1;
   Button b1;
   
-  MacroCOMP(MacroList ml, int i_, int x_, int y_) {
+  MacroCOMP(MacroPlane ml, int i_, int x_, int y_) {
     super(ml, i_, x_, y_);
     g.setLabel("Comp>");
     in1 =  createInputF("   IN",0);
@@ -3305,7 +3861,7 @@ class MacroCOMP extends Macro {
         {out.bang();}
       else {out.unBang();}
 
-      out.update();
+      //out.update();
       updated = true;
     }
   }
@@ -3317,7 +3873,7 @@ class MacroBOOL extends Macro {
   
   RadioButton r1;
   
-  MacroBOOL(MacroList ml, int i_, int x_, int y_) {
+  MacroBOOL(MacroPlane ml, int i_, int x_, int y_) {
     super(ml, i_, x_, y_);
     g.setLabel("BOOL");
     in1 =  createInputB("   IN");
@@ -3364,7 +3920,34 @@ class MacroBOOL extends Macro {
       else if (r1.getItem("NOT" + id).getState()) 
         if (!in1.get()) {out.bang();} else {out.unBang();}
 
-      out.update();
+      //out.update();
+      updated = true;
+    }
+  }
+}
+
+class MacroNOT extends Macro {
+  OutputB out;
+  InputB in;
+  
+  MacroNOT(MacroPlane ml, int i_, int x_, int y_) {
+    super(ml, i_, x_, y_);
+    g.setLabel("NOT").setSize(45, 22);
+    in =  createInputB("");
+    out = createOutputB("              !");
+  }
+  public void clear() {
+    super.clear();
+  }
+  //void to_strings() {
+  //  super.to_strings();
+  //  file.append("macroBOOL");
+  //}
+
+  public void update() {
+    super.update();
+    if (in.getUpdate()) {
+      if (in.get()) {out.bang();} else {out.unBang();}
       updated = true;
     }
   }
@@ -3377,7 +3960,7 @@ class MacroCALC extends Macro {
   
   RadioButton r1;
   
-  MacroCALC(MacroList ml, int i_, int x_, int y_) {
+  MacroCALC(MacroPlane ml, int i_, int x_, int y_) {
     super(ml, i_, x_, y_);
     g.setLabel("CALC");
     in1 =  createInputF("   IN", 0);
@@ -3432,7 +4015,7 @@ class MacroCALC extends Macro {
       else out.unBang();
       v1 = in1.get(); v2 = in2.get(); 
 
-      out.update();
+      //out.update();
       updated = true;
     }
   }
@@ -3464,470 +4047,397 @@ class MacroCALC extends Macro {
 //#######################################################################
 
 
-class Keyboard extends Macro {
-  boolean w,c,a,p;
-  OutputB wO,cO,aO,pO;
+//class Keyboard extends Macro {
+//  boolean w,c,a,p;
+//  OutputB wO,cO,aO,pO;
   
-  Keyboard(MacroList l_, int i_, int x_, int y_) {
-    super(l_, i_, x_, y_);
-    w = false; c = false; a = false; p = false;
-    g.setLabel("Key");
-    g.setWidth(150);
-    aO = createOutputB("          A");
-    wO = createOutputB("          W");
-    pO = createOutputB("          P");
-    cO = createOutputB("          C");
-  }
-  public void clear() {
-    super.clear();
-  }
-  //void to_strings() {
-  //  super.to_strings();
-  //  file.append("Keyboard");
-  //}
+//  Keyboard(MacroList l_, int i_, int x_, int y_) {
+//    super(l_, i_, x_, y_);
+//    w = false; c = false; a = false; p = false;
+//    g.setLabel("Key");
+//    g.setWidth(150);
+//    aO = createOutputB("          A");
+//    wO = createOutputB("          W");
+//    pO = createOutputB("          P");
+//    cO = createOutputB("          C");
+//  }
+//  void clear() {
+//    super.clear();
+//  }
+//  //void to_strings() {
+//  //  super.to_strings();
+//  //  file.append("Keyboard");
+//  //}
   
-  public void update() {
-    w = false; c = false; a = false; p = false;
-    if (keysClick[4]) {w = true;}
-    if (keysClick[5]) {c = true;}
-    if (keysClick[7]) {a = true;}
-    if (keysClick[8]) {p = true;}
-    wO.set(w);
-    cO.set(c);
-    aO.set(a);
-    pO.set(p);
-    super.update();
-    updated = true;
-  }
+//  void update() {
+//    w = false; c = false; a = false; p = false;
+//    if (keysClick[4]) {w = true;}
+//    if (keysClick[5]) {c = true;}
+//    if (keysClick[7]) {a = true;}
+//    if (keysClick[8]) {p = true;}
+//    wO.set(w);
+//    cO.set(c);
+//    aO.set(a);
+//    pO.set(p);
+//    super.update();
+//    updated = true;
+//  }
   
-  public void drawing(float x, float y) {}
-}
+//  void drawing(float x, float y) {}
+//}
 
-class GrowingPop extends Macro {
-  InputB addI;
-  InputB add2I;
+//class GrowingPop extends Macro {
+//  InputB addI;
+//  InputB add2I;
   
-  GrowingPop(MacroList l_, int i_, int x_, int y_) {
-    super(l_, i_, x_, y_);
-    g.setLabel("ADD");
-    g.setWidth(200);
-    addI = createInputB("grower");
-    add2I = createInputB("floc");
-  }
-  public void clear() {
-    super.clear();
-  }
-  //void to_strings() {
-  //  super.to_strings();
-  //  file.append("GrowingPop");
-  //}
+//  GrowingPop(MacroList l_, int i_, int x_, int y_) {
+//    super(l_, i_, x_, y_);
+//    g.setLabel("ADD");
+//    g.setWidth(200);
+//    addI = createInputB("grower");
+//    add2I = createInputB("floc");
+//  }
+//  void clear() {
+//    super.clear();
+//  }
+//  //void to_strings() {
+//  //  super.to_strings();
+//  //  file.append("GrowingPop");
+//  //}
   
-  public void drawing(float x, float y) {}
+//  void drawing(float x, float y) {}
   
-  public void update() {
-    if (addI.getUpdate() && add2I.getUpdate()) {
-      if (addI.get()) {
-        if (!gcom.adding_type.get()) 
-        for (int j = 0; j < gcom.initial_entity.get(); j++)
-          gcom.initialEntity();
-        if (gcom.adding_type.get()) gcom.adding_pile = gcom.initial_entity.get();
-      }
-      if (add2I.get()) {
-        if (!fcom.adding_type.get()) 
-        for (int j = 0; j < fcom.initial_entity.get(); j++)
-          fcom.initialEntity();
-        if (fcom.adding_type.get()) fcom.adding_pile = fcom.initial_entity.get();
-      }
-    }
-    super.update();
-    updated = true;
-  }
-}
+//  void update() {
+//    if (addI.getUpdate() && add2I.getUpdate()) {
+//      if (addI.get()) {
+//        if (!gcom.adding_type.get()) 
+//        for (int j = 0; j < gcom.initial_entity.get(); j++)
+//          gcom.initialEntity();
+//        if (gcom.adding_type.get()) gcom.adding_pile = gcom.initial_entity.get();
+//      }
+//      if (add2I.get()) {
+//        if (!fcom.adding_type.get()) 
+//        for (int j = 0; j < fcom.initial_entity.get(); j++)
+//          fcom.initialEntity();
+//        if (fcom.adding_type.get()) fcom.adding_pile = fcom.initial_entity.get();
+//      }
+//    }
+//    super.update();
+//    updated = true;
+//  }
+//}
 
-class GrowingParam extends Macro {
-  InputF growI,sproutI,stopI,dieI,ageI;
-  float grow,sprout,stop,die,age;
+//class GrowingParam extends Macro {
+//  InputF growI,sproutI,stopI,dieI,ageI;
+//  float grow,sprout,stop,die,age;
   
-  GrowingParam(MacroList l_, int i_, int x_, int y_) {
-    super(l_, i_, x_, y_);
-    g.setLabel("GROW");
-    g.setWidth(200);
-    //growI = createInputF("GROW", GROW_DIFFICULTY);
-    //grow = GROW_DIFFICULTY;
-    //sproutI = createInputF("SPROUT", SPROUT_DIFFICULTY);
-    //sprout = SPROUT_DIFFICULTY;
-    //stopI = createInputF("STOP", STOP_DIFFICULTY);
-    //stop = STOP_DIFFICULTY;
-    //dieI = createInputF("DIE", DIE_DIFFICULTY);
-    //die = DIE_DIFFICULTY;
-    //ageI = createInputF("AGE", OLD_AGE);
-    //age = OLD_AGE;
-  }
-  public void clear() {
-    super.clear();
-  }
-  //void to_strings() {
-  //  super.to_strings();
-  //  file.append("GrowingControl");
-  //  file.append(str(grow));
-  //  file.append(str(sprout));
-  //  file.append(str(stop));
-  //  file.append(str(die));
-  //}
+//  GrowingParam(MacroList l_, int i_, int x_, int y_) {
+//    super(l_, i_, x_, y_);
+//    g.setLabel("GROW");
+//    g.setWidth(200);
+//    //growI = createInputF("GROW", GROW_DIFFICULTY);
+//    //grow = GROW_DIFFICULTY;
+//    //sproutI = createInputF("SPROUT", SPROUT_DIFFICULTY);
+//    //sprout = SPROUT_DIFFICULTY;
+//    //stopI = createInputF("STOP", STOP_DIFFICULTY);
+//    //stop = STOP_DIFFICULTY;
+//    //dieI = createInputF("DIE", DIE_DIFFICULTY);
+//    //die = DIE_DIFFICULTY;
+//    //ageI = createInputF("AGE", OLD_AGE);
+//    //age = OLD_AGE;
+//  }
+//  void clear() {
+//    super.clear();
+//  }
+//  //void to_strings() {
+//  //  super.to_strings();
+//  //  file.append("GrowingControl");
+//  //  file.append(str(grow));
+//  //  file.append(str(sprout));
+//  //  file.append(str(stop));
+//  //  file.append(str(die));
+//  //}
   
-  public void drawing(float x, float y) {}
+//  void drawing(float x, float y) {}
   
-  public void update() {
-    //float g = growI.get();
-    //float sp = sproutI.get();
-    //float st = stopI.get();
-    //float d = dieI.get();
-    //float a = ageI.get();
+//  void update() {
+//    //float g = growI.get();
+//    //float sp = sproutI.get();
+//    //float st = stopI.get();
+//    //float d = dieI.get();
+//    //float a = ageI.get();
     
-    //if (g != grow) {
-    //  grow = g; GROW_DIFFICULTY = grow;
-    //  update_textlabel("GROW", " = r^", GROW_DIFFICULTY); }
-    //else if (g != GROW_DIFFICULTY) {
-    //  grow = GROW_DIFFICULTY; growI.set(grow); }
+//    //if (g != grow) {
+//    //  grow = g; GROW_DIFFICULTY = grow;
+//    //  update_textlabel("GROW", " = r^", GROW_DIFFICULTY); }
+//    //else if (g != GROW_DIFFICULTY) {
+//    //  grow = GROW_DIFFICULTY; growI.set(grow); }
     
-    //if (sp != sprout) {
-    //  sprout = sp; SPROUT_DIFFICULTY = sprout;
-    //  update_textlabel("BLOOM", " = r^", SPROUT_DIFFICULTY); }
-    //else if (sp != SPROUT_DIFFICULTY) {
-    //  sprout = SPROUT_DIFFICULTY; sproutI.set(sprout); }
+//    //if (sp != sprout) {
+//    //  sprout = sp; SPROUT_DIFFICULTY = sprout;
+//    //  update_textlabel("BLOOM", " = r^", SPROUT_DIFFICULTY); }
+//    //else if (sp != SPROUT_DIFFICULTY) {
+//    //  sprout = SPROUT_DIFFICULTY; sproutI.set(sprout); }
     
-    //if (st != stop) {
-    //  stop = st; STOP_DIFFICULTY = stop;
-    //  update_textlabel("STOP", " = r^", STOP_DIFFICULTY); }
-    //else if (st != STOP_DIFFICULTY) {
-    //  stop = STOP_DIFFICULTY; stopI.set(stop); }
+//    //if (st != stop) {
+//    //  stop = st; STOP_DIFFICULTY = stop;
+//    //  update_textlabel("STOP", " = r^", STOP_DIFFICULTY); }
+//    //else if (st != STOP_DIFFICULTY) {
+//    //  stop = STOP_DIFFICULTY; stopI.set(stop); }
     
-    //if (d != die) {
-    //  die = d; DIE_DIFFICULTY = die;
-    //  update_textlabel("DIE", " = r^", DIE_DIFFICULTY); }
-    //else if (d != DIE_DIFFICULTY) {
-    //  die = DIE_DIFFICULTY; dieI.set(die); }
+//    //if (d != die) {
+//    //  die = d; DIE_DIFFICULTY = die;
+//    //  update_textlabel("DIE", " = r^", DIE_DIFFICULTY); }
+//    //else if (d != DIE_DIFFICULTY) {
+//    //  die = DIE_DIFFICULTY; dieI.set(die); }
       
-    //if (a != age) {
-    //  age = a; OLD_AGE = (int)age;
-    //  update_textlabel("AGING", " at ", OLD_AGE);
-    //}
-    //else if (a != OLD_AGE) {
-    //  age = OLD_AGE; ageI.set(age); }
+//    //if (a != age) {
+//    //  age = a; OLD_AGE = (int)age;
+//    //  update_textlabel("AGING", " at ", OLD_AGE);
+//    //}
+//    //else if (a != OLD_AGE) {
+//    //  age = OLD_AGE; ageI.set(age); }
     
-    super.update();
-    updated = true;
-  }
-}
+//    super.update();
+//    updated = true;
+//  }
+//}
 
-class GrowingActive extends Macro {
-  InputB growI,sproutI,stopI,dieI,growoffI,sproutoffI,stopoffI,dieoffI;
+//class GrowingActive extends Macro {
+//  InputB growI,sproutI,stopI,dieI,growoffI,sproutoffI,stopoffI,dieoffI;
   
-  GrowingActive(MacroList l_, int i_, int x_, int y_) {
-    super(l_, i_, x_, y_);
-    g.setLabel("GROW");
-    g.setWidth(200);
-    growI = createInputB("GROW ON");
-    sproutI = createInputB("SPROUT ON");
-    stopI = createInputB("STOP ON");
-    dieI = createInputB("DIE ON");
-    growoffI = createInputB("GROW OFF");
-    sproutoffI = createInputB("SPROUT OFF");
-    stopoffI = createInputB("STOP OFF");
-    dieoffI = createInputB("DIE OFF");
-  }
-  public void clear() {
-    super.clear();
-  }
-  //void to_strings() {
-  //  super.to_strings();
-  //  file.append("GrowingActiv");
-  //}
+//  GrowingActive(MacroList l_, int i_, int x_, int y_) {
+//    super(l_, i_, x_, y_);
+//    g.setLabel("GROW");
+//    g.setWidth(200);
+//    growI = createInputB("GROW ON");
+//    sproutI = createInputB("SPROUT ON");
+//    stopI = createInputB("STOP ON");
+//    dieI = createInputB("DIE ON");
+//    growoffI = createInputB("GROW OFF");
+//    sproutoffI = createInputB("SPROUT OFF");
+//    stopoffI = createInputB("STOP OFF");
+//    dieoffI = createInputB("DIE OFF");
+//  }
+//  void clear() {
+//    super.clear();
+//  }
+//  //void to_strings() {
+//  //  super.to_strings();
+//  //  file.append("GrowingActiv");
+//  //}
   
-  public void drawing(float x, float y) {}
+//  void drawing(float x, float y) {}
   
-  public void update() {
-    //if (growI.getUpdate() && sproutI.getUpdate() && stopI.getUpdate() && dieI.getUpdate() && 
-    //    growoffI.getUpdate() && sproutoffI.getUpdate() && stopoffI.getUpdate() && dieoffI.getUpdate() ) {
-    //  if (growI.get()   && !ON_GROW)   bGrow.setOn();
-    //  if (sproutI.get() && !ON_SPROUT) bSprout.setOn();
-    //  if (stopI.get()   && !ON_STOP)   bStop.setOn();
-    //  if (dieI.get()    && !ON_DIE)    bDie.setOn();
-    //  if (growoffI.get()   && ON_GROW)   bGrow.setOff();
-    //  if (sproutoffI.get() && ON_SPROUT) bSprout.setOff();
-    //  if (stopoffI.get()   && ON_STOP)   bStop.setOff();
-    //  if (dieoffI.get()    && ON_DIE)    bDie.setOff();
-    //}
-    super.update();
-    updated = true;
-  }
-}
+//  void update() {
+//    //if (growI.getUpdate() && sproutI.getUpdate() && stopI.getUpdate() && dieI.getUpdate() && 
+//    //    growoffI.getUpdate() && sproutoffI.getUpdate() && stopoffI.getUpdate() && dieoffI.getUpdate() ) {
+//    //  if (growI.get()   && !ON_GROW)   bGrow.setOn();
+//    //  if (sproutI.get() && !ON_SPROUT) bSprout.setOn();
+//    //  if (stopI.get()   && !ON_STOP)   bStop.setOn();
+//    //  if (dieI.get()    && !ON_DIE)    bDie.setOn();
+//    //  if (growoffI.get()   && ON_GROW)   bGrow.setOff();
+//    //  if (sproutoffI.get() && ON_SPROUT) bSprout.setOff();
+//    //  if (stopoffI.get()   && ON_STOP)   bStop.setOff();
+//    //  if (dieoffI.get()    && ON_DIE)    bDie.setOff();
+//    //}
+//    super.update();
+//    updated = true;
+//  }
+//}
 
-class GrowingControl extends Macro {
-  InputB in;
+//class GrowingControl extends Macro {
+//  InputB in;
   
-  RadioButton r1, r2, r3;
+//  RadioButton r1, r2, r3;
   
-  GrowingControl(MacroList l_, int i_, int x_, int y_) {
-    super(l_, i_, x_, y_);
-    g.setLabel("GROW");
-    g.setWidth(200);
-    in = createInputB("");
-    g.setSize(g.getWidth(), 28 + (inCount*28));
+//  GrowingControl(MacroList l_, int i_, int x_, int y_) {
+//    super(l_, i_, x_, y_);
+//    g.setLabel("GROW");
+//    g.setWidth(200);
+//    in = createInputB("");
+//    g.setSize(g.getWidth(), 28 + (inCount*28));
     
-    r1 = cp5.addRadioButton("radioButton1" + id)
-         .setGroup(g)
-         .setPosition(20,6)
-         .setSize(15,15)
-         .setItemsPerRow(1)
-         .setSpacingRow(8)
-         .addItem("x" + id,1)
-         .addItem("/" + id,2)
-         ;
+//    r1 = cp5.addRadioButton("radioButton1" + id)
+//         .setGroup(g)
+//         .setPosition(20,6)
+//         .setSize(15,15)
+//         .setItemsPerRow(1)
+//         .setSpacingRow(8)
+//         .addItem("x" + id,1)
+//         .addItem("/" + id,2)
+//         ;
          
-     r2 = cp5.addRadioButton("radioButton2" + id)
-         .setGroup(g)
-         .setPosition(55,6)
-         .setSize(15,15)
-         .setItemsPerRow(1)
-         .setSpacingRow(8)
-         .addItem("1.2" + id,1)
-         .addItem("2" + id,2)
-         ;
+//     r2 = cp5.addRadioButton("radioButton2" + id)
+//         .setGroup(g)
+//         .setPosition(55,6)
+//         .setSize(15,15)
+//         .setItemsPerRow(1)
+//         .setSpacingRow(8)
+//         .addItem("1.2" + id,1)
+//         .addItem("2" + id,2)
+//         ;
      
-     r3 = cp5.addRadioButton("radioButton3" + id)
-         .setGroup(g)
-         .setPosition(100,6)
-         .setSize(15,15)
-         .setItemsPerRow(2)
-         .setSpacingRow(8)
-         .setSpacingColumn(35)
-         .addItem("GROW" + id,1)
-         .addItem("BLOOM" + id,2)
-         .addItem("STOP" + id,3)
-         .addItem("DIE" + id,4)
-         ;
+//     r3 = cp5.addRadioButton("radioButton3" + id)
+//         .setGroup(g)
+//         .setPosition(100,6)
+//         .setSize(15,15)
+//         .setItemsPerRow(2)
+//         .setSpacingRow(8)
+//         .setSpacingColumn(35)
+//         .addItem("GROW" + id,1)
+//         .addItem("BLOOM" + id,2)
+//         .addItem("STOP" + id,3)
+//         .addItem("DIE" + id,4)
+//         ;
      
-     r1.getItem("x" + id).getCaptionLabel().setText("x");
-     r1.getItem("/" + id).getCaptionLabel().setText("/");
-     r2.getItem("1.2" + id).getCaptionLabel().setText("1.2");
-     r2.getItem("2" + id).getCaptionLabel().setText("2");
-     r3.getItem("GROW" + id).getCaptionLabel().setText("GROW");
-     r3.getItem("BLOOM" + id).getCaptionLabel().setText("BLOOM");
-     r3.getItem("STOP" + id).getCaptionLabel().setText("STOP");
-     r3.getItem("DIE" + id).getCaptionLabel().setText("DIE");
+//     r1.getItem("x" + id).getCaptionLabel().setText("x");
+//     r1.getItem("/" + id).getCaptionLabel().setText("/");
+//     r2.getItem("1.2" + id).getCaptionLabel().setText("1.2");
+//     r2.getItem("2" + id).getCaptionLabel().setText("2");
+//     r3.getItem("GROW" + id).getCaptionLabel().setText("GROW");
+//     r3.getItem("BLOOM" + id).getCaptionLabel().setText("BLOOM");
+//     r3.getItem("STOP" + id).getCaptionLabel().setText("STOP");
+//     r3.getItem("DIE" + id).getCaptionLabel().setText("DIE");
      
-     for(Toggle t:r1.getItems())
-       t.getCaptionLabel().setFont(createFont("Arial",16));
-     r1.getItem("x" + id).setState(true);
-     for(Toggle t:r2.getItems())
-       t.getCaptionLabel().setFont(createFont("Arial",16));
-     r2.getItem("2" + id).setState(true);
-  }
-  public void clear() {
-    super.clear();
-  }
-  //void to_strings() {
-  //  super.to_strings();
-  //  file.append("GrowingActiv");
-  //}
+//     for(Toggle t:r1.getItems())
+//       t.getCaptionLabel().setFont(createFont("Arial",16));
+//     r1.getItem("x" + id).setState(true);
+//     for(Toggle t:r2.getItems())
+//       t.getCaptionLabel().setFont(createFont("Arial",16));
+//     r2.getItem("2" + id).setState(true);
+//  }
+//  void clear() {
+//    super.clear();
+//  }
+//  //void to_strings() {
+//  //  super.to_strings();
+//  //  file.append("GrowingActiv");
+//  //}
   
-  public void drawing(float x, float y) {}
+//  void drawing(float x, float y) {}
   
-  public void update() {
-    if (in.getUpdate()) {
-      float m = 0;
-      if (r2.getItem("1.2" + id).getState()) m = 1.2f;
-      else if (r2.getItem("2" + id).getState()) m = 2;
-      if (r1.getItem("/" + id).getState()) m = 1 / m;
-      if (in.get()) {
-        //if (r3.getItem("GROW" + id).getState()) {
-        //  GROW_DIFFICULTY *= m;
-        //  update_textlabel("GROW", " = r^", GROW_DIFFICULTY); }
-        //if (r3.getItem("BLOOM" + id).getState()) {
-        //  SPROUT_DIFFICULTY *= m;
-        //  update_textlabel("SPROUT", " = r^", SPROUT_DIFFICULTY); }
-        //if (r3.getItem("STOP" + id).getState()) {
-        //  STOP_DIFFICULTY *= m;
-        //  update_textlabel("STOP", " = r^", STOP_DIFFICULTY); }
-        //if (r3.getItem("DIE" + id).getState()) {
-        //  DIE_DIFFICULTY *= m;
-        //  update_textlabel("DIE", " = r^", DIE_DIFFICULTY); }
-      }
-    }
-    super.update();
-    updated = true;
-  }
-}
+//  void update() {
+//    if (in.getUpdate()) {
+//      float m = 0;
+//      if (r2.getItem("1.2" + id).getState()) m = 1.2;
+//      else if (r2.getItem("2" + id).getState()) m = 2;
+//      if (r1.getItem("/" + id).getState()) m = 1 / m;
+//      if (in.get()) {
+//        //if (r3.getItem("GROW" + id).getState()) {
+//        //  GROW_DIFFICULTY *= m;
+//        //  update_textlabel("GROW", " = r^", GROW_DIFFICULTY); }
+//        //if (r3.getItem("BLOOM" + id).getState()) {
+//        //  SPROUT_DIFFICULTY *= m;
+//        //  update_textlabel("SPROUT", " = r^", SPROUT_DIFFICULTY); }
+//        //if (r3.getItem("STOP" + id).getState()) {
+//        //  STOP_DIFFICULTY *= m;
+//        //  update_textlabel("STOP", " = r^", STOP_DIFFICULTY); }
+//        //if (r3.getItem("DIE" + id).getState()) {
+//        //  DIE_DIFFICULTY *= m;
+//        //  update_textlabel("DIE", " = r^", DIE_DIFFICULTY); }
+//      }
+//    }
+//    super.update();
+//    updated = true;
+//  }
+//}
 
-class GrowingWatcher extends Macro {
-  OutputF popO,growO,turnO;
-  float pop,grow,turn;
+//class GrowingWatcher extends Macro {
+//  OutputF popO,growO,turnO;
+//  float pop,grow,turn;
   
-  GrowingWatcher(MacroList l_, int i_, int x_, int y_) {
-    super(l_, i_, x_, y_);
-    g.setLabel("Watcher");
-    g.setWidth(150);
-    popO = createOutputF("      POP", 0);
-    growO = createOutputF("  GROW", 0);
-    turnO = createOutputF("  turn", 0);
-  }
-  public void clear() {
-    super.clear();
-  }
-  //void to_strings() {
-  //  super.to_strings();
-  //  file.append("GrowWatcher");
-  //  file.append(str(pop));
-  //  file.append(str(grow));
-  //}
+//  GrowingWatcher(MacroList l_, int i_, int x_, int y_) {
+//    super(l_, i_, x_, y_);
+//    g.setLabel("Watcher");
+//    g.setWidth(150);
+//    popO = createOutputF("      POP", 0);
+//    growO = createOutputF("  GROW", 0);
+//    turnO = createOutputF("  turn", 0);
+//  }
+//  void clear() {
+//    super.clear();
+//  }
+//  //void to_strings() {
+//  //  super.to_strings();
+//  //  file.append("GrowWatcher");
+//  //  file.append(str(pop));
+//  //  file.append(str(grow));
+//  //}
   
-  public void drawing(float x, float y) {}
+//  void drawing(float x, float y) {}
   
-  public void update() {
-    int p = gcom.active_Entity_Nb();
-    int g = gcom.grower_Nb();
-    popO.set(p);
-    growO.set(g);
-    turnO.set(tick.get());
-    if (pop != p) popO.bang();
-    if (grow != g) growO.bang();
-    if (turn != tick.get()) turnO.bang();
-    pop = p; grow = g; turn = tick.get();
-    super.update();
-    updated = true;
-  }
-}
+//  void update() {
+//    int p = gcom.active_Entity_Nb();
+//    int g = gcom.grower_Nb();
+//    popO.set(p);
+//    growO.set(g);
+//    turnO.set(sim.tick.get());
+//    if (pop != p) popO.bang();
+//    if (grow != g) growO.bang();
+//    if (turn != sim.tick.get()) turnO.bang();
+//    pop = p; grow = g; turn = sim.tick.get();
+//    super.update();
+//    updated = true;
+//  }
+//}
 
-class SimControl extends Macro {
-  InputB inR,inRng,inP;
+//class SimControl extends Macro {
+//  InputB inR,inRng,inP;
   
-  SimControl(MacroList l_, int i_, int x_, int y_) {
-    super(l_, i_, x_, y_);
-    g.setLabel("SIMULATION");
-    g.setWidth(150);
-    inR = createInputB("RESET");
-    inRng = createInputB("RNG");
-    inP = createInputB("PAUSE");
-  }
-  public void clear() {
-    super.clear();
-  }
-  //void to_strings() {
-  //  super.to_strings();
-  //  file.append("Sim Control");
-  //}
+//  SimControl(MacroList l_, int i_, int x_, int y_) {
+//    super(l_, i_, x_, y_);
+//    g.setLabel("SIMULATION");
+//    g.setWidth(150);
+//    inR = createInputB("RESET");
+//    inRng = createInputB("RNG");
+//    inP = createInputB("PAUSE");
+//  }
+//  void clear() {
+//    super.clear();
+//  }
+//  //void to_strings() {
+//  //  super.to_strings();
+//  //  file.append("Sim Control");
+//  //}
   
-  public void drawing(float x, float y) {}
+//  void drawing(float x, float y) {}
   
-  public void update() {
-    if (inR.getUpdate() && inRng.getUpdate() && inP.getUpdate()) {
-      if (inR.get()) reset();
-      if (inRng.get()) {
-        SEED.set(PApplet.parseInt(random(1000000000)));
-        reset();
-      }
-      if (inP.get()) {
-        pause.set(!pause.get());
-      }
-    }
-    super.update();
-    updated = true;
-  }
-}
+//  void update() {
+//    if (inR.getUpdate() && inRng.getUpdate() && inP.getUpdate()) {
+//      if (inR.get()) sim.reset();
+//      if (inRng.get()) {
+//        sim.SEED.set(int(random(1000000000)));
+//        sim.reset();
+//      }
+//      if (inP.get()) {
+//        sim.pause.set(!sim.pause.get());
+//      }
+//    }
+//    super.update();
+//    updated = true;
+//  }
+//}
 
 
-MacroList mList;
 
-//Keyboard keyb;
-//GrowingControl gcC;
-//GrowingWatcher gwC;
 
-//MacroVAL mv1,mv2;
-
-sPanel macro_build_panel;
-
-public void init_macro() {
-  mList = new MacroList();
-  
-  macro_build_panel = new sPanel(cp5, 100, 300)
-    .setTab("Macros")
-    .addSeparator(5)
-    .addText("- NEW  MACRO -", 85, 0, 26)
-    .addSeparator(12)
-    .addText("BASIC MACRO :", 0, 0, 18)
-    .addSeparator(8)
-    .addDrawer(70)
-      .addButton("VAL", 30, 0)
-        .setSize(100, 30)
-        .addListener(new ControlListener() {
-          public void controlEvent(final ControlEvent ev) {
-            mList.addMacroVAL(mList.adding_pos, mList.adding_pos, 0);
-          } } )
-        .getDrawer()
-      .addButton("PULSE", 140, 0)
-        .setSize(100, 30)
-        .addListener(new ControlListener() {
-          public void controlEvent(final ControlEvent ev) {
-            mList.addPulse(mList.adding_pos, mList.adding_pos);
-          } } )
-        .getDrawer()
-      .addButton("DELAY", 250, 0)
-        .setSize(100, 30)
-        .addListener(new ControlListener() {
-          public void controlEvent(final ControlEvent ev) {
-            mList.addMacroDELAY(mList.adding_pos, mList.adding_pos, 0);
-          } } )
-        .getDrawer()
-      .addButton("COMP", 30, 40)
-        .setSize(100, 30)
-        .addListener(new ControlListener() {
-          public void controlEvent(final ControlEvent ev) {
-            mList.addMacroCOMP(mList.adding_pos, mList.adding_pos);
-          } } )
-        .getDrawer()
-      .addButton("BOOL", 140, 40)
-        .setSize(100, 30)
-        .addListener(new ControlListener() {
-          public void controlEvent(final ControlEvent ev) {
-            mList.addMacroBOOL(mList.adding_pos, mList.adding_pos);
-          } } )
-        .getDrawer()
-      .addButton("CALC", 250, 40)
-        .setSize(100, 30)
-        .addListener(new ControlListener() {
-          public void controlEvent(final ControlEvent ev) {
-            mList.addMacroCALC(mList.adding_pos, mList.adding_pos);
-          } } )
-        .getDrawer()
-      .getPanel()
-    .addLine(12)
-    .addSeparator(5)
-    ;
-  
-  //keyb.wO.linkTo(mv1.in);
-  //keyb.aO.linkTo(mv2.in);
-  
-  //mv1.out.linkTo(gcC.growI);
-  //mv2.out.linkTo(gcC.growI);
-}
-
-class MacroList {
+class MacroPlane extends Callable {
   ArrayList<Macro> macroList = new ArrayList<Macro>(0);
   ArrayList<InputB> inBList = new ArrayList<InputB>(0);
   ArrayList<OutputB> outBList = new ArrayList<OutputB>(0);
   ArrayList<InputF> inFList = new ArrayList<InputF>(0);
   ArrayList<OutputF> outFList = new ArrayList<OutputF>(0);
   
-  LinkList linkList = new LinkList(this);
+  LinkList linkList;
   
   Group g;
-  LinkB NOTB = linkList.createLinkB();
-  LinkF NOTF = linkList.createLinkF();
-  InputB NOTBI;
-  InputF NOTFI;
-  OutputB NOTBO;
-  OutputF NOTFO;
+  LinkB NOTB = null;
+  LinkF NOTF = null;
+  InputB NOTBI = null;
+  InputF NOTFI = null;
+  OutputB NOTBO = null;
+  OutputF NOTFO = null;
   
   boolean creatingLinkB = false;
   OutputB selectOutB;
@@ -3936,7 +4446,12 @@ class MacroList {
   
   int adding_pos = 40;
   
-  MacroList() {
+  sPanel build_panel;
+  
+  MacroPlane() {
+    linkList = new LinkList(this);
+    NOTB = linkList.createLinkB();
+    NOTF = linkList.createLinkF();
     g = cp5.addGroup("Main")
                   .setVisible(false)
                   .setPosition(-200,-200)
@@ -3946,6 +4461,90 @@ class MacroList {
     NOTFO = createOutputF(g,-1,"",1,0);
     NOTBI = createInputB(g,-1,"",0);
     NOTFI = createInputF(g,-1,"",1,0);
+    
+    addChannel(sim.tick_chan);
+    
+    build_panel = new sPanel(cp5, 100, 200)
+      .setTab("Macros")
+      .addTitle("- NEW  MACRO -", 85, 0, 28)
+      .addSeparator(12)
+      .addText("Basic Macro :", 0, 0, 18)
+      .addSeparator(8)
+      .addDrawer(150)
+        .addButton("VAL", 30, 0)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroVAL(adding_pos, adding_pos, 0);
+            } } )
+          .getDrawer()
+        .addButton("PULSE", 140, 0)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroPulse(adding_pos, adding_pos);
+            } } )
+          .getDrawer()
+        .addButton("DELAY", 250, 0)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroDELAY(adding_pos, adding_pos, 0);
+            } } )
+          .getDrawer()
+        .addButton("COMP", 30, 40)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroCOMP(adding_pos, adding_pos);
+            } } )
+          .getDrawer()
+        .addButton("BOOL", 140, 40)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroBOOL(adding_pos, adding_pos);
+            } } )
+          .getDrawer()
+        .addButton("CALC", 250, 40)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroCALC(adding_pos, adding_pos);
+            } } )
+          .getDrawer()
+        .addButton("BANG", 30, 80)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroBang(adding_pos, adding_pos);
+            } } )
+          .getDrawer()
+        .addButton("KEY", 140, 80)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroKey(adding_pos, adding_pos);
+            } } )
+          .getDrawer()
+        .addButton("TOGGLE", 250, 80)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroToggle(adding_pos, adding_pos);
+            } } )
+          .getDrawer()
+        .addButton("NOT", 140, 120)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroNOT(adding_pos, adding_pos);
+            } } )
+          .getDrawer()
+        .getPanel()
+      .addLine(12)
+      .addSeparator(5)
+      ;
   }
   
   public void clear() {
@@ -4008,6 +4607,10 @@ class MacroList {
     }
   }
   
+  public void answer(Channel channel, float value) { //tick chan
+    update();
+  }
+  
   public void update() {
     int counter = 0;
     while (counter < macroList.size()) {
@@ -4021,7 +4624,11 @@ class MacroList {
     for (Macro m : macroList) {
       m.updated = false;
     }
-    if (mouseClick[1]) {
+  }
+  
+  public void frame() {
+    for (Macro m : macroList) m.frame();
+    if (kb.mouseClick[1]) {
       creatingLinkB = false;
       creatingLinkF = false;
       for (int i = linkList.linkBList.size() - 1; i >= 0; i--) {
@@ -4063,49 +4670,34 @@ class MacroList {
     selectOutF.linkTo(in);
   }
   
-  public Keyboard addKeyboard(int _x, int _y) {
+  public MacroPulse addMacroPulse(int _x, int _y) {
     int id = macroList.size();
-    return new Keyboard(this, id, _x, _y);
+    return new MacroPulse(this, id, _x, _y);
   }
   
-  public Pulse addPulse(int _x, int _y) {
+  public MacroKey addMacroKey(int _x, int _y) {
     int id = macroList.size();
-    return new Pulse(this, id, _x, _y);
+    return new MacroKey(this, id, _x, _y);
   }
   
-  public SimControl addSimControl(int _x, int _y) {
+  public MacroBang addMacroBang(int _x, int _y) {
     int id = macroList.size();
-    return new SimControl(this, id, _x, _y);
+    return new MacroBang(this, id, _x, _y);
   }
   
-  public GrowingPop addGrowingPop(int _x, int _y) {
+  public MacroToggle addMacroToggle(int _x, int _y) {
     int id = macroList.size();
-    return new GrowingPop(this, id, _x, _y);
-  }
-  
-  public GrowingParam addGrowingParam(int _x, int _y) {
-    int id = macroList.size();
-    return new GrowingParam(this, id, _x, _y);
-  }
-  
-  public GrowingControl addGrowingControl(int _x, int _y) {
-    int id = macroList.size();
-    return new GrowingControl(this, id, _x, _y);
-  }
-  
-  public GrowingActive addGrowingActive(int _x, int _y) {
-    int id = macroList.size();
-    return new GrowingActive(this, id, _x, _y);
-  }
-  
-  public GrowingWatcher addGrowingWatcher(int _x, int _y) {
-    int id = macroList.size();
-    return new GrowingWatcher(this, id, _x, _y);
+    return new MacroToggle(this, id, _x, _y);
   }
   
   public MacroVAL addMacroVAL(int _x, int _y, float v) {
     int id = macroList.size();
     return new MacroVAL(this, v, id, _x, _y);
+  }
+  
+  public MacroNOT addMacroNOT(int _x, int _y) {
+    int id = macroList.size();
+    return new MacroNOT(this, id, _x, _y);
   }
   
   public MacroCOMP addMacroCOMP(int _x, int _y) {
@@ -4164,18 +4756,22 @@ class MacroList {
 }
 
 abstract class Macro {
-  MacroList macroList;
+  MacroPlane macroList;
   boolean updated = false;
   Group g;
   int id; int x,y; float mx = 0; float my = 0;
   int inCount = 0;
   int outCount = 0;
+  ArrayList<OutputB> loutB = new ArrayList<OutputB>(0);
+  ArrayList<OutputF> loutF = new ArrayList<OutputF>(0);
+  ArrayList<InputB> linB = new ArrayList<InputB>(0);
+  ArrayList<InputF> linF = new ArrayList<InputF>(0);
   
-  Macro(MacroList ml, int i_, int x_, int y_) {
+  Macro(MacroPlane ml, int i_, int x_, int y_) {
     ml.addMacro(this);
     macroList = ml;
-    ml.adding_pos += 60;
-    if (ml.adding_pos >= 700) ml.adding_pos -= 635;
+    ml.adding_pos += 30;
+    if (ml.adding_pos >= 200) ml.adding_pos -= 162;
     id = i_;
     x = x_; y = y_;
     g = cp5.addGroup("Macro" + str(id))
@@ -4185,11 +4781,24 @@ abstract class Macro {
                   .setBackgroundColor(color(60, 200))
                   .disableCollapse()
                   .moveTo("Macros")
-                  .setHeight(22)
+                  .setBarHeight(20)//<
                   ;
     g.getCaptionLabel().setFont(createFont("Arial",16));
+    new Button(cp5, "button"+get_free_id())
+      .setPosition(-20, -20)
+      .setSize(20, 20)
+      .setGroup(g)
+      .addListener(new ControlListener() {
+        public void controlEvent(final ControlEvent ev) { 
+          clear(); } } )
+      .getCaptionLabel().setText("X")
+      ;
   }
   public void clear() {
+    for (OutputB o : loutB) { o.clear(); macroList.outBList.remove(o); }
+    for (OutputF o : loutF) { o.clear(); macroList.outFList.remove(o); }
+    for (InputB o : linB) { o.clear(); macroList.inBList.remove(o); }
+    for (InputF o : linF) { o.clear(); macroList.inFList.remove(o); }
     g.remove();
   }
   
@@ -4202,17 +4811,21 @@ abstract class Macro {
   //  file.append(str(outCount));
   //}
   
-  public void update() {
+  public void update() {} //tick
+  public void custom_frame() {}
+  
+  public void frame() {
+    custom_frame();
     if (cp5.getTab("Macros").isActive()) {
-      if (g.isMouseOver() && mouseClick[0]) {
+      if (g.isMouseOver() && kb.mouseClick[0]) {
         mx = g.getPosition()[0] - mouseX;
         my = g.getPosition()[1] - mouseY;
         cam.GRAB = false; //deactive le deplacement camera
       }
-      if (g.isMouseOver() && mouseUClick[0]) {
+      if (g.isMouseOver() && kb.mouseUClick[0]) {
         cam.GRAB = true;
       }
-      if (g.isMouseOver() && mouseButtons[0]) {
+      if (g.isMouseOver() && kb.mouseButtons[0]) {
         x = PApplet.parseInt(mouseX + mx); y = PApplet.parseInt(mouseY + my);
         g.setPosition(mouseX + mx,mouseY + my);
       }
@@ -4225,6 +4838,7 @@ abstract class Macro {
       g.setSize(g.getWidth(), 28 + (inCount*28));
     }
     inCount +=1;
+    linB.add(in);
     return in;
   }
 
@@ -4233,6 +4847,7 @@ abstract class Macro {
     if (inCount >= outCount) {
       g.setSize(g.getWidth(), 28 + (inCount*28));
     }
+    linF.add(in);
     inCount +=1;
     return in;
   }
@@ -4242,6 +4857,7 @@ abstract class Macro {
     if (outCount >= inCount) {
       g.setSize(g.getWidth(), 28 + (outCount*28));
     }
+    loutB.add(out);
     outCount +=1;
     return out;
   }
@@ -4251,6 +4867,7 @@ abstract class Macro {
     if (outCount >= inCount) {
       g.setSize(g.getWidth(), 28 + (outCount*28));
     }
+    loutF.add(out);
     outCount +=1;
     return out;
   }
@@ -4260,6 +4877,29 @@ abstract class Macro {
 //##                         METHODES UTILES                           ##
 //#######################################################################
 
+
+public String trimStringFloat(float f) {
+  String s;
+  if (f%1.0f == 0.0f) s = nfc(PApplet.parseInt(f)); else s = str(f);
+  String end = "";
+  for (int i = s.length()-1; i > 0 ; i--) {
+    if (s.charAt(i) == 'E') {
+      end = s.substring(i, s.length());
+    }
+  }
+  for (int i = 0; i < s.length() ; i++) {
+    if (s.charAt(i) == '.' && s.length() - i > 4) {
+      int m = 4;
+      if (f >= 10) m -= 1;
+      if (f >= 100) m -= 1;
+      if (f >= 1000) m -= 2;
+      s = s.substring(0, i+m);
+      s = s + end;
+      return s;
+    }
+  }
+  return s;
+}
 
 public float soothedcurve(float rad, float dst) {
   float val = max(0, rad*rad - dst*dst);
@@ -4279,33 +4919,7 @@ public float distancePointToPoint(float xa, float ya, float xb, float yb) {
   return sqrt( pow((xb-xa), 2) + pow((yb-ya), 2) );
 }
 
-public float crandom(float d) {
-  return pow(random(1.0f), d) ;
-}
-
-/*
-
-crandom results :
-difficulty   nb > 0.5 pour 1000
-       0.04 999
-       0.08 999
-       0.16 986
-       0.32 885
-       0.64 661
-       1.28 418
-       2.56 236
-       5.12 126
-      10.24 65
-      20.48 33
-      40.96 16
-      81.92 8
-     163.84 4
-     327.68 2
-     655.36 1
-    1310.72 0
-    2621.44 0
-
-*/
+public float crandom(float d) { return pow(random(1.0f), d); }
 
 // auto indexing
 int used_index = 0;
@@ -4353,10 +4967,14 @@ class SpecialValue {
   ArrayList<sInt> sintlist = new ArrayList<sInt>();
   ArrayList<sFlt> sfltlist = new ArrayList<sFlt>();
   ArrayList<sBoo> sboolist = new ArrayList<sBoo>();
+  ArrayList<sVec> sveclist = new ArrayList<sVec>();
+  ArrayList<sStr> sstrlist = new ArrayList<sStr>();
   public void unFlagChange() {
     for (sInt i : sintlist) i.has_changed = false;
     for (sFlt i : sfltlist) i.has_changed = false;
-    for (sBoo i : sboolist) i.has_changed = false; }
+    for (sBoo i : sboolist) i.has_changed = false;
+    for (sVec i : sveclist) i.has_changed = false; 
+    for (sStr i : sstrlist) i.has_changed = false; }
 }
 
 
@@ -4365,7 +4983,9 @@ class sInt {
   SpecialValue save;
   int val = 0;
   int id = 0;
+  String name = "int";
   sInt(SpecialValue s, int v) { save = s; val = v; id = save.sintlist.size(); save.sintlist.add(this); }
+  sInt(SpecialValue s, int v, String n) { name = n; save = s; val = v; id = save.sintlist.size(); save.sintlist.add(this); }
   public int get() { return val; }
   public void set(int v) { if (v != val) has_changed = true; val = v; }
 }
@@ -4375,7 +4995,9 @@ class sFlt {
   SpecialValue save;
   float val = 0;
   int id = 0;
+  String name = "flt";
   sFlt(SpecialValue s, float v) { save = s; val = v; id = save.sfltlist.size(); save.sfltlist.add(this); }
+  sFlt(SpecialValue s, float v, String n) { name = n; save = s; val = v; id = save.sfltlist.size(); save.sfltlist.add(this); }
   public float get() { return val; }
   public void set(float v) { if (v != val) has_changed = true; val = v; }
 }
@@ -4385,11 +5007,36 @@ class sBoo {
   SpecialValue save;
   boolean val = false;
   int id = 0;
+  String name = "boo";
   sBoo(SpecialValue s, boolean v) { save = s; val = v; id = save.sboolist.size(); save.sboolist.add(this); }
+  sBoo(SpecialValue s, boolean v, String n) { name = n; save = s; val = v; id = save.sboolist.size(); save.sboolist.add(this); }
   public boolean get() { return val; }
   public void set(boolean v) { if (v != val) { has_changed = true; val = v; } }
 }
 
+class sVec {
+  boolean has_changed = false;
+  SpecialValue save;
+  PVector val = new PVector();
+  int id = 0;
+  String name = "vec";
+  sVec(SpecialValue s, PVector v) { save = s; val = v; id = save.sveclist.size(); save.sveclist.add(this); }
+  sVec(SpecialValue s, PVector v, String n) { name = n; save = s; val = v; id = save.sveclist.size(); save.sveclist.add(this); }
+  public PVector get() { return new PVector(val.x, val.y); }
+  public void set(PVector v) { if (v.x != val.x || v.y != val.y) { has_changed = true; val.x = v.x; val.y = v.y; } }
+}
+
+class sStr {
+  boolean has_changed = false;
+  SpecialValue save;
+  String val = new String();
+  int id = 0;
+  String name = "str";
+  sStr(SpecialValue s, String v) { save = s; val = v; id = save.sstrlist.size(); save.sstrlist.add(this); }
+  sStr(SpecialValue s, String v, String n) { name = n; save = s; val = v; id = save.sstrlist.size(); save.sstrlist.add(this); }
+  public String get() { return new String(val); }
+  public void set(String v) { if (!v.equals(val)) { has_changed = true; val = v; } }
+}
 
 
 
@@ -4398,31 +5045,45 @@ class sBoo {
 //#######################################################################
 
 
+int SV_start_bloc = 3;
+
 public void saving(SpecialValue sv, String file) {
-  String[] sl = new String[sv.sintlist.size() + sv.sfltlist.size() + sv.sboolist.size()];
-  //for (String s : sl) s = new String(); //??maybe useless?
+  String[] sl = new String[SV_start_bloc + sv.sintlist.size() + sv.sfltlist.size() + sv.sboolist.size()];
+  sl[0] = str(sv.sintlist.size());
+  sl[1] = str(sv.sfltlist.size());
+  sl[2] = str(sv.sboolist.size());
   for (sInt i : sv.sintlist) {
-    sl[i.id] = str(i.get());
+    sl[SV_start_bloc + i.id] = str(i.get());
   }
   for (sFlt i : sv.sfltlist) {
-    sl[sv.sintlist.size() + i.id] = str(i.get());
+    sl[SV_start_bloc + sv.sintlist.size() + i.id] = str(i.get());
   }
   for (sBoo i : sv.sboolist) {
-    sl[sv.sintlist.size() + sv.sfltlist.size() + i.id] = str(i.get());
+    sl[SV_start_bloc + sv.sintlist.size() + sv.sfltlist.size() + i.id] = str(i.get());
   }
   saveStrings(file, sl);
 }
 public void loading(SpecialValue s, String file) {
+  
   String[] sl = loadStrings(file);
-  if (sl.length != s.sintlist.size() + s.sfltlist.size() + s.sboolist.size()) return;
+  
+  int intlsize = PApplet.parseInt(sl[0]);
+  int fltlsize = PApplet.parseInt(sl[1]);
+  int boolsize = PApplet.parseInt(sl[2]);
+  
+  if (intlsize != s.sintlist.size()) return;
+  if (fltlsize != s.sfltlist.size()) return;
+  if (boolsize != s.sboolist.size()) return;
+  if (sl.length < SV_start_bloc + intlsize + fltlsize + boolsize) return;
+  
   for (sInt i : s.sintlist) {
-    i.set(PApplet.parseInt(sl[i.id]));
+    i.set(PApplet.parseInt(sl[SV_start_bloc + i.id]));
   }
   for (sFlt i : s.sfltlist) {
-    i.set(PApplet.parseFloat(sl[s.sintlist.size() + i.id]));
+    i.set(PApplet.parseFloat(sl[SV_start_bloc + s.sintlist.size() + i.id]));
   }
   for (sBoo i : s.sboolist) {
-    i.set(PApplet.parseBoolean(sl[s.sintlist.size() + s.sfltlist.size() + i.id]));
+    i.set(PApplet.parseBoolean(sl[SV_start_bloc + s.sintlist.size() + s.sfltlist.size() + i.id]));
   }
 }
 
@@ -4436,10 +5097,9 @@ public void loading(SpecialValue s, String file) {
 
 
 class sGraph {
-  //permet l'enregistrement de donné pour le graphique
   int larg =             1200;
-  int[] graph  = new int[1200];
-  int[] graph2 = new int[1200];
+  int[] graph  = new int[larg];
+  int[] graph2 = new int[larg];
   int gc = 0;
   int max = 10;
   
@@ -4452,6 +5112,7 @@ class sGraph {
       graph2[i] = 0;
     }
     max = 10;
+    //addChannel(c);
   }
   
   public void draw() {
@@ -4499,7 +5160,7 @@ class sGraph {
   
   public void settings() {  fullScreen();  noSmooth(); }
   static public void main(String[] passedArgs) {
-    String[] appletArgs = new String[] { "grows_2_1" };
+    String[] appletArgs = new String[] { "grows_2_2" };
     if (passedArgs != null) {
       PApplet.main(concat(appletArgs, passedArgs));
     } else {

@@ -1,6 +1,6 @@
 class BoxComu extends Community {
   
-  BoxComu(ComunityList _c) { super(_c, "Box", 1000); init();
+  BoxComu(Simulation _c) { super(_c, "Box", 1000); init();
     
     
   }

@@ -5,15 +5,34 @@ ici on definie les objet de structure
 */
 
 
-class ComunityList {
+class Simulation {
   ArrayList<Community> list = new ArrayList<Community>();
   sPanel panel;
   sTextfield file_path_tf;
   
-  ComunityList() {
+  sFlt tick = new sFlt(simval, 0); //conteur de tour depuis le dernier reset ou le debut
+  sBoo pause = new sBoo(simval, false); //permet d'interompre le defilement des tour
+  sFlt tick_by_frame = new sFlt(simval, 16); //nombre de tour a executé par frame
+  float tick_pile = 0; //pile des tour
+  sInt SEED = new sInt(simval, 548651008); //seed pour l'aleatoire
+  sBoo auto_reset = new sBoo(simval, true);
+  sBoo auto_reset_rng_seed = new sBoo(simval, true);
+  sInt auto_reset_turn = new sInt(simval, 4000);
+  sBoo auto_screenshot = new sBoo(simval, false);
+  
+  Channel tick_chan = new Channel();
+  Channel unpaused_frame_chan = new Channel();
+  
+  boolean next_tick = false;
+  
+  Simulation() {
+    
+  }
+  
+  void building() {
     //menu principale de la sim
-    panel = new sPanel(cp5, 1190, 500)
-      .addText("SIMULATION CONTROL", 28, 0, 28)
+    panel = new sPanel(cp5, 1190, 430)
+      .addTitle("SIMULATION CONTROL", 28, 0, 28)
       .addLine(10)
       .addDrawer(30)
         .addText("SEED: ", 50, 4)
@@ -23,40 +42,55 @@ class ComunityList {
           .setSize(200, 20)
           .getDrawer()
         .getPanel()
-      .addDrawer(30)
+      .addDrawer(60)
         .addText("framerate: ", 30, 0)
-          .setValue(framerate)
+          .setValue(fr.value)
           .getDrawer()
-        .addText("turn: ", 200, 0)
+        .addText("time (s): ", 200, 0)
+          .setValue(fr.time)
+          .getDrawer()
+        .addText("tickrate: ", 30, 30)
+          .setValue(fr.tickrate)
+          .getDrawer()
+        .addText("tick: ", 200, 30)
           .setValue(tick)
           .getDrawer()
         .getPanel()
-      .addValueController("SPEED: ", sMode.FACTOR, 2, 1.2, tick_by_frame)
+      .addValueController("tick / frame:", sMode.FACTOR, 2, 1.2, tick_by_frame)
       .addSeparator(10)
       .addDrawer(30)
-        .addSwitch("P", 20, 0)
+        .addSwitch("PAUSE", 20, 0)
           .setValue(pause)
-          .setSize(40, 30)
+          .setSize(170, 30)
           .getDrawer()
-        .addButton("R", 80, 0)
-          .setSize(100, 30)
+        .addButton("NEXT TICK", 200, 0)
+          .setSize(160, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { next_tick = true; } } )
+          .getDrawer()
+        .getPanel()
+        .addSeparator(10)
+      .addDrawer(30)
+        
+        .addButton("RESET", 20, 0)
+          .setSize(80, 30)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { reset(); } } )
           .getDrawer()
-        .addButton("RNG", 200, 0)
-          .setSize(100, 30)
+        .addButton("RNG", 110, 0)
+          .setSize(80, 30)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { SEED.set(int(random(1000000000))); reset(); } } )
           .getDrawer()
-        .addButton("I", 320, 0)
-          .setSize(20, 30)
+        .addButton("NEXT FRAME", 200, 0)
+          .setSize(160, 30)
           .addListener(new ControlListener() {
-            public void controlEvent(final ControlEvent ev) { cam.screenshot = true; } } )
+            public void controlEvent(final ControlEvent ev) {
+              for (int i = 0; i < tick_by_frame.get()-1; i++) tick();
+              next_tick = true;
+            } } )
           .getDrawer()
-        .addSwitch("A", 340, 0)
-          .setValue(auto_screenshot)
-          .setSize(20, 30)
-          .getDrawer()
+        
         .getPanel()
       .addSeparator(10)
       .addDrawer(30)
@@ -105,50 +139,74 @@ class ComunityList {
           .setSize(100, 30)
           .setFont(18)
           .getDrawer()
-        .getPanel()
-      .addSeparator(10)
+        .getPanel().addSeparator(10)
       .addDrawer(30)
         .addButton("S", 0, 0)
           .setSize(60, 30)
           .addListener(new ControlListener() {
-            public void controlEvent(final ControlEvent ev) { saving(simval, file_path_tf.getText()); } } )
+            public void controlEvent(final ControlEvent ev) { 
+              saving(simval, file_path_tf.getText()); } } )
           .getDrawer()
-        .addButton("L", 320, 0)
+        .addButton("L", 270, 0)
           .setSize(60, 30)
           .addListener(new ControlListener() {
-            public void controlEvent(final ControlEvent ev) { loading(simval, file_path_tf.getText()); } } )
+            public void controlEvent(final ControlEvent ev) { 
+              loading(simval, file_path_tf.getText()); 
+              reset(); } } )
+          .getDrawer()
+        .addButton("I", 340, 0)
+          .setSize(20, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { cam.screenshot = true; } } )
+          .getDrawer()
+        .addSwitch("A", 360, 0)
+          .setValue(auto_screenshot)
+          .setSize(20, 30)
           .getDrawer()
         .getPanel()
       ;
     file_path_tf = panel.lastDrawer().addTextfield(70, 0)
       .setText("save.txt")
-      .setSize(240, 30)
+      .setSize(190, 30)
+      
       ;
+    //file_path_tf.setColor(color(255));
     panel.addSeparator(10);
     
     //macro custom et menu d'ajout
-    macro_build_panel
-      .addText("SIMULATION :", 0, 0, 18)
+    plane.build_panel
+      .addText("Simulation :", 0, 0, 18)
       .addSeparator(8)
       .addDrawer(30)
-        .addButton("SIM IN", 30, 0)
-          .setSize(150, 30)
+        .addButton("RESET", 20, 0)
+          .setSize(80, 30)
           .addListener(new ControlListener() {
-            public void controlEvent(final ControlEvent ev) { newMacroSimIN(); } } )
+            public void controlEvent(final ControlEvent ev) { newMacroSimIN1(); } } )
           .getDrawer()
-        .addButton("SIM OUT", 200, 0)
-          .setSize(150, 30)
+        .addButton("RUN", 110, 0)
+          .setSize(80, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroSimIN2(); } } )
+          .getDrawer()
+        .addButton("AUTO", 200, 0)
+          .setSize(80, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroSimIN3(); } } )
+          .getDrawer()
+        .addButton("OUT", 290, 0)
+          .setSize(80, 30)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { newMacroSimOUT(); } } )
           .getDrawer()
         .getPanel()
       .addSeparator(10)
       ;
+    for (Community c : list) c.building();
   }
   
-  void newMacroSimIN() {
-    new MacroCUSTOM(mList)
-      .setLabel("SIM IN")
+  void newMacroSimIN1() {
+    new MacroCUSTOM(plane)
+      .setLabel("SIM RESET")
       .setWidth(170)
       .addMCRun()
         .addRunnable(new Runnable() { public void run() { reset(); }})
@@ -158,9 +216,24 @@ class ComunityList {
         .addRunnable(new Runnable() { public void run() { SEED.set(int(random(1000000000))); reset(); }})
         .setText("rng")
         .getMacro()
+      ;
+  }
+  
+  void newMacroSimIN2() {
+    new MacroCUSTOM(plane)
+      .setLabel("SIM RUN")
+      .setWidth(155)
+      .addMCsBooWatcher()
+        .addValue(pause)
+        .setText("pause")
+        .getMacro()
       .addMCsBooControl()
         .setValue(pause)
-        .setText("pause")
+        .setText("")
+        .getMacro()
+      .addMCRun()
+        .addRunnable(new Runnable() { public void run() { next_tick = true; }})
+        .setText("tick")
         .getMacro()
       .addMCsFltControl()
         .setValue(tick_by_frame)
@@ -169,14 +242,25 @@ class ComunityList {
       ;
   }
   
-  void newMacroSimOUT() {
-    new MacroCUSTOM(mList)
-      .setLabel("SIM OUT")
-      .setWidth(150)
-      .addMCsBooWatcher()
-        .addValue(pause)
-        .setText("pause")
+  void newMacroSimIN3() {
+    new MacroCUSTOM(plane)
+      .setLabel("SIM AUTO")
+      .setWidth(170)
+      .addMCsBooControl()
+        .setValue(auto_reset)
+        .setText("auto reset")
         .getMacro()
+      .addMCsIntControl()
+        .setValue(auto_reset_turn)
+        .setText("reset tick")
+        .getMacro()
+      ;
+  }
+  
+  void newMacroSimOUT() {
+    new MacroCUSTOM(plane)
+      .setLabel("SIM OUT")
+      .setWidth(170)
       .align()
       .addMCsFltWatcher()
         .addValue(tick)
@@ -186,30 +270,81 @@ class ComunityList {
         .addValue(tick_by_frame)
         .setText("   speed")
         .getMacro()
+      .addMCsIntWatcher()
+        .addValue(fr.value)
+        .setText("framerate")
+        .getMacro()
+      .addMCsIntWatcher()
+        .addValue(fr.time)
+        .setText("time s")
+        .getMacro()
       ;
   }
   
-  void tick() {
-    for (Community c : list) c.tick();
-  }
-  
-  void draw() {
-    for (Community c : list) if (c.show_entity.get()) c.draw_All();
-  }
-  
-  void comunity_reset() {
+  void reset() {
     randomSeed(SEED.get());
     for (Community c : list) c.reset();
+    tick.set(0);
+    fr.reset();
   }
+  
+  void frame() {
+    if (!pause.get()) {
+      tick_pile += tick_by_frame.get();
+      
+      //auto screenshot before reset
+      if (auto_reset.get() && auto_reset_turn.get() == tick.get() + tick_by_frame.get() + tick_by_frame.get() && auto_screenshot.get()) {
+          cam.screenshot = true; }
+      
+      while (tick_pile >= 1) {
+        tick();
+        tick_pile--;
+      }
+      
+      //run_each_unpaused_frame
+      callChannel(unpaused_frame_chan);
+    }
+    
+    if (next_tick) { tick(); next_tick = false; }
+    
+    //run custom frame methods
+    for (Community c : list) c.frame();
+  }
+  
+  void tick() {
+    
+    //auto reset
+    if (auto_reset.get() && auto_reset_turn.get() <= tick.get()) {
+      if (auto_reset_rng_seed.get()) {
+        SEED.set(int(random(1000000000)));
+      }
+      reset();
+    }
+    
+    //tick communitys
+    for (Community c : list) c.tick();
+    
+    //tick call
+    callChannel(tick_chan);
+    
+    tick.set(tick.get()+1);
+  }
+  
+  void draw_to_cam() {
+    for (Community c : list) if (c.show_entity.get()) c.custom_cam_draw_pre_entity();
+    for (Community c : list) if (c.show_entity.get()) c.draw_Cam();
+    for (Community c : list) if (c.show_entity.get()) c.custom_cam_draw_post_entity();
+  }
+  void draw_to_screen() { for (Community c : list) if (c.show_entity.get()) c.draw_Screen(); }
 }
 
 abstract class Community {
   ArrayList<Entity> list = new ArrayList<Entity>(); //contien les objet
-  int MAX_ENT = 5000; //longueur max de l'array d'objet
+  sInt MAX_ENT = new sInt(simval, 500); //longueur max de l'array d'objet
   sInt initial_entity = new sInt(simval, 0);
   int id; //index dans comu list
   sInt activeEntity = new sInt(simval, 0);
-  ComunityList comList;
+  Simulation comList;
   sPanel panel;
   sBoo adding_type = new sBoo(simval, true);
   int adding_pile = 0;
@@ -219,15 +354,9 @@ abstract class Community {
   sBoo show_menu = new sBoo(simval, true);
   String name = "";
   
-  Community(ComunityList _c, String n, int max) { comList = _c; name = n; MAX_ENT = max; }
-    
-  void init() {
-    id = comList.list.size();
-    comList.list.add(this);
-    list.clear();
-    for (int i = 0; i < MAX_ENT ; i++)
-      list.add(build());
-      
+  Community(Simulation _c, String n, int max) { comList = _c; name = n; MAX_ENT.set(max); }
+  
+  void building() {
     comList.panel.addDrawer(20)
         .addText("Community: "+name, 0, 0)
           .setFont(18)
@@ -237,9 +366,9 @@ abstract class Community {
           .setSize(50, 20).setFont(18)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { 
-              if (show_menu.get()) panel.g.hide(); else panel.g.show(); } } )
+              if (show_menu.get()) panel.big.hide(); else panel.big.show(); } } )
           .getDrawer()
-        .addSwitch("E", 330, 0)
+        .addSwitch("D", 330, 0)
           .setValue(show_entity)
           .setSize(50, 20).setFont(18)
           .getDrawer()
@@ -247,8 +376,8 @@ abstract class Community {
       .addSeparator(10)
       ;
     
-    panel = new sPanel(cp5, 30 + id*50, 50 + id*30)
-      .addText("COMUNITY CONTROL", 38, 0, 28)
+    panel = new sPanel(cp5, 20 + id*50, 20 + id*30)
+      .addTitle(name+" Control", 90, 0, 28)
       .addLine(10)
       .addText("Utilities", 140, 0, 22)
       .addSeparator(8)
@@ -256,6 +385,14 @@ abstract class Community {
         .addText("Active Entity: ", 0, 0)
           .setValue(activeEntity)
           .setFont(18)
+          .getDrawer()
+        .getPanel()
+      .addSeparator(10)
+      .addValueController("Max Entity: ", sMode.INCREMENT, 100, 10, MAX_ENT).lastDrawer()
+        .addButton("i", 80, 5)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { init_array(); reset(); } } )
+          .setSize(20, 20).setFont(18)
           .getDrawer()
         .getPanel()
       .addSeparator(10)
@@ -277,43 +414,76 @@ abstract class Community {
         .getPanel()
       .addLine(22)
       ;
-    if (!show_menu.get()) panel.g.hide();
+    if (!show_menu.get()) panel.big.hide();
     
-    macro_build_panel
+    plane.build_panel
       .addText("Community: " + name, 0, 0, 18)
       .addSeparator(8)
       .addDrawer(30)
-        .addButton("COM IN", 30, 0)
-          .setSize(150, 30)
+        .addButton("INIT", 0, 0)
+          .setSize(120, 30)
           .addListener(new ControlListener() {
-            public void controlEvent(final ControlEvent ev) { newMacroComuIN(); } } )
+            public void controlEvent(final ControlEvent ev) { newMacroComuINIT(); } } )
           .getDrawer()
-        .addButton("COM OUT", 200, 0)
-          .setSize(150, 30)
+        .addButton("ADD", 130, 0)
+          .setSize(120, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { newMacroComuADD(); } } )
+          .getDrawer()
+        .addButton("POP", 260, 0)
+          .setSize(120, 30)
           .addListener(new ControlListener() {
             public void controlEvent(final ControlEvent ev) { newMacroComuOUT(); } } )
           .getDrawer()
         .getPanel()
       .addSeparator(10)
       ;
+    custom_build();
   }
   
-  void newMacroComuIN() {
-    new MacroCUSTOM(mList)
-      .setLabel("COMU IN " + name)
-      .setWidth(200)
+  void newMacroComuINIT() {
+    new MacroCUSTOM(plane)
+      .setLabel(name + " INIT")
+      .setWidth(250)
+      .addMCsIntControl()
+        .setValue(MAX_ENT)
+        .setText("")
+        .getMacro()
       .addMCsIntControl()
         .setValue(initial_entity)
-        .setText("init")
+        .setText("")
         .getMacro()
       .addMCsIntControl()
         .setValue(adding_step)
-        .setText("step")
+        .setText("")
         .getMacro()
       .addMCsBooControl()
         .setValue(adding_type)
-        .setText("step")
+        .setText("              do step")
         .getMacro()
+      .addMCsIntWatcher()
+        .addValue(MAX_ENT)
+        .setText("     max")
+        .getMacro()
+      .addMCsIntWatcher()
+        .addValue(initial_entity)
+        .setText("     add")
+        .getMacro()
+      .addMCsIntWatcher()
+        .addValue(adding_step)
+        .setText("    step")
+        .getMacro()
+      .addMCsBooWatcher()
+        .addValue(adding_type)
+        .setText("")
+        .getMacro()
+      ;
+  }
+  
+  void newMacroComuADD() {
+    new MacroCUSTOM(plane)
+      .setLabel("ADD " + name)
+      .setWidth(120)
       .addMCRun()
         .addRunnable(new Runnable() { public void run() { adding_pile += initial_entity.get(); }})
         .setText("add")
@@ -322,24 +492,12 @@ abstract class Community {
   }
   
   void newMacroComuOUT() {
-    new MacroCUSTOM(mList)
-      .setLabel("COMU OUT " + name)
-      .setWidth(200)
+    new MacroCUSTOM(plane)
+      .setLabel(name + " POP")
+      .setWidth(160)
       .addMCsIntWatcher()
         .addValue(activeEntity)
         .setText("  active")
-        .getMacro()
-      .addMCsIntWatcher()
-        .addValue(initial_entity)
-        .setText("  init")
-        .getMacro()
-      .addMCsIntWatcher()
-        .addValue(adding_step)
-        .setText("  step")
-        .getMacro()
-      .addMCsBooWatcher()
-        .addValue(adding_type)
-        .setText("  step")
         .getMacro()
       ;
   }
@@ -349,12 +507,29 @@ abstract class Community {
   Community show_entity() { show_entity.set(true); return this; }
   Community hide_entity() { show_entity.set(false); return this; }
   
+  void init_array() {
+    list.clear();
+    for (int i = 0; i < MAX_ENT.get() ; i++)
+      list.add(build());
+  }
+  
+  void init() {
+    id = comList.list.size();
+    comList.list.add(this);
+    init_array();
+  }
+  
   void reset() { //deactivate all then create starting situation from parameters
     this.destroy_All();
+    if (MAX_ENT.get() != list.size()) init_array();
     if (!adding_type.get()) 
       for (int j = 0; j < initial_entity.get(); j++)
         initialEntity();
     if (adding_type.get()) adding_pile = initial_entity.get();
+  }
+  
+  void frame() {
+    custom_frame();
   }
   
   void tick() {
@@ -367,12 +542,21 @@ abstract class Community {
       }
     }
     for (Entity e : list) if (e.active) e.tick();
-    custom_tick();
     activeEntity.set(active_Entity_Nb());
+    custom_tick();
   }
+  
+  void custom_build() {}
+  void custom_frame() {}
   void custom_tick() {}
-  void draw_All() {
+  void custom_cam_draw_pre_entity() {}
+  void custom_cam_draw_post_entity() {}
+  void custom_screen_draw() {}
+  
+  void draw_Cam() {
     for (Entity e : list) if (e.active) e.drawing(); }
+  void draw_Screen() {
+    custom_screen_draw(); }
   void destroy_All() {
     for (Entity e : list) e.destroy(); }
   

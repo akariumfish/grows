@@ -1,42 +1,47 @@
 import controlP5.*; //la lib pour les menu
 
 
-void init_panel(String s) {
-  cp5 = new ControlP5(this);
+void init_Tabs(String s) {
   
   int c = color(190);
-  int c2 = color(10, 100, 180);
   cp5.addTab("Menu")
     .setSize(100,30)
     .setHeight(30)
-    .setColorActive(c2)
+    .setLabel("  Menu")
     .getCaptionLabel().setFont(getFont(18)).setColor(c);
     ;
   cp5.addTab("Macros")
     .setSize(100,30)
     .setHeight(30)
-    .setColorActive(c2)
+    .setLabel("  Macros")
     .getCaptionLabel().setFont(getFont(18)).setColor(c);
     ;
 
   cp5.getTab("default")
     .setSize(100,30)
     .setHeight(30)
-    .setColorActive(c2)
-    .setLabel("Main")
+    .setLabel("  View")
     .getCaptionLabel().setFont(getFont(18)).setColor(c);
     ;
   cp5.getTab(s).bringToFront();
   
-  cp5.getWindow().setPositionOfTabs(35, height-30);
+  cp5.getWindow()
+    .setPositionOfTabs(35, height-30)
+    .setColorBackground(color(5, 55, 99, 255))
+    .setColorForeground(color(13, 130, 240, 255))
+    .setColorActive(color(10, 100, 180, 255))
+    ;
 
-  init_macro();
 }
 
 class sGrabable extends Callable {
   float mx = 0; float my = 0;
   Group g;
   PVector pos = new PVector(0, 0);
+  boolean pos_loaded = false;
+  
+  sFlt pos_x = new sFlt(simval, 0);
+  sFlt pos_y = new sFlt(simval, 0);
   
   sGrabable(ControlP5 c, float x, float y) {
     g = new Group(c, "panel" + get_free_id());
@@ -66,26 +71,36 @@ class sGrabable extends Callable {
   
   void answer(Channel chan, float value) {
     if (chan == frame_chan) {
-      if (g.isMouseOver()) {
-        if (mouseClick[0]) {
-          mx = g.getPosition()[0] - mouseX;
-          my = g.getPosition()[1] - mouseY;
-          cam.GRAB = false; //deactive le deplacement camera
-        } else if (mouseUClick[0]) {
-          cam.GRAB = true;
-        }
-        if (mouseButtons[0]) {
-          g.setPosition(mouseX + mx,mouseY + my);
-          pos = cam.screen_to_cam(new PVector(mouseX + mx, mouseY + my));
-        }
+      if (!pos_loaded) {
+        g.setPosition(pos_x.get(),pos_y.get());
+        pos = cam.screen_to_cam(new PVector(pos_x.get(),pos_y.get()));
+        pos_loaded = true;
       } else {
-        if (mouseClick[0] && cam.GRAB == true) {
-          mx = g.getPosition()[0] - mouseX;
-          my = g.getPosition()[1] - mouseY;
-        }
-        if (mouseButtons[0] && cam.GRAB == true) {
-          g.setPosition(mouseX + mx,mouseY + my);
-          pos = cam.screen_to_cam(new PVector(mouseX + mx, mouseY + my));
+        if (g.isMouseOver()) {
+          if (kb.mouseClick[0]) {
+            mx = g.getPosition()[0] - mouseX;
+            my = g.getPosition()[1] - mouseY;
+            cam.GRAB = false; //deactive le deplacement camera
+          } else if (kb.mouseUClick[0]) {
+            cam.GRAB = true;
+          }
+          if (kb.mouseButtons[0]) {
+            g.setPosition(mouseX + mx,mouseY + my);
+            pos = cam.screen_to_cam(new PVector(mouseX + mx, mouseY + my));
+            pos_x.set(mouseX + mx);
+            pos_y.set(mouseY + my);
+          }
+        } else {
+          if (kb.mouseClick[0] && cam.GRAB == true) {
+            mx = g.getPosition()[0] - mouseX;
+            my = g.getPosition()[1] - mouseY;
+          }
+          if (kb.mouseButtons[0] && cam.GRAB == true) {
+            g.setPosition(mouseX + mx,mouseY + my);
+            pos = cam.screen_to_cam(new PVector(mouseX + mx, mouseY + my));
+            pos_x.set(mouseX + mx);
+            pos_y.set(mouseY + my);
+          }
         }
       }
     }
@@ -102,9 +117,12 @@ class sPanel extends Callable {
   int drawer_height = 0;
   sDrawer last_drawer = null;
   float mx = 0; float my = 0;
+  Group big;
   Group g;
+  Button hideButton;
   boolean pos_loaded = false;
   
+  sBoo closed = new sBoo(simval, false);
   sInt pos_x = new sInt(simval, 100);
   sInt pos_y = new sInt(simval, 100);
   
@@ -119,37 +137,58 @@ class sPanel extends Callable {
         super.onLeave();
       }
     };
+    big = new Group(c, "panel" + get_free_id());
     
     pos_x.set(int(x));
     pos_y.set(int(y));
     
-    g.setPosition(x, y)
+    g.setPosition(0, 0)
         .setSize(PANEL_WIDTH, 0)
         .setBackgroundHeight(0)
+        .setBarHeight(0)
         .setBackgroundColor(color(60, 200))
         .disableCollapse()
         .moveTo("Menu")
+        .setGroup(big)
         .getCaptionLabel().setText("");
-        
+    big.setPosition(x, y)
+        .setSize(PANEL_WIDTH, 0)
+        .setBackgroundHeight(35)
+        .setBackgroundColor(color(60))
+        .setBarHeight(12)
+        .disableCollapse()
+        .moveTo("Menu")
+        .getCaptionLabel().setText("");
+    hideButton = new Button(c, "button"+get_free_id());
+    hideButton.setPosition(PANEL_WIDTH-20, 0)
+        .setSize(20, 20)
+        .setGroup(big)
+        .setSwitch(true)
+        .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) { 
+              if (g.isVisible()) { closed.set(true); g.hide(); hideButton.getCaptionLabel().setText("v"); }
+              else { closed.set(false); g.show(); hideButton.getCaptionLabel().setText("-"); } } } )
+        .getCaptionLabel().setText("-").setFont(getFont(18));
     this.addChannel(frame_chan);
   }
   
   void answer(Channel channel, float value) {
     if (!pos_loaded) {
-      g.setPosition(pos_x.get(),pos_y.get());
+      big.setPosition(pos_x.get(),pos_y.get());
+      if (closed.get()) { hideButton.setOn(); }
       pos_loaded = true;
     } else {
       //moving control panel
-      if (g.isMouseOver()) {
-        if (mouseClick[0]) {
-          mx = g.getPosition()[0] - mouseX;
-          my = g.getPosition()[1] - mouseY;
+      if (big.isMouseOver()) {
+        if (kb.mouseClick[0]) {
+          mx = big.getPosition()[0] - mouseX;
+          my = big.getPosition()[1] - mouseY;
           cam.GRAB = false; //deactive le deplacement camera
-        } else if (mouseUClick[0]) {
+        } else if (kb.mouseUClick[0]) {
           cam.GRAB = true;
         }
-        if (mouseButtons[0]) {
-          g.setPosition(mouseX + mx,mouseY + my);
+        if (kb.mouseButtons[0]) {
+          big.setPosition(mouseX + mx,mouseY + my);
           pos_x.set(int(mouseX+mx));
           pos_y.set(int(mouseY+my));
         }
@@ -157,7 +196,7 @@ class sPanel extends Callable {
     }
   }
   
-  sPanel setTab(String s) { g.moveTo(s); return this; }
+  sPanel setTab(String s) { big.moveTo(s); return this; }
   
   sDrawer addDrawer(int h) { return new sDrawer(this, h); }
   sDrawer lastDrawer() { return last_drawer; }
@@ -170,7 +209,13 @@ class sPanel extends Callable {
       ;
     return this;
   }
-  
+  sPanel addTitle(String title, int x, int y, int s) {
+    addDrawer(s + y)
+      .addText(title, x, y)
+        .setFont(s)
+        .setGroup(big);
+    return this;
+  }
   sPanel addText(String title, int x, int y, int s) {
     addDrawer(s + y)
       .addText(title, x, y)
@@ -196,14 +241,17 @@ class sPanel extends Callable {
       signe1 = "/"; signe2 = "x";
       f1a = 1/f1; f2a = 1/f2; f1b = f1; f2b = f2;
     }
+    String s1,s2;
+    if (f1%1 == 0) s1 = str(int(f1)); else s1 = str(f1);
+    if (f2%1 == 0) s2 = str(int(f2)); else s2 = str(f2);
     addDrawer(30)
-      .addIntModifier(signe1+str(f1), 0, 0)
+      .addIntModifier(signe1+s1, 0, 0)
         .setMode(mode, f1a)
         .setValue(i)
         .setSize(30, 30)
         .setFont(16)
       .getDrawer()
-      .addIntModifier(signe1+str(f2), 40, 0)
+      .addIntModifier(signe1+s2, 40, 0)
         .setMode(mode, f2a)
         .setValue(i)
         .setSize(30, 30)
@@ -212,17 +260,17 @@ class sPanel extends Callable {
       .addText(label, 110, 5)
         .setFont(18)
       .getDrawer()
-      .addText("", 200, 5)
+      .addText("", 210, 5)
         .setValue(i)
         .setFont(18)
       .getDrawer()
-      .addIntModifier(signe2+str(f2), 310, 0)
+      .addIntModifier(signe2+s2, 310, 0)
         .setMode(mode, f2b)
         .setValue(i)
         .setSize(30, 30)
         .setFont(16)
       .getDrawer()
-      .addIntModifier(signe2+str(f1), 350, 0)
+      .addIntModifier(signe2+s1, 350, 0)
         .setMode(mode, f1b)
         .setValue(i)
         .setSize(30, 30)
@@ -239,14 +287,17 @@ class sPanel extends Callable {
       signe1 = "/"; signe2 = "x";
       f1a = 1/f1; f2a = 1/f2; f1b = f1; f2b = f2;
     }
+    String s1,s2;
+    if (f1%1 == 0) s1 = str(int(f1)); else s1 = str(f1);
+    if (f2%1 == 0) s2 = str(int(f2)); else s2 = str(f2);
     addDrawer(30)
-      .addFltModifier(signe1+str(f1), 0, 0)
+      .addFltModifier(signe1+s1, 0, 0)
         .setMode(mode, f1a)
         .setValue(i)
         .setSize(30, 30)
         .setFont(16)
       .getDrawer()
-      .addFltModifier(signe1+str(f2), 40, 0)
+      .addFltModifier(signe1+s2, 40, 0)
         .setMode(mode, f2a)
         .setValue(i)
         .setSize(30, 30)
@@ -255,17 +306,17 @@ class sPanel extends Callable {
       .addText(label, 110, 5)
         .setFont(18)
       .getDrawer()
-      .addText("", 200, 5)
+      .addText("", 210, 5)
         .setValue(i)
         .setFont(18)
       .getDrawer()
-      .addFltModifier(signe2+str(f2), 310, 0)
+      .addFltModifier(signe2+s2, 310, 0)
         .setMode(mode, f2b)
         .setValue(i)
         .setSize(30, 30)
         .setFont(16)
       .getDrawer()
-      .addFltModifier(signe2+str(f1), 350, 0)
+      .addFltModifier(signe2+s1, 350, 0)
         .setMode(mode, f1b)
         .setValue(i)
         .setSize(30, 30)
@@ -362,6 +413,10 @@ class sDrawer {
     return this;
   }
 }
+
+
+
+
 
 
 
@@ -627,10 +682,11 @@ class sLabel extends Callable {
   }
   void print() {
     if (ival != null) t.setText(text_start + str(ival.get()) + text_end);
-    else if (fval != null) t.setText(text_start + str(fval.get()) + text_end);
+    else if (fval != null) {t.setText(text_start + trimStringFloat(fval.get()) + text_end); }
     else t.setText(text_start + text_end);
   }
   sLabel setPanel(sPanel p) { t.setGroup(p.g); return this; }
+  sLabel setGroup(Group p) { t.setGroup(p); return this; }
   sLabel setValue(sFlt i) {
     this.addChannel(frame_chan);
     fval = i;

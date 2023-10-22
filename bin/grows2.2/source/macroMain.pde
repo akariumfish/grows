@@ -1,96 +1,23 @@
 
 
-MacroList mList;
 
-//Keyboard keyb;
-//GrowingControl gcC;
-//GrowingWatcher gwC;
 
-//MacroVAL mv1,mv2;
-
-sPanel macro_build_panel;
-
-void init_macro() {
-  mList = new MacroList();
-  
-  macro_build_panel = new sPanel(cp5, 100, 300)
-    .setTab("Macros")
-    .addSeparator(5)
-    .addText("- NEW  MACRO -", 85, 0, 26)
-    .addSeparator(12)
-    .addText("BASIC MACRO :", 0, 0, 18)
-    .addSeparator(8)
-    .addDrawer(70)
-      .addButton("VAL", 30, 0)
-        .setSize(100, 30)
-        .addListener(new ControlListener() {
-          public void controlEvent(final ControlEvent ev) {
-            mList.addMacroVAL(mList.adding_pos, mList.adding_pos, 0);
-          } } )
-        .getDrawer()
-      .addButton("PULSE", 140, 0)
-        .setSize(100, 30)
-        .addListener(new ControlListener() {
-          public void controlEvent(final ControlEvent ev) {
-            mList.addPulse(mList.adding_pos, mList.adding_pos);
-          } } )
-        .getDrawer()
-      .addButton("DELAY", 250, 0)
-        .setSize(100, 30)
-        .addListener(new ControlListener() {
-          public void controlEvent(final ControlEvent ev) {
-            mList.addMacroDELAY(mList.adding_pos, mList.adding_pos, 0);
-          } } )
-        .getDrawer()
-      .addButton("COMP", 30, 40)
-        .setSize(100, 30)
-        .addListener(new ControlListener() {
-          public void controlEvent(final ControlEvent ev) {
-            mList.addMacroCOMP(mList.adding_pos, mList.adding_pos);
-          } } )
-        .getDrawer()
-      .addButton("BOOL", 140, 40)
-        .setSize(100, 30)
-        .addListener(new ControlListener() {
-          public void controlEvent(final ControlEvent ev) {
-            mList.addMacroBOOL(mList.adding_pos, mList.adding_pos);
-          } } )
-        .getDrawer()
-      .addButton("CALC", 250, 40)
-        .setSize(100, 30)
-        .addListener(new ControlListener() {
-          public void controlEvent(final ControlEvent ev) {
-            mList.addMacroCALC(mList.adding_pos, mList.adding_pos);
-          } } )
-        .getDrawer()
-      .getPanel()
-    .addLine(12)
-    .addSeparator(5)
-    ;
-  
-  //keyb.wO.linkTo(mv1.in);
-  //keyb.aO.linkTo(mv2.in);
-  
-  //mv1.out.linkTo(gcC.growI);
-  //mv2.out.linkTo(gcC.growI);
-}
-
-class MacroList {
+class MacroPlane extends Callable {
   ArrayList<Macro> macroList = new ArrayList<Macro>(0);
   ArrayList<InputB> inBList = new ArrayList<InputB>(0);
   ArrayList<OutputB> outBList = new ArrayList<OutputB>(0);
   ArrayList<InputF> inFList = new ArrayList<InputF>(0);
   ArrayList<OutputF> outFList = new ArrayList<OutputF>(0);
   
-  LinkList linkList = new LinkList(this);
+  LinkList linkList;
   
   Group g;
-  LinkB NOTB = linkList.createLinkB();
-  LinkF NOTF = linkList.createLinkF();
-  InputB NOTBI;
-  InputF NOTFI;
-  OutputB NOTBO;
-  OutputF NOTFO;
+  LinkB NOTB = null;
+  LinkF NOTF = null;
+  InputB NOTBI = null;
+  InputF NOTFI = null;
+  OutputB NOTBO = null;
+  OutputF NOTFO = null;
   
   boolean creatingLinkB = false;
   OutputB selectOutB;
@@ -99,7 +26,12 @@ class MacroList {
   
   int adding_pos = 40;
   
-  MacroList() {
+  sPanel build_panel;
+  
+  MacroPlane() {
+    linkList = new LinkList(this);
+    NOTB = linkList.createLinkB();
+    NOTF = linkList.createLinkF();
     g = cp5.addGroup("Main")
                   .setVisible(false)
                   .setPosition(-200,-200)
@@ -109,6 +41,90 @@ class MacroList {
     NOTFO = createOutputF(g,-1,"",1,0);
     NOTBI = createInputB(g,-1,"",0);
     NOTFI = createInputF(g,-1,"",1,0);
+    
+    addChannel(sim.tick_chan);
+    
+    build_panel = new sPanel(cp5, 100, 200)
+      .setTab("Macros")
+      .addTitle("- NEW  MACRO -", 85, 0, 28)
+      .addSeparator(12)
+      .addText("Basic Macro :", 0, 0, 18)
+      .addSeparator(8)
+      .addDrawer(150)
+        .addButton("VAL", 30, 0)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroVAL(adding_pos, adding_pos, 0);
+            } } )
+          .getDrawer()
+        .addButton("PULSE", 140, 0)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroPulse(adding_pos, adding_pos);
+            } } )
+          .getDrawer()
+        .addButton("DELAY", 250, 0)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroDELAY(adding_pos, adding_pos, 0);
+            } } )
+          .getDrawer()
+        .addButton("COMP", 30, 40)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroCOMP(adding_pos, adding_pos);
+            } } )
+          .getDrawer()
+        .addButton("BOOL", 140, 40)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroBOOL(adding_pos, adding_pos);
+            } } )
+          .getDrawer()
+        .addButton("CALC", 250, 40)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroCALC(adding_pos, adding_pos);
+            } } )
+          .getDrawer()
+        .addButton("BANG", 30, 80)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroBang(adding_pos, adding_pos);
+            } } )
+          .getDrawer()
+        .addButton("KEY", 140, 80)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroKey(adding_pos, adding_pos);
+            } } )
+          .getDrawer()
+        .addButton("TOGGLE", 250, 80)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroToggle(adding_pos, adding_pos);
+            } } )
+          .getDrawer()
+        .addButton("NOT", 140, 120)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              addMacroNOT(adding_pos, adding_pos);
+            } } )
+          .getDrawer()
+        .getPanel()
+      .addLine(12)
+      .addSeparator(5)
+      ;
   }
   
   void clear() {
@@ -171,6 +187,10 @@ class MacroList {
     }
   }
   
+  void answer(Channel channel, float value) { //tick chan
+    update();
+  }
+  
   void update() {
     int counter = 0;
     while (counter < macroList.size()) {
@@ -184,7 +204,11 @@ class MacroList {
     for (Macro m : macroList) {
       m.updated = false;
     }
-    if (mouseClick[1]) {
+  }
+  
+  void frame() {
+    for (Macro m : macroList) m.frame();
+    if (kb.mouseClick[1]) {
       creatingLinkB = false;
       creatingLinkF = false;
       for (int i = linkList.linkBList.size() - 1; i >= 0; i--) {
@@ -226,49 +250,34 @@ class MacroList {
     selectOutF.linkTo(in);
   }
   
-  Keyboard addKeyboard(int _x, int _y) {
+  MacroPulse addMacroPulse(int _x, int _y) {
     int id = macroList.size();
-    return new Keyboard(this, id, _x, _y);
+    return new MacroPulse(this, id, _x, _y);
   }
   
-  Pulse addPulse(int _x, int _y) {
+  MacroKey addMacroKey(int _x, int _y) {
     int id = macroList.size();
-    return new Pulse(this, id, _x, _y);
+    return new MacroKey(this, id, _x, _y);
   }
   
-  SimControl addSimControl(int _x, int _y) {
+  MacroBang addMacroBang(int _x, int _y) {
     int id = macroList.size();
-    return new SimControl(this, id, _x, _y);
+    return new MacroBang(this, id, _x, _y);
   }
   
-  GrowingPop addGrowingPop(int _x, int _y) {
+  MacroToggle addMacroToggle(int _x, int _y) {
     int id = macroList.size();
-    return new GrowingPop(this, id, _x, _y);
-  }
-  
-  GrowingParam addGrowingParam(int _x, int _y) {
-    int id = macroList.size();
-    return new GrowingParam(this, id, _x, _y);
-  }
-  
-  GrowingControl addGrowingControl(int _x, int _y) {
-    int id = macroList.size();
-    return new GrowingControl(this, id, _x, _y);
-  }
-  
-  GrowingActive addGrowingActive(int _x, int _y) {
-    int id = macroList.size();
-    return new GrowingActive(this, id, _x, _y);
-  }
-  
-  GrowingWatcher addGrowingWatcher(int _x, int _y) {
-    int id = macroList.size();
-    return new GrowingWatcher(this, id, _x, _y);
+    return new MacroToggle(this, id, _x, _y);
   }
   
   MacroVAL addMacroVAL(int _x, int _y, float v) {
     int id = macroList.size();
     return new MacroVAL(this, v, id, _x, _y);
+  }
+  
+  MacroNOT addMacroNOT(int _x, int _y) {
+    int id = macroList.size();
+    return new MacroNOT(this, id, _x, _y);
   }
   
   MacroCOMP addMacroCOMP(int _x, int _y) {
@@ -327,18 +336,22 @@ class MacroList {
 }
 
 abstract class Macro {
-  MacroList macroList;
+  MacroPlane macroList;
   boolean updated = false;
   Group g;
   int id; int x,y; float mx = 0; float my = 0;
   int inCount = 0;
   int outCount = 0;
+  ArrayList<OutputB> loutB = new ArrayList<OutputB>(0);
+  ArrayList<OutputF> loutF = new ArrayList<OutputF>(0);
+  ArrayList<InputB> linB = new ArrayList<InputB>(0);
+  ArrayList<InputF> linF = new ArrayList<InputF>(0);
   
-  Macro(MacroList ml, int i_, int x_, int y_) {
+  Macro(MacroPlane ml, int i_, int x_, int y_) {
     ml.addMacro(this);
     macroList = ml;
-    ml.adding_pos += 60;
-    if (ml.adding_pos >= 700) ml.adding_pos -= 635;
+    ml.adding_pos += 30;
+    if (ml.adding_pos >= 200) ml.adding_pos -= 162;
     id = i_;
     x = x_; y = y_;
     g = cp5.addGroup("Macro" + str(id))
@@ -348,11 +361,24 @@ abstract class Macro {
                   .setBackgroundColor(color(60, 200))
                   .disableCollapse()
                   .moveTo("Macros")
-                  .setHeight(22)
+                  .setBarHeight(20)//<
                   ;
     g.getCaptionLabel().setFont(createFont("Arial",16));
+    new Button(cp5, "button"+get_free_id())
+      .setPosition(-20, -20)
+      .setSize(20, 20)
+      .setGroup(g)
+      .addListener(new ControlListener() {
+        public void controlEvent(final ControlEvent ev) { 
+          clear(); } } )
+      .getCaptionLabel().setText("X")
+      ;
   }
   void clear() {
+    for (OutputB o : loutB) { o.clear(); macroList.outBList.remove(o); }
+    for (OutputF o : loutF) { o.clear(); macroList.outFList.remove(o); }
+    for (InputB o : linB) { o.clear(); macroList.inBList.remove(o); }
+    for (InputF o : linF) { o.clear(); macroList.inFList.remove(o); }
     g.remove();
   }
   
@@ -365,17 +391,21 @@ abstract class Macro {
   //  file.append(str(outCount));
   //}
   
-  void update() {
+  void update() {} //tick
+  void custom_frame() {}
+  
+  void frame() {
+    custom_frame();
     if (cp5.getTab("Macros").isActive()) {
-      if (g.isMouseOver() && mouseClick[0]) {
+      if (g.isMouseOver() && kb.mouseClick[0]) {
         mx = g.getPosition()[0] - mouseX;
         my = g.getPosition()[1] - mouseY;
         cam.GRAB = false; //deactive le deplacement camera
       }
-      if (g.isMouseOver() && mouseUClick[0]) {
+      if (g.isMouseOver() && kb.mouseUClick[0]) {
         cam.GRAB = true;
       }
-      if (g.isMouseOver() && mouseButtons[0]) {
+      if (g.isMouseOver() && kb.mouseButtons[0]) {
         x = int(mouseX + mx); y = int(mouseY + my);
         g.setPosition(mouseX + mx,mouseY + my);
       }
@@ -388,6 +418,7 @@ abstract class Macro {
       g.setSize(g.getWidth(), 28 + (inCount*28));
     }
     inCount +=1;
+    linB.add(in);
     return in;
   }
 
@@ -396,6 +427,7 @@ abstract class Macro {
     if (inCount >= outCount) {
       g.setSize(g.getWidth(), 28 + (inCount*28));
     }
+    linF.add(in);
     inCount +=1;
     return in;
   }
@@ -405,6 +437,7 @@ abstract class Macro {
     if (outCount >= inCount) {
       g.setSize(g.getWidth(), 28 + (outCount*28));
     }
+    loutB.add(out);
     outCount +=1;
     return out;
   }
@@ -414,6 +447,7 @@ abstract class Macro {
     if (outCount >= inCount) {
       g.setSize(g.getWidth(), 28 + (outCount*28));
     }
+    loutF.add(out);
     outCount +=1;
     return out;
   }

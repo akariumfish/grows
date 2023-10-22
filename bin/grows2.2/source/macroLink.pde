@@ -1,9 +1,9 @@
 class LinkList {
   ArrayList<LinkB> linkBList = new ArrayList<LinkB>(0);
   ArrayList<LinkF> linkFList = new ArrayList<LinkF>(0);
-  MacroList macroList;
+  MacroPlane macroList;
   
-  LinkList(MacroList m) {
+  LinkList(MacroPlane m) {
     macroList = m;
   }
   
@@ -20,23 +20,23 @@ class LinkList {
   //}
   
   LinkB createLinkB() {
-    LinkB l = new LinkB(macroList);
+    LinkB l = new LinkB(plane);
     linkBList.add(l);
     return l;
   }
 
   LinkF createLinkF() {
-    LinkF l = new LinkF(macroList);
+    LinkF l = new LinkF(plane);
     linkFList.add(l);
     return l;
   }
 }
 
 class LinkB {
-  MacroList macroList;
+  MacroPlane macroList;
   InputB in;
   OutputB out;
-  LinkB(MacroList m) {
+  LinkB(MacroPlane m) {
     macroList = m;
   }
   //void to_strings() {
@@ -47,13 +47,15 @@ class LinkB {
   //  }
   //}
   boolean collision(int x, int y) {
-    if (this != macroList.NOTB && in != macroList.NOTBI && out != macroList.NOTBO) {
+    if (macroList != null && this != macroList.NOTB && in != macroList.NOTBI && out != macroList.NOTBO) {
       return distancePointToLine(x, y, in.x, in.y, out.x, out.y) < 3;
     }
     return false;
   }
   void drawing() {
-    if (this != macroList.NOTB && in != macroList.NOTBI && out != macroList.NOTBO) {
+    if (macroList != null && 
+        macroList.NOTB != null && macroList.NOTBI != null && macroList.NOTBO != null && 
+        this != macroList.NOTB && in != macroList.NOTBI && out != macroList.NOTBO) {
       if (distancePointToLine(mouseX, mouseY, in.x, in.y, out.x, out.y) < 3) {
         if (out.bang) {stroke(255,255,0,180); fill(255,255,0);} else {stroke(182,182,0,180); fill(182,182,0);}
       } else {
@@ -81,11 +83,11 @@ class LinkB {
 }
 
 class LinkF {
-  MacroList macroList;
+  MacroPlane macroList;
   InputF in;
   OutputF out;
   float value = 0;
-  LinkF(MacroList m) {
+  LinkF(MacroPlane m) {
     macroList = m;
   }
   //void to_strings() {
@@ -96,13 +98,15 @@ class LinkF {
   //  }
   //}
   boolean collision(int x, int y) {
-    if (this != macroList.NOTF && in != macroList.NOTFI && out != macroList.NOTFO) {
+    if (macroList != null && this != macroList.NOTF && in != macroList.NOTFI && out != macroList.NOTFO) {
       return distancePointToLine(x, y, in.x, in.y, out.x, out.y) < 3;
     }
     return false;
   }
   void drawing() {
-    if (this != macroList.NOTF && in != macroList.NOTFI && out != macroList.NOTFO) {
+    if (macroList != null && 
+        macroList.NOTB != null && macroList.NOTBI != null && macroList.NOTBO != null && 
+        this != macroList.NOTF && in != macroList.NOTFI && out != macroList.NOTFO) {
       if (distancePointToLine(mouseX, mouseY, in.x, in.y, out.x, out.y) < 3) {
         if (out.bang) {stroke(255,255,0,180); fill(255,255,0);} else {stroke(182,182,0,180); fill(182,182,0);}
       } else {
@@ -129,14 +133,14 @@ class LinkF {
   }
 }
 
-abstract class InputA {
-  MacroList macroList;
+abstract class InputA extends Callable {
+  MacroPlane macroList;
   int x,y,n;
   int id = 0;
   Group g;
   Button in;
   boolean bang = false;
-  InputA(MacroList m, String s_, int _id, Group g_, int n_) {
+  InputA(MacroPlane m, String s_, int _id, Group g_, int n_) {
     macroList = m;
     id = _id;
     g = g_;
@@ -149,6 +153,7 @@ abstract class InputA {
        .setGroup(g)
        ;
     x = int(g.getPosition()[0]); y = int(g.getPosition()[1] + 12 + (n*26));
+    addChannel(frame_chan);
   }
   void clear() {
     in.remove();
@@ -166,7 +171,7 @@ abstract class InputA {
 class InputB extends InputA {
   ArrayList<LinkB> l = new ArrayList<LinkB>(0);
   Textlabel t;
-  InputB(MacroList m, int id, Group g_, int i, String text, int n_) {
+  InputB(MacroPlane m, int id, Group g_, int i, String text, int n_) {
     super(m, "inB", id, g_, n_);
     t = cp5.addTextlabel("Ctrl" + str(i) + "inBText" + str(n))
                     .setText(text)
@@ -177,6 +182,7 @@ class InputB extends InputA {
                     ;
   }
   void clear() {
+    for (LinkB t : l) macroList.linkList.linkBList.remove(t);
     t.remove();
     super.clear();
   }
@@ -184,8 +190,13 @@ class InputB extends InputA {
   //  super.to_strings();
   //  file.append("B");
   //}
+  void answer(Channel chan, float v) {
+    if (in.isMouseOver() && kb.mouseClick[0] && macroList.creatingLinkB) {macroList.addLinkSelectInB(this);}
+    x = int(g.getPosition()[0]); y = int(g.getPosition()[1] + 14 + (n*26));
+    
+  }
   boolean getUpdate() {
-    if (in.isMouseOver() && mouseClick[0] && macroList.creatingLinkB) {macroList.addLinkSelectInB(this);}
+    if (in.isMouseOver() && kb.mouseClick[0] && macroList.creatingLinkB) {macroList.addLinkSelectInB(this);}
     x = int(g.getPosition()[0]); y = int(g.getPosition()[1] + 14 + (n*26));
     bang = false;
     for (LinkB b : l) {
@@ -207,7 +218,9 @@ class InputF extends InputA {
   float value;
   Textfield textf;
   Textlabel t;
-  InputF(MacroList m, int id, Group g_, int i, String text, int n_, float d) {
+  Button ch;
+  boolean auto_reset = false;
+  InputF(MacroPlane m, int id, Group g_, int i, String text, int n_, float d) {
     super(m, "inF", id, g_, n_);
     value = d;
     t = cp5.addTextlabel("Ctrl" + str(id) + "inFText" + str(n))
@@ -236,25 +249,43 @@ class InputF extends InputA {
         }) 
        ;
     textf.getValueLabel().setFont(createFont("Arial",18));
+    ch = cp5.addButton("button" + get_free_id())
+      .setGroup(g)
+      .setSize(12, 22)
+      .setSwitch(true)
+      .setPosition(in.getPosition()[0] + 14, in.getPosition()[1])
+      .addListener(new ControlListener() {
+          public void controlEvent(final ControlEvent ev) { auto_reset = ch.isOn(); } } )
+      ;
+    ch.getCaptionLabel().setText("R").setFont(getFont(12));
   }
   void clear() {
     textf.remove();
     t.remove();
+    for (LinkF t : l) macroList.linkList.linkFList.remove(t);
     super.clear();
   }
-  boolean getUpdate() {
-    if (in.isMouseOver() && mouseClick[0] && macroList.creatingLinkF) {macroList.addLinkSelectInF(this);}
+  void answer(Channel chan, float v) {
+    if (in.isMouseOver() && kb.mouseClick[0] && macroList.creatingLinkF) {macroList.addLinkSelectInF(this);}
     x = int(g.getPosition()[0]); y = int(g.getPosition()[1] + 14 + (n*26));
+  }
+  boolean getUpdate() {
+    
     bang = false;
     for (LinkF f : l) {
       if (!f.out.updated) {return false;}
     }
+    //
     for (LinkF f : l) {
       bang |= f.out.bang;
       if (f.out.bang) {value = f.out.value;}
     }
     if (bang) { textf.setFocus(true); textf.setText(str(value)); textf.setFocus(false); }
-    
+    if (!bang && auto_reset && value != 0) {
+      value = 0;
+      bang = true;
+      textf.setFocus(true); textf.setText(str(value)); textf.setFocus(false);
+    }
     if (!bang && float(textf.getText()) != value) {
       value = float(textf.getText());
       bang = true;
@@ -284,8 +315,8 @@ class InputF extends InputA {
   //}
 }
 
-abstract class OutputA {
-  MacroList macroList;
+abstract class OutputA extends Callable {
+  MacroPlane macroList;
   boolean updated = false;
   int x = -100; int y = -100;
   int n = 0;
@@ -294,7 +325,7 @@ abstract class OutputA {
   Button out;
   boolean bang = false;
 
-  OutputA(MacroList m, String s_, int _id, Group g_, int n_) {
+  OutputA(MacroPlane m, String s_, int _id, Group g_, int n_) {
     g = g_;
     n = n_;
     id = _id;
@@ -307,6 +338,7 @@ abstract class OutputA {
        .setGroup(g)
        ;
     x = int(g.getPosition()[0] + g.getWidth()); y = int(g.getPosition()[1] + 14 + (n*26));
+    addChannel(frame_chan);
   }
   
   void clear() {
@@ -325,7 +357,7 @@ abstract class OutputA {
 class OutputB extends OutputA {
   ArrayList<LinkB> l = new ArrayList<LinkB>(0);
   Textlabel t;
-  OutputB(MacroList m, int id, Group g_, int i, String text, int n_) {
+  OutputB(MacroPlane m, int id, Group g_, int i, String text, int n_) {
     super(m, "outB", id, g_, n_);
     t = cp5.addTextlabel("Ctrl" + str(i) + "outBText" + str(n))
                     .setText(text)
@@ -337,6 +369,7 @@ class OutputB extends OutputA {
   }
   void clear() {
     t.remove();
+    for (LinkB t : l) macroList.linkList.linkBList.remove(t);
     super.clear();
   }
   //void to_strings() {
@@ -350,15 +383,15 @@ class OutputB extends OutputA {
         b.in.bang = bang;
       }
     }
-    update();
+    //update();
   }
   void bang() { set(true); }
   void unBang() { set(false); }
   boolean get() {
     return bang;
   }
-  void update() {
-    if (out.isMouseOver() && mouseClick[0]) {macroList.addLinkSelectOutB(this);}
+  void answer(Channel chan, float v) {
+    if (out.isMouseOver() && kb.mouseClick[0]) {macroList.addLinkSelectOutB(this);}
     updated = true;
     x = int(g.getPosition()[0] + g.getWidth()); y = int(g.getPosition()[1] + 14 + (n*26));
     if (bang) {out.setOn();} else {out.setOff();}
@@ -376,7 +409,7 @@ class OutputF extends OutputA {
   float value;
   Textfield textf;
   Textlabel t;
-  OutputF(MacroList m, int id, Group g_, int i, String text, int n_, float d) {
+  OutputF(MacroPlane m, int id, Group g_, int i, String text, int n_, float d) {
     super(m, "outF", id, g_, n_);
     value = d;
     t = cp5.addTextlabel("Ctrl" + str(i) + "outFText" + str(n_))
@@ -399,10 +432,12 @@ class OutputF extends OutputA {
        .setFocus(false)
        ;
     textf.getValueLabel().setFont(createFont("Arial",18));
+    
   }
   void clear() {
     t.remove();
     textf.remove();
+    for (LinkF t : l) macroList.linkList.linkFList.remove(t);
     super.clear();
   }
   //void to_strings() {
@@ -417,7 +452,7 @@ class OutputF extends OutputA {
     if (value != v) { value = v; bang(); return; }
     value = v;
   }
-  void unBang() {bang = false;}
+  void unBang() { bang = false; update(); }
   void bang() {
     bang = true;
     for (LinkF f : l) {
@@ -426,13 +461,16 @@ class OutputF extends OutputA {
     update();
   }
   float get() {return value;}
-  void update() {
-    if (out.isMouseOver() && mouseClick[0]) {macroList.addLinkSelectOutF(this);}
+  void answer(Channel chan, float v) {
+    if (out.isMouseOver() && kb.mouseClick[0]) {macroList.addLinkSelectOutF(this);}
     updated = true;
     x = int(g.getPosition()[0] + g.getWidth()); y = int(g.getPosition()[1] + 12 + (n*26));
-    if (value < 0.000001) {value = 0;}
-    if (bang) {out.setOn(); textf.setFocus(true); textf.setText(str(value).trim()); textf.setFocus(false);} else {out.setOff();}
     //bang = false;
+    update();
+  }
+  void update() {
+    //if (value < 0.000001) {value = 0;}
+    if (bang) {out.setOn(); textf.setFocus(true); textf.setText(str(value).trim()); textf.setFocus(false);} else {out.setOff();}
   }
   OutputF linkTo(InputF in) {
     LinkF nl = macroList.linkList.createLinkF();
