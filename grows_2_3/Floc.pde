@@ -23,7 +23,6 @@ class FlocComu extends Community {
     
     init_canvas();
   }
-  
   void custom_build() {
     panel.addSeparator(1)
       .addDrawer(20)
@@ -166,18 +165,18 @@ class FlocComu extends Community {
       ;
   }
   
-  void custom_tick() {
+  void custom_pre_tick() {
     for (Entity e1 : list)
       for (Entity e2 : list)
         if (e1.id < e2.id && e1 != e2 && e1.active && e2.active)
             ((Floc)e1).pair(((Floc)e2));
           
   }
-  
+  void custom_post_tick() {}
   void custom_frame() {
     can.drawHalo(this);
   }
-  
+  void custom_cam_draw_post_entity() {}
   void custom_cam_draw_pre_entity() {
     can.drawCanvas();
   }
@@ -350,7 +349,7 @@ class Canvas extends Callable {
   int can_div = 4;
   int can_st = can_div-1;
   
-  sBoo show_canvas = new sBoo(simval, false);
+  sBoo show_canvas = new sBoo(simval, true);
   sBoo show_canvas_bound = new sBoo(simval, true);
   
   sGrabable can_grab;

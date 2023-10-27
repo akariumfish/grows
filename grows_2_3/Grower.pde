@@ -39,6 +39,10 @@ class GrowerComu extends Community {
     graph.init();
     
   }
+  void custom_cam_draw_pre_entity() {}
+  void custom_cam_draw_post_entity() {}
+  void custom_pre_tick() {}
+  void custom_post_tick() {}
   void custom_build() {
     //creation du menu
     panel.addText("Shape", 150, 0, 22)

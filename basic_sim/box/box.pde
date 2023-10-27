@@ -17,13 +17,11 @@ MacroPlane plane;
 Channel frame_chan = new Channel();
 Channel frameend_chan = new Channel();
 
-GrowerComu gcom;
-FlocComu fcom;
 BoxComu bcom;
 
 void setup() {//executé au demarage
-  //size(1600, 900);//taille de l'ecran
-  fullScreen();
+  size(1600, 900);//taille de l'ecran
+  //fullScreen();
   noSmooth();//pas d'antialiasing
   //smooth();//anti aliasing
   
@@ -37,15 +35,15 @@ void setup() {//executé au demarage
   sim = new Simulation();
   plane = new MacroPlane();
   
-  gcom = new GrowerComu(sim);
-  fcom = new FlocComu(sim);
-  //bcom = new BoxComu(sim);
+  bcom = new BoxComu(sim);
   
   sim.building();
   
   loading(simval, "save.txt");
   
   sim.reset();
+  
+  
   
   background(0);//fond noir
 }
@@ -203,7 +201,7 @@ class Camera {
     }
     return r;
   }
-  
+  PVector screen_to_cam(float x, float y) { return screen_to_cam(new PVector(x, y)); }
   PVector screen_to_cam(PVector p) {
     PVector r = new PVector();
     if (matrixPushed) {

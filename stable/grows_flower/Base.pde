@@ -111,9 +111,9 @@ class Base {
     // PERSO    ----------------
     
     
-    if (!end && sprouts == 0) { stroke(255, 0, 0); strokeWeight(3 / cam_scale); }
-    else if (end) { stroke(0, 255, 0); strokeWeight(1 / cam_scale); }
-    else { stroke(255); strokeWeight(1 / cam_scale); }
+    if (!end && sprouts == 0) { stroke(255, 255, 50); strokeWeight(3 / cam_scale); }
+    else if (end) { stroke(255, 190, 0); strokeWeight(1 / cam_scale); }
+    else { stroke(255, 0, 0); strokeWeight(1 / cam_scale); }
     //fill(255);
     //ellipseMode(CENTER);
     //ellipse(pos.x, pos.y, 2, 2);

@@ -289,6 +289,7 @@ class Simulation {
   }
   
   void frame() {
+    for (Community c : list) c.isFrame = true;
     if (!pause.get()) {
       tick_pile += tick_by_frame.get();
       
@@ -296,8 +297,11 @@ class Simulation {
       if (auto_reset.get() && auto_reset_turn.get() == tick.get() + tick_by_frame.get() + tick_by_frame.get() && auto_screenshot.get()) {
           cam.screenshot = true; }
       
+      boolean flag = true;
       while (tick_pile >= 1) {
         tick();
+        if (flag) for (Community c : list) c.isFrame = false;
+        flag = false;
         tick_pile--;
       }
       
@@ -353,8 +357,25 @@ abstract class Community {
   sBoo show_entity = new sBoo(simval, true);
   sBoo show_menu = new sBoo(simval, true);
   String name = "";
+  boolean isFrame = false;
   
   Community(Simulation _c, String n, int max) { comList = _c; name = n; MAX_ENT.set(max); }
+  
+  Community show_menu() { panel.g.show(); show_menu.set(true); return this; }
+  Community hide_menu() { panel.g.hide(); show_menu.set(false); return this; }
+  Community show_entity() { show_entity.set(true); return this; }
+  Community hide_entity() { show_entity.set(false); return this; }
+  
+  //void custom_setup() {}
+  //void custom_draw() {}
+  void custom_build() {}
+  void custom_reset() {}
+  void custom_frame() {}
+  abstract void custom_pre_tick();
+  abstract void custom_post_tick();
+  abstract void custom_cam_draw_pre_entity();
+  abstract void custom_cam_draw_post_entity();
+  void custom_screen_draw() {}
   
   void building() {
     comList.panel.addDrawer(20)
@@ -502,11 +523,6 @@ abstract class Community {
       ;
   }
   
-  Community show_menu() { panel.g.show(); show_menu.set(true); return this; }
-  Community hide_menu() { panel.g.hide(); show_menu.set(false); return this; }
-  Community show_entity() { show_entity.set(true); return this; }
-  Community hide_entity() { show_entity.set(false); return this; }
-  
   void init_array() {
     list.clear();
     for (int i = 0; i < MAX_ENT.get() ; i++)
@@ -526,6 +542,7 @@ abstract class Community {
       for (int j = 0; j < initial_entity.get(); j++)
         initialEntity();
     if (adding_type.get()) adding_pile = initial_entity.get();
+    custom_reset();
   }
   
   void frame() {
@@ -541,17 +558,12 @@ abstract class Community {
         adding_pile--;
       }
     }
+    custom_pre_tick();
     for (Entity e : list) if (e.active) e.tick();
+    for (Entity e : list) if (e.active) e.age++;
     activeEntity.set(active_Entity_Nb());
-    custom_tick();
+    custom_post_tick();
   }
-  
-  void custom_build() {}
-  void custom_frame() {}
-  void custom_tick() {}
-  void custom_cam_draw_pre_entity() {}
-  void custom_cam_draw_post_entity() {}
-  void custom_screen_draw() {}
   
   void draw_Cam() {
     for (Entity e : list) if (e.active) e.drawing(); }
@@ -573,15 +585,16 @@ abstract class Community {
 
 abstract class Entity { 
   Community com;
-  int id;
+  int id, age;
   boolean active;
   Entity(Community c) {
     active = false;
     id = c.list.size();
     com = c;
+    age = 0;
   }
   Entity activate() {
-    if (!active) { active = true; init(); }
+    if (!active) { active = true; age = 0; init(); }
     return this;
   }
   Entity destroy() {

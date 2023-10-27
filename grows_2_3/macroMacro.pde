@@ -736,7 +736,7 @@ class MacroNOT extends Macro {
   void update() {
     super.update();
     if (in.getUpdate()) {
-      if (in.get()) {out.bang();} else {out.unBang();}
+      if (!in.get()) {out.bang();} else {out.unBang();}
       updated = true;
     }
   }
