@@ -233,7 +233,16 @@ class Box extends Entity {
     stroke(filling);
     strokeWeight(max(0, connect_bubble_size/1.3 - 4/cam.cam_scale.get()));
     line(connect1.x, connect1.y, connect2.x, connect2.y);
-    
+    int point_size = 16;
+    int c = 0;
+    strokeWeight(point_size);
+    for (float i = rect.pos.x + (rect.size.x%point_size)/2 + point_size/2; i < rect.pos.x + rect.size.x ; i += point_size) 
+      for (float j = rect.pos.y + (rect.size.y%point_size)/2 + point_size/2; j < rect.pos.y + rect.size.y ; j += point_size) {
+        stroke(0, 255, 0, c);
+        point(i, j);
+        c+=(generation*point_size);
+        if (c > 255) c -= 255;
+      }
     fill(lining);
     textFont(getFont(int(rect.size.y/3)));
     text(""+generation, rect.pos.x + rect.size.x/3, rect.pos.y + rect.size.y/1.41);
