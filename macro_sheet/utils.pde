@@ -70,12 +70,13 @@ PFont getFont(int st) {
 
 
 void callChannel(Channel chan, float val) {
-  for (Callable c : chan.calls) c.answer(chan, val); }
+  for (int i = 0; i < chan.calls.size() ; i++) chan.calls.get(i).answer(chan, val); }
 void callChannel(Channel chan) { callChannel(chan, 0); }
 class Channel { ArrayList<Callable> calls = new ArrayList<Callable>(); }
 abstract class Callable {
   Callable() {}   Callable(Channel c) {addChannel(c);}
   void addChannel(Channel c) { c.calls.add(this); }
+  void removeChannel(Channel c) { c.calls.remove(this); }
   public abstract void answer(Channel channel, float value); }
   
 //Channel test_chan = new Channel();

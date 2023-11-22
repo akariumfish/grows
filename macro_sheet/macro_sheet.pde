@@ -147,17 +147,17 @@ class sFramerate {
 
 class Camera {
   PVector cam_pos = new PVector(0, 0); //position de la camera
-  sFlt cam_scale = new sFlt(simval, 0.5); //facteur de grossicement
+  sFlt cam_scale = new sFlt(simval, 3.0); //facteur de grossicement
   float ZOOM_FACTOR = 1.1; //facteur de modification de cam_scale quand on utilise la roulette de la sourie
   boolean GRAB = true;
   boolean screenshot = false; //enregistre une image de la frame sans les menu si true puis se desactive
   
   boolean matrixPushed = false;
   
-  sBoo grid = new sBoo(simval, false);
+  sBoo grid = new sBoo(simval, true);
   
-  sFlt pos_x = new sFlt(simval, -800);
-  sFlt pos_y = new sFlt(simval, -450);
+  sFlt pos_x = new sFlt(simval, -700);
+  sFlt pos_y = new sFlt(simval, -350);
   boolean pos_loaded = false;
   
   Channel zoom_chan = new Channel();
@@ -285,11 +285,14 @@ void mouseDragged() { kb.mouseDraggedEvent(); }
 void mouseMoved() { kb.mouseMovedEvent(); }
 
 public class sInput {
+  
+  boolean keyButton, keyClick, keyJClick, keyUClick, keyJUClick;
   boolean[] keysButtons, keysClick, keysJClick, keysUClick, keysJUClick;
   boolean[] mouseButtons, mouseClick, mouseJClick, mouseUClick, mouseJUClick;
   boolean mouseMove = false;
   boolean mouseWheelUp = false;
   boolean mouseWheelDown = false;
+  char last_key = ' ';
   
   char[] keys_code = { 'a', 'b', 'c', 'd'};
   int keyNb = keys_code.length;
@@ -321,6 +324,10 @@ public class sInput {
       keysUClick[i] = false; keysJUClick[i] = false;
     }
     
+    keyButton = false;
+    keyClick = false; keyJClick = false;
+    keyUClick = false; keyJUClick = false;
+    
     mouseButtons = new boolean[3];
     mouseClick = new boolean[3]; mouseJClick = new boolean[3];
     mouseUClick = new boolean[3]; mouseJUClick = new boolean[3];
@@ -347,6 +354,10 @@ public class sInput {
       if (keysUClick[i] == true) {keysJUClick[i] = true;}
       if (keysUClick[i] == true && keysJUClick[i] == true) {keysUClick[i] = false; keysJUClick[i] = false;}
     }
+    if (keyClick == true) {keyJClick = true;}
+    if (keyClick == true && keyJClick == true) {keyClick = false; keyJClick = false;}
+    if (keyUClick == true) {keyJUClick = true;}
+    if (keyUClick == true && keyJUClick == true) {keyUClick = false; keyJUClick = false;}
   }
   
   void mouseWheelEvent(MouseEvent event) {
@@ -368,6 +379,8 @@ public class sInput {
         keysButtons[i]=true;
         keysClick[i]=true;
       }
+    keyButton=true;
+    keyClick=true;
   }
   
   void keyReleasedEvent()
@@ -377,6 +390,8 @@ public class sInput {
         keysButtons[0]=false;
         keysUClick[0]=true; 
       }
+    keyButton=false;
+    keyUClick=true;
   }
   
   void mousePressedEvent()
