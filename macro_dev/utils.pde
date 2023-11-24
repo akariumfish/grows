@@ -1,4 +1,51 @@
 
+
+
+
+//ArrayList<Test> builderlist = new ArrayList<Test>();
+
+//void mysetup() {
+  
+//}
+
+//class Test {
+//  Test() {
+//  }
+//  void to_string(String[] s, int id) {}
+//  void from_string(String[] s, int id) {}
+//  void clear() {}
+//  int size() { return 0; }
+//}
+
+
+//void save(String file, ArrayList<Test> tl) {
+//  String[] sl = new String[tl.size()];
+//  int id = 0;
+//  sl[0] = str(tl.size());
+//  id++;
+//  for (Test v : tl) {
+//    v.to_string(sl, id);
+//    id += v.size();
+//  }
+//  saveStrings(file, sl);
+//}
+
+//void load(String file, ArrayList<Test> tl) {
+//  for (Test t : tl) t.clear();
+//  tl.clear();
+//  String[] sl = loadStrings(file);
+//  int id = 1;
+//  for (int i = 1; i < int(sl[0]) ; i++) {
+//    Test t = new Test();
+//    tl.add(t);
+//    t.from_string(sl, id);
+//    id += t.size();
+//  }
+//}
+
+
+
+
 //#######################################################################
 //##                         METHODES UTILES                           ##
 //#######################################################################
@@ -243,7 +290,7 @@ class sGraph {
   }
   
   void draw() {
-    if (SHOW_GRAPH.get() && !cp5.getTab("default").isActive()) {
+    if (SHOW_GRAPH.get()) { // && !cp5.getTab("default").isActive()) {
       strokeWeight(0.5);
       stroke(255);
       for (int i = 1; i < larg; i++) if (i != gc) {

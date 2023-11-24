@@ -13,25 +13,6 @@ APPLET
     hoverable
 
 
-fenetre:
-  deplacable
-  collapse
-  closing
-  drawer function
-  
-widget:
-boutton
-  auto svalue control
-
-text
-  auto updatable
-
-input field
-  auto change svalue
-
-macro in/out
-
-
 */
 
 //nGUI gui = new nGUI();
@@ -67,6 +48,144 @@ class nGUI {
     drawing_pile.drawing();
   }
 }
+/*
+
+objet UI multi fonction
+
+Constructeurs:
+nWidget(nGUI g) 
+nWidget(nGUI g, float x, float y) 
+nWidget(nGUI g, float x, float y, float w, float h) 
+nWidget(nGUI g, String _label, int _text_font, float x, float y)
+nWidget(nGUI g, String _label, int _text_font, float x, float y, float w, float h) 
+
+void clear() destructeur
+
+nWidget setDrawer(Drawer d)
+
+nWidget setPassif()
+nWidget setTrigger() one time click
+nWidget setSwitch() switch on / off
+
+nWidget addExclude(nWidget b) auto off excluded when set on
+nWidget removeExclude(nWidget b)
+
+nWidget setGrabbable() peut etre deplacer en clicker glisser
+nWidget setFixed() 
+
+nWidget setParent(nWidget p) attache sa position au parent
+nWidget clearParent() 
+
+nWidget setLayer(int l) pour l'ordre d'affichage (valeur haute au dessus)
+
+nWidget setSelectable(boolean o) click=select (show outline)
+nWidget setField(boolean o) can input text inside
+
+nWidget setOutline(boolean o)
+nWidget setOutlineWeight(int l) 
+nWidget setHoveredOutline(boolean o)
+
+nWidget setText(String s) 
+nWidget setFont(int s) 
+
+nWidget setPosition(float x, float y) par rapport au parent et au stick/align
+nWidget setSize(float x, float y) 
+
+nWidget setPX(float v) 
+nWidget setPY(float v) 
+nWidget setSX(float v) 
+nWidget setSY(float v) 
+
+nWidget setStandbyColor(color c) 
+nWidget setHoveredColor(color c)
+nWidget setClickedColor(color c)
+nWidget setLabelColor(color c) 
+nWidget setOutlineColor(color c)
+nWidget setSelectedColor(color c)
+
+nWidget hide() desactive draw et comportement
+nWidget show() 
+
+positionnement auto par rapport au parent independent sur les deux axes
+nWidget alignUp()
+nWidget alignDown()
+nWidget alignLeft()
+nWidget alignRight()
+nWidget stackUp()
+nWidget stackDown()
+nWidget stackLeft()
+nWidget stackRight()
+
+switch
+boolean isOn()
+void setOn()
+void setOff()
+
+void toLayerTop() sera au dessus dans sont layer
+
+nGUI getGUI()
+Rect getRect()
+int getLayer()
+
+float getX() real pos 
+float getY() real pos
+float getLocalX() 
+float getLocalY() 
+float getSX() prend en compte si cacher ou non
+float getSY() prend en compte si cacher ou non
+float getLocalSX() 
+float getLocalSY() 
+
+String getText() 
+
+boolean isClicked() trigger ou switch
+boolean isHovered() 
+boolean isHided() 
+
+nWidget addEventFrame(Runnable r)       
+nWidget addEventGrab(Runnable r)       
+nWidget addEventDrag(Runnable r)       
+nWidget addEventLiberate(Runnable r)   
+nWidget addEventMouseEnter(Runnable r) 
+nWidget addEventMouseLeave(Runnable r) 
+nWidget addEventPress(Runnable r)    
+nWidget addEventRelease(Runnable r)   
+nWidget addEventTrigger(Runnable r)   
+nWidget addEventSwitchOn(Runnable r)   
+nWidget addEventSwitchOff(Runnable r)  
+nWidget addEventFieldChange(Runnable r)  
+
+nWidget removeEventFrame(Runnable r)      
+nWidget removeEventGrab(Runnable r)       
+nWidget removeEventDrag(Runnable r)       
+nWidget removeEventLiberate(Runnable r)   
+nWidget removeEventMouseEnter(Runnable r) 
+nWidget removeEventMouseLeave(Runnable r)
+nWidget removeEventPress(Runnable r)      
+nWidget removeEventRelease(Runnable r)    
+nWidget removeEventTrigger(Runnable r)    
+nWidget removeEventSwitchOn(Runnable r)   
+nWidget removeEventSwitchOff(Runnable r)  
+nWidget removeEventFieldChange(Runnable r) 
+
+pour les super class
+void customPositionChange() {}
+void customShapeChange() {}
+void customLayerChange() {}
+void customVisibilityChange() {}
+void eventFrame() {}
+void eventGrab() {}
+void eventDrag() {}
+void eventLiberate() {}
+void eventMouseEnter() {}
+void eventMouseLeave() {}
+void eventPress() {}
+void eventRelease() {}
+void eventTrigger() {}
+void eventSwitchOn() {}
+void eventSwitchOff() {}
+
+*/
 
 class nWidget extends Callable {
   private nGUI gui;
@@ -289,6 +408,8 @@ class nWidget extends Callable {
   nWidget stackDown()  { alignY = false; stackY = true; placeUp = false; placeDown = true; changePosition(); return this; }
   nWidget stackLeft()  { alignX = false; stackX = true; placeLeft = true; placeRight = false; changePosition(); return this; }
   nWidget stackRight() { alignX = false; stackX = true; placeLeft = false; placeRight = true; changePosition(); return this; }
+  
+  boolean isOn() { return switchState; }
   
   void setOn() {
     if (!switchState) {
@@ -524,167 +645,4 @@ class nWidget extends Callable {
   void eventTrigger() {}
   void eventSwitchOn() {}
   void eventSwitchOff() {}
-}
-
-
-
-
-
-
-
-
-
-class Drawer {
-  Drawing_pile pile = null;
-  int layer;
-  boolean active = true;
-  Drawer() {}
-  Drawer(Drawing_pile p) {
-    layer = 0;
-    pile = p;
-    pile.drawables.add(this);
-  }
-  Drawer(Drawing_pile p, int l) {
-    layer = l;
-    pile = p;
-    pile.drawables.add(this);
-  }
-  void clear() { if (pile != null) pile.drawables.remove(this); }
-  void toLayerTop() { pile.drawables.remove(this); pile.drawables.add(0, this); }
-  Drawer setLayer(int l) {
-    layer = l;
-    return this;
-  }
-  void drawing() {}
-}
-
-class Drawing_pile {
-  ArrayList<Drawer> drawables = new ArrayList<Drawer>();
-  Drawing_pile() { }
-  void drawing() {
-    int layer = 0;
-    int run_count = 0;
-    while (run_count < drawables.size()) {
-      for (int i = drawables.size() - 1; i >= 0 ; i--) {
-        Drawer r = drawables.get(i);
-        if (r.layer == layer) {
-          if (r.active) r.drawing();
-          run_count++;
-        }
-      }
-      layer++;
-    }
-  }
-  int getHighestLayer() {
-    if (drawables.size() > 0) {
-      int l = drawables.get(0).layer;
-      for (Drawer r : drawables) if (r.layer > l) l = r.layer;
-      return l;
-    } else return 0; }
-  int getLowestLayer() {
-    if (drawables.size() > 0) {
-      int l = drawables.get(0).layer;
-      for (Drawer r : drawables) if (r.layer < l) l = r.layer;
-      return l;
-    } else return 0; }
-}
-
-
-
-
-
-
-
-
-
-class Hoverable_pile {
-  ArrayList<Hoverable> hoverables = new ArrayList<Hoverable>();
-  Hoverable_pile() { }
-  void search(PVector pointer) {
-    int layer = 0;
-    for (Hoverable h : hoverables) { 
-      if (layer < h.layer) layer = h.layer;
-      h.mouseOver = false;
-    }
-    
-    boolean found = false;
-    int count = 0;
-    
-    if (hoverables.size() > 0) while (count < hoverables.size() && !found) {
-      for (int i = 0; i < hoverables.size() ; i++) {
-        Hoverable h = hoverables.get(i);
-        if (h.layer == layer) {
-          count++;
-          if (!found && h.active && h.rect != null && rectCollide(pointer, h.rect)) {
-            h.mouseOver = true;
-            found = true;
-          }
-        }
-      }
-      layer--;
-    }
-  }
-}
-
-class Hoverable {
-  Hoverable_pile pile = null;
-  int layer;
-  Rect rect = null;
-  boolean mouseOver = false;
-  boolean active = true;
-  Hoverable(Hoverable_pile p, Rect r) {
-    layer = 0;
-    pile = p;
-    pile.hoverables.add(this);
-    rect = r;
-  }
-  Hoverable(Hoverable_pile p, Rect r, int l) {
-    layer = l;
-    pile = p;
-    pile.hoverables.add(this);
-    rect = r;
-  }
-  void clear() { if (pile != null) pile.hoverables.remove(this); }
-  void toLayerTop() { pile.hoverables.remove(this); pile.hoverables.add(0, this); }
-  Hoverable setLayer(int l) {
-    layer = l;
-    return this;
-  }
-}
-
-
-
-
-
-
-
-
-class Rect {
-  PVector pos = new PVector(0, 0);
-  PVector size = new PVector(0, 0);
-  Rect() {}
-  Rect(float x, float y, float w, float h) {pos.x = x; pos.y = y; size.x = w; size.y = h;}
-  Rect(Rect r) {pos.x = r.pos.x; pos.y = r.pos.y; size.x = r.size.x; size.y = r.size.y;}
-  void draw() { rect(pos.x, pos.y, size.x, size.y); }
-}
-
-boolean rectCollide(Rect rect1, Rect rect2) {
-  return (rect1.pos.x < rect2.pos.x + rect2.size.x &&
-          rect1.pos.x + rect1.size.x > rect2.pos.x &&
-          rect1.pos.y < rect2.pos.y + rect2.size.y &&
-          rect1.pos.y + rect1.size.y > rect2.pos.y   );
-}
-
-boolean rectCollide(Rect rect1, Rect rect2, float s) {
-  Rect r1 = new Rect(rect1); r1.pos.x -= s; r1.pos.y -= s; r1.size.x += 2*s; r1.size.y += 2*s;
-  Rect r2 = new Rect(rect2); r2.pos.x -= s; r2.pos.y -= s; r2.size.x += 2*s; r2.size.y += 2*s;
-  return (r1.pos.x < r2.pos.x + r2.size.x &&
-          r1.pos.x + r1.size.x > r2.pos.x &&
-          r1.pos.y < r2.pos.y + r2.size.y &&
-          r1.pos.y + r1.size.y > r2.pos.y   );
-}
-
-boolean rectCollide(PVector p, Rect rect) {
-  return (p.x >= rect.pos.x && p.x <= rect.pos.x + rect.size.x &&
-          p.y >= rect.pos.y && p.y <= rect.pos.y + rect.size.y );
 }
