@@ -14,8 +14,8 @@ Macro_Input i;
 
 void mysetup() {
   ms = new Macro_Main(gui, tickpile, 20, 20);
-  //ms.addBool();
-  ms.do_load();
+  //ms.addSheet();
+  //ms.do_load();
   ms.childDragged();
 }
 
@@ -64,7 +64,7 @@ void setup() {//executé au demarage
   noSmooth();//pas d'antialiasing
   //smooth();//anti aliasing
 
-  cam = new Camera();
+  cam = new Camera(-700, -350, 3.0);
   kb = new sInput();
   fr = new sFramerate(60);
 
@@ -204,11 +204,14 @@ class Camera {
 
   sBoo grid = new sBoo(simval, true);
 
-  sFlt pos_x = new sFlt(simval, -700);
-  sFlt pos_y = new sFlt(simval, -350);
+  sFlt pos_x = new sFlt(simval, 0);
+  sFlt pos_y = new sFlt(simval, 0);
   boolean pos_loaded = false;
 
   Channel zoom_chan = new Channel();
+  
+  Camera() {}
+  Camera(float x, float y, float s) { pos_x.set(x); pos_y.set(y); cam_scale.set(s); }
 
   PVector getCamMouse() { 
     return screen_to_cam(new PVector(mouseX, mouseY));

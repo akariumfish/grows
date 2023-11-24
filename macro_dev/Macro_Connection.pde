@@ -7,6 +7,7 @@
 
 
 /*
+
 objets des connection in et out linkable
 objet out 
   cree et affiche les links
@@ -17,7 +18,209 @@ objet in
 
 objet packet : est transporté
     string definition plus array de string
+
 */
+
+
+
+class Macro_Sheet_Input {
+  Macro_Sheet sheet,parent;
+  Macro_Input in = null;
+  Macro_Output out = null;
+  nWidget grabber;
+  
+  float enlarged_pos = 0;
+  float reduc_pos = 0;
+  
+  Macro_Sheet_Input(nGUI _gui, Macro_Sheet _parent, Macro_Sheet _sheet) {
+    gui = _gui;
+    parent = _parent;
+    sheet = _sheet;
+    
+    reduc_pos = sheet.macro_size / 8 + sheet.sheet_inCount * sheet.macro_size * 1.125;
+    enlarged_pos = reduc_pos;
+    sheet.sheet_inputs.add(this);
+    sheet.sheet_inCount++;
+    
+    grabber = new nWidget(gui, 0, reduc_pos, sheet.macro_size * 0.75, sheet.macro_size)
+      .setParent(sheet.inputs_ref)
+      .setLayer(sheet.layer+2)
+      .addEventDrag(new Runnable() { public void run() { 
+        enlarged_pos = grabber.getLocalY();
+        sheet.childDragged(); 
+      } } )
+      .setGrabbable()
+      .setConstrainX(true)
+      ;
+    if (parent == null) grabber.setPX(-sheet.macro_size);
+    out = new Macro_Output(gui, sheet, 0, 0 )
+      .setParent(grabber)
+      .setLayer(sheet.layer+2)
+      ;
+    out.connect.stackRight();
+    
+    if (parent != null) {
+      in = new Macro_Input(gui, parent, 0, 0 )
+        .setParent(grabber)
+        .setLayer(sheet.layer)
+        ;
+      in.connect.stackLeft();
+      sheet.extinputs.add(in);
+      in.direct_connect(out);
+    }
+  }
+  void reduc() {
+    grabber.setPY(reduc_pos)
+      .hide();
+    out.hide();
+    if (in != null) in.show();
+  }
+  void enlarg() {
+    grabber.setPY(enlarged_pos)
+      .show();
+    out.show();
+  }
+  void hide() {
+    grabber.hide();
+  }
+  void show() {
+    grabber.show();
+  }
+  void clear() {
+    sheet.extinputs.remove(in);
+    sheet.sheet_inCount--;
+    sheet.sheet_inputs.remove(this);
+    if (in != null) in.clear();
+    out.clear();
+    grabber.clear();
+  }
+  void to_string(String[] s, int id) {
+    s[id] = str(enlarged_pos);
+    s[id+1] = str(reduc_pos);
+    log("to string sheet input " + id + " enlarged " + s[id] + " reduc " + s[id+1]);
+  }
+  void from_string(String[] s, int id) {
+    enlarged_pos = float(s[id]);
+    reduc_pos = float(s[id+1]);
+    log("from string sheet input " + id + " enlarged " + s[id] + " reduc " + s[id+1]);
+  }
+  int size() { return 2; }
+  
+  Macro_Sheet_Input setLayer(int l) {
+    grabber.setLayer(l);
+    if (in != null) in.setLayer(l-2);
+    out.setLayer(l);
+    return this;
+  }
+  
+  void toLayerTop() {
+    grabber.toLayerTop();
+    if (in != null) in.toLayerTop();
+    out.toLayerTop();
+  }
+  
+}
+
+
+
+class Macro_Sheet_Output {
+  Macro_Sheet sheet,parent;
+  Macro_Input in = null;
+  Macro_Output out = null;
+  nWidget grabber;
+  
+  float enlarged_pos = 0;
+  float reduc_pos = 0;
+  
+  Macro_Sheet_Output(nGUI _gui, Macro_Sheet _parent, Macro_Sheet _sheet) {
+    gui = _gui;
+    parent = _parent;
+    sheet = _sheet;
+    
+    reduc_pos = sheet.macro_size / 8 + sheet.sheet_outCount * sheet.macro_size * 1.125;
+    enlarged_pos = reduc_pos;
+    sheet.sheet_outputs.add(this);
+    sheet.sheet_outCount++;
+    
+    grabber = new nWidget(gui, -sheet.macro_size * 0.75, reduc_pos, sheet.macro_size * 0.75, sheet.macro_size)
+      .setParent(sheet.outputs_ref)
+      .setLayer(sheet.layer+2)
+      .addEventDrag(new Runnable() { public void run() { 
+        enlarged_pos = grabber.getLocalY();
+        sheet.childDragged(); 
+      } } )
+      .setGrabbable()
+      .setConstrainX(true)
+      ;
+    if (parent == null) grabber.setPX(sheet.macro_size * 0.25);
+    if (parent != null) {
+      out = new Macro_Output(gui, parent, 0, 0 )
+        .setParent(grabber)
+        .setLayer(sheet.layer+2)
+        ;
+      out.connect.stackRight();
+      sheet.extoutputs.add(out);
+    }
+    
+    in = new Macro_Input(gui, sheet, 0, 0 )
+      .setParent(grabber)
+      .setLayer(sheet.layer)
+      ;
+    in.connect.stackLeft();
+    in.direct_connect(out);
+    
+  }
+  void reduc() {
+    grabber.setPY(reduc_pos)
+      .hide();
+    in.hide();
+    if (out != null) out.show();
+  }
+  void enlarg() {
+    grabber.setPY(enlarged_pos)
+      .show();
+    in.show();
+  }
+  void hide() {
+    grabber.hide();
+  }
+  void show() {
+    grabber.show();
+  }
+  void clear() {
+    sheet.extoutputs.remove(in);
+    sheet.sheet_outCount--;
+    sheet.sheet_outputs.remove(this);
+    in.clear();
+    if (out != null) out.clear();
+    grabber.clear();
+  }
+  void to_string(String[] s, int id) {
+    s[id] = str(enlarged_pos);
+    s[id+1] = str(reduc_pos);
+    log("to string sheet input " + id + " enlarged " + s[id] + " reduc " + s[id+1]);
+  }
+  void from_string(String[] s, int id) {
+    enlarged_pos = float(s[id]);
+    reduc_pos = float(s[id+1]);
+    log("from string sheet input " + id + " enlarged " + s[id] + " reduc " + s[id+1]);
+  }
+  int size() { return 2; }
+  
+  Macro_Sheet_Output setLayer(int l) {
+    grabber.setLayer(l);
+    in.setLayer(l);
+    if (out != null) out.setLayer(l-2);
+    return this;
+  }
+  
+  void toLayerTop() {
+    grabber.toLayerTop();
+    in.toLayerTop();
+    if (out != null) out.toLayerTop();
+  }
+  
+}
 
 
 
@@ -47,7 +250,7 @@ class Macro_Packet {
 
 
 class Macro_Output {
-  Macro_Abstract macro;
+  Macro_Sheet macro;
   Drawer line_drawer;
   nWidget connect;
   
@@ -67,7 +270,13 @@ class Macro_Output {
     return this;
   }
   
-  Macro_Output(nGUI _gui, Macro_Abstract _s, float x, float y) {
+  Macro_Output toLayerTop() {
+    line_drawer.toLayerTop();
+    connect.toLayerTop();
+    return this;
+  }
+  
+  Macro_Output(nGUI _gui, Macro_Sheet _s, float x, float y) {
     
     macro = _s;
     index = macro.getFreeOutputIndex();
@@ -219,11 +428,11 @@ class Macro_Output {
 
 
 class Macro_Input {
-  Macro_Abstract macro;
+  Macro_Sheet macro;
   nWidget connect;
   ArrayList<Macro_Output> connected_outputs = new ArrayList<Macro_Output>();
   int index = -1;
-  Macro_Input(nGUI _gui, Macro_Abstract _s, float x, float y) {
+  Macro_Input(nGUI _gui, Macro_Sheet _s, float x, float y) {
     macro = _s;
     index = macro.getFreeInputIndex();
     macro.inputs.add(this);
@@ -254,6 +463,10 @@ class Macro_Input {
   }
   Macro_Input setLayer(int l) {
     connect.setLayer(l);
+    return this;
+  }
+  Macro_Input toLayerTop() {
+    connect.toLayerTop();
     return this;
   }
   void hide() { connect.hide(); }

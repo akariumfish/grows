@@ -43,7 +43,7 @@ class Macro_Value extends Macro_Abstract {
   Macro_Output out;
   Macro_Input in_bang,in_val;
   nWidget button,field;
-  Macro_Value(nGUI _gui, Macro_Abstract p, float x, float y) {
+  Macro_Value(nGUI _gui, Macro_Sheet p, float x, float y) {
     super(_gui, p, "value", x, y);
     button = new nWidget(_gui, macro_size / 8, macro_size / 8, macro_size*2, macro_size)
       .setTrigger()
@@ -55,7 +55,7 @@ class Macro_Value extends Macro_Abstract {
       }})
       ;
     
-    field = new nWidget(_gui, macro_size / 8, macro_size * 11 / 8, macro_size*2, macro_size)
+    field = new nWidget(_gui, macro_size / 8, macro_size * 10 / 8, macro_size*2, macro_size)
       .setParent(panel)
       .setLayer(layer)
       .setFont(int(macro_size/1.5))
@@ -120,15 +120,15 @@ class Macro_Comp extends Macro_Abstract {
   Macro_Input in_val1,in_val2;
   nWidget field1,field2,modeSUP,modeINF,modeEQ;
   Tickable tick;
-  Macro_Comp(nGUI _gui, Macro_Abstract p, float x, float y) {
+  Macro_Comp(nGUI _gui, Macro_Sheet p, float x, float y) {
     super(_gui, p, "comp", x, y);
-    modeSUP = new nWidget(_gui, ">", int(macro_size/1.5), - macro_size, macro_size * 11 / 8, macro_size, macro_size)
+    modeSUP = new nWidget(_gui, ">", int(macro_size/1.5), - macro_size, macro_size * 10 / 8, macro_size, macro_size)
       .setSwitch()
       .setParent(panel)
       .setLayer(layer)
       .stackDown()
       ;
-    modeINF = new nWidget(_gui, "<", int(macro_size/1.5), macro_size / 8, macro_size * 11 / 8, macro_size, macro_size)
+    modeINF = new nWidget(_gui, "<", int(macro_size/1.5), macro_size / 8, macro_size * 10 / 8, macro_size, macro_size)
       .setSwitch()
       .setParent(panel)
       .setLayer(layer)
@@ -136,21 +136,21 @@ class Macro_Comp extends Macro_Abstract {
       .addExclude(modeSUP)
       ;
     modeSUP.addExclude(modeINF);
-    modeEQ = new nWidget(_gui, "=", int(macro_size/1.5), macro_size / 4 + macro_size, macro_size * 11 / 8, macro_size, macro_size)
+    modeEQ = new nWidget(_gui, "=", int(macro_size/1.5), macro_size / 4 + macro_size, macro_size * 10 / 8, macro_size, macro_size)
       .setSwitch()
       .setParent(panel)
       .setLayer(layer)
       .stackDown()
       ;
     
-    field1 = new nWidget(_gui, macro_size / 8, macro_size * 2 / 8, macro_size*2, macro_size)
+    field1 = new nWidget(_gui, macro_size / 8, macro_size * 1 / 8, macro_size*2, macro_size)
       .setParent(panel)
       .setLayer(layer)
       .setFont(int(macro_size/1.5))
       .setText("0.0")
       .setField(true)
       ;
-    field2 = new nWidget(_gui, macro_size / 8, macro_size * 20 / 8, macro_size*2, macro_size)
+    field2 = new nWidget(_gui, macro_size / 8, macro_size * 19 / 8, macro_size*2, macro_size)
       .setParent(panel)
       .setLayer(layer)
       .setFont(int(macro_size/1.5))
@@ -238,27 +238,27 @@ class Macro_Calc extends Macro_Abstract {
   Macro_Input in_val1,in_val2;
   nWidget field1,field2,modeADD,modeSUP,modeMUL,modeDIV;
   Tickable tick;
-  Macro_Calc(nGUI _gui, Macro_Abstract p, float x, float y) {
+  Macro_Calc(nGUI _gui, Macro_Sheet p, float x, float y) {
     super(_gui, p, "calc", x, y);
-    modeADD = new nWidget(_gui, "+", int(macro_size/1.3), - macro_size, macro_size * 11 / 8, macro_size, macro_size)
+    modeADD = new nWidget(_gui, "+", int(macro_size/1.3), - macro_size, macro_size * 10 / 8, macro_size, macro_size)
       .setSwitch()
       .setParent(panel)
       .setLayer(layer)
       .stackDown()
       ;
-    modeSUP = new nWidget(_gui, "-", int(macro_size/1.3), macro_size / 8, macro_size * 11 / 8, macro_size, macro_size)
+    modeSUP = new nWidget(_gui, "-", int(macro_size/1.3), macro_size / 8, macro_size * 10 / 8, macro_size, macro_size)
       .setSwitch()
       .setParent(panel)
       .setLayer(layer)
       .stackDown()
       ;
-    modeMUL = new nWidget(_gui, "X", int(macro_size/1.5), macro_size / 4 + macro_size, macro_size * 11 / 8, macro_size, macro_size)
+    modeMUL = new nWidget(_gui, "X", int(macro_size/1.5), macro_size / 4 + macro_size, macro_size * 10 / 8, macro_size, macro_size)
       .setSwitch()
       .setParent(panel)
       .setLayer(layer)
       .stackDown()
       ;
-    modeDIV = new nWidget(_gui, "/", int(macro_size/1.5), macro_size * 3 / 8 + 2 * macro_size, macro_size * 11 / 8, macro_size, macro_size)
+    modeDIV = new nWidget(_gui, "/", int(macro_size/1.5), macro_size * 3 / 8 + 2 * macro_size, macro_size * 10 / 8, macro_size, macro_size)
       .setSwitch()
       .setParent(panel)
       .setLayer(layer)
@@ -269,14 +269,14 @@ class Macro_Calc extends Macro_Abstract {
     modeMUL.addExclude(modeSUP).addExclude(modeADD).addExclude(modeDIV);
     modeDIV.addExclude(modeSUP).addExclude(modeMUL).addExclude(modeADD);
     
-    field1 = new nWidget(_gui, macro_size / 8, macro_size * 2 / 8, macro_size*2, macro_size)
+    field1 = new nWidget(_gui, macro_size / 8, macro_size * 1 / 8, macro_size*2, macro_size)
       .setParent(panel)
       .setLayer(layer)
       .setFont(int(macro_size/1.5))
       .setText("0.0")
       .setField(true)
       ;
-    field2 = new nWidget(_gui, macro_size / 8, macro_size * 20 / 8, macro_size*2, macro_size)
+    field2 = new nWidget(_gui, macro_size / 8, macro_size * 19 / 8, macro_size*2, macro_size)
       .setParent(panel)
       .setLayer(layer)
       .setFont(int(macro_size/1.5))
@@ -367,7 +367,7 @@ class Macro_Calc extends Macro_Abstract {
 class Macro_Bang extends Macro_Abstract {
   Macro_Output out;
   nWidget button;
-  Macro_Bang(nGUI _gui, Macro_Abstract p, float x, float y) {
+  Macro_Bang(nGUI _gui, Macro_Sheet p, float x, float y) {
     super(_gui, p, "bang", x, y);
     button = new nWidget(_gui, macro_size / 4, macro_size / 8, macro_size*2, macro_size)
       .setTrigger()
@@ -409,7 +409,7 @@ class Macro_Switch extends Macro_Abstract {
   Macro_Output out;
   nWidget button;
   Tickable tick;
-  Macro_Switch(nGUI _gui, Macro_Abstract p, float x, float y) {
+  Macro_Switch(nGUI _gui, Macro_Sheet p, float x, float y) {
     super(_gui, p, "switch", x, y);
     setWidth(macro_size*3.5);
     button = new nWidget(_gui, macro_size / 4, macro_size / 8, macro_size*2, macro_size)
@@ -458,7 +458,7 @@ class Macro_Pulse extends Macro_Abstract {
   Tickable tick;
   int time = 20;
   int count = 0;
-  Macro_Pulse(nGUI _gui, Macro_Abstract p, float x, float y) {
+  Macro_Pulse(nGUI _gui, Macro_Sheet p, float x, float y) {
     super(_gui, p, "pulse", x, y);
     setWidth(macro_size*4.5);
     time_field = new nWidget(_gui, macro_size / 8, macro_size / 8, macro_size*3, macro_size)
@@ -526,7 +526,7 @@ class Macro_Delay extends Macro_Abstract {
   int time = 1;
   int count = 0;
   
-  Macro_Delay(nGUI _gui, Macro_Abstract p, float x, float y) {
+  Macro_Delay(nGUI _gui, Macro_Sheet p, float x, float y) {
     super(_gui, p, "delay", x, y);
     setWidth(macro_size*5.5);
     time_field = new nWidget(_gui, macro_size / 8, macro_size / 8, macro_size*3, macro_size)
@@ -593,7 +593,7 @@ class Macro_Bool extends Macro_Abstract {
   Macro_Packet pack1 = null, pack2 = null;
   nWidget modeAND,modeOR;
   
-  Macro_Bool(nGUI _gui, Macro_Abstract p, float x, float y) {
+  Macro_Bool(nGUI _gui, Macro_Sheet p, float x, float y) {
     super(_gui, p, "bool", x, y);
     modeAND = new nWidget(_gui, "&&", int(macro_size/1.5), macro_size / 8, macro_size * 5 / 8, macro_size, macro_size)
       .setSwitch()
@@ -628,7 +628,7 @@ class Macro_Bool extends Macro_Abstract {
       .setLayer(0)
       ;
     toLayerTop();
-    setWidth(macro_size*4.625);
+    setWidth(macro_size*3.625);
     outputs_ref.setPY(macro_size * 4 / 8);
   }
   void test() {
@@ -674,7 +674,7 @@ class Macro_Not extends Macro_Abstract {
   Tickable tick;
   Macro_Packet pack = null;
   
-  Macro_Not(nGUI _gui, Macro_Abstract p, float x, float y) {
+  Macro_Not(nGUI _gui, Macro_Sheet p, float x, float y) {
     super(_gui, p, "not", x, y);
     
     out = addExtOutput();

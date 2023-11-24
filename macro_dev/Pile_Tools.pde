@@ -55,6 +55,7 @@ class Drawer {
   }
   void clear() { if (pile != null) pile.drawables.remove(this); }
   void toLayerTop() { pile.drawables.remove(this); pile.drawables.add(0, this); }
+  void toLayerBottom() { pile.drawables.remove(this); pile.drawables.add(this); }
   Drawer setLayer(int l) {
     layer = l;
     return this;
@@ -151,6 +152,7 @@ class Hoverable {
   }
   void clear() { if (pile != null) pile.hoverables.remove(this); }
   void toLayerTop() { pile.hoverables.remove(this); pile.hoverables.add(0, this); }
+  void toLayerBottom() { pile.hoverables.remove(this); pile.hoverables.add(this); }
   Hoverable setLayer(int l) {
     layer = l;
     return this;

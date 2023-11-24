@@ -206,6 +206,7 @@ class nWidget extends Callable {
   private boolean grabbable = false;
   private boolean isClicked = false;
   private boolean isHovered = false;
+  private boolean isGrabbed = false;
   private boolean isSelectable = false;
   private boolean isSelected = false;
   private boolean isField = false;
@@ -229,6 +230,12 @@ class nWidget extends Callable {
   private color labelColor = color(255);
   private color outlineColor = color(255);
   private color selectedColor = color(255, 255, 0);
+  
+  private boolean constrainX = false;
+  private boolean constrainY = false;
+  
+  nWidget setConstrainX(boolean b) { constrainX = b; return this; }
+  nWidget setConstrainY(boolean b) { constrainY = b; return this; }
   
   nWidget(nGUI g) {
     gui = g;
@@ -342,8 +349,9 @@ class nWidget extends Callable {
   
   nWidget setParent(nWidget p) { 
     if (parent != null) parent.childs.remove(this); 
-    parent = p; p.childs.add(this); changePosition(); return this; }
-  nWidget clearParent() { parent.childs.remove(this); parent = null; changePosition(); return this; }
+    if (p != null) { parent = p; p.childs.add(this); changePosition(); } return this; }
+  nWidget clearParent() { 
+    if (parent != null) { parent.childs.remove(this); parent = null; changePosition(); } return this; }
   
   nWidget setLayer(int l) { 
     layer = l; 
@@ -516,16 +524,20 @@ class nWidget extends Callable {
           mx = getLocalX() - cam.getCamMouse().x;
           my = getLocalY() - cam.getCamMouse().y;
           cam.GRAB = false; //deactive le deplacement camera
+          isGrabbed = true;
           runEvents(eventGrabRun);
           eventGrab();
-        } else if (kb.mouseUClick[0]) {
-          cam.GRAB = true;
-          runEvents(eventLiberateRun);
-          eventLiberate();
         }
       }
-      if (isClicked) {
-        setPX(cam.getCamMouse().x + mx); setPY(cam.getCamMouse().y + my);
+      if (isGrabbed && kb.mouseUClick[0]) {
+        isGrabbed = false;
+        cam.GRAB = true;
+        runEvents(eventLiberateRun);
+        eventLiberate();
+      }
+      if (isGrabbed && isClicked) {
+        if (!constrainX) setPX(cam.getCamMouse().x + mx);
+        if (!constrainY) setPY(cam.getCamMouse().y + my);
         runEvents(eventDragRun);
         eventDrag();
       }

@@ -15,12 +15,7 @@ abstract class Macro_Abstract {
   ArrayList<Macro_Input> extinputs = new ArrayList<Macro_Input>(0);
   ArrayList<Macro_Output> extoutputs = new ArrayList<Macro_Output>(0);
   
-  
-  ArrayList<Macro_Input> inputs = new ArrayList<Macro_Input>(0);
-  ArrayList<Macro_Output> outputs = new ArrayList<Macro_Output>(0);
-  
-  Macro_Abstract parent;
-  ArrayList<Macro_Abstract> child_macro = new ArrayList<Macro_Abstract>(0);
+  Macro_Sheet parent;
   
   nGUI gui;
   
@@ -46,7 +41,7 @@ abstract class Macro_Abstract {
     for (Macro_Output m : extoutputs) m.show();
   }
   
-  Macro_Abstract(nGUI _gui, Macro_Abstract p, String n, float x, float y) {
+  Macro_Abstract(nGUI _gui, Macro_Sheet p, String n, float x, float y) {
     gui = _gui;
     parent = p;
     name = n;
@@ -65,15 +60,6 @@ abstract class Macro_Abstract {
       .stackRight()
       .setLayer(layer)
       ;
-    inputs_ref = new nWidget(gui, 0, 0)
-      .setParent(grabber)
-      .stackDown()
-      ;
-    outputs_ref = new nWidget(gui, -macro_size, 0)
-      .setParent(closer)
-      .stackRight()
-      .stackDown()
-      ;
     back = new nWidget(gui, 0, 0)
       .setParent(grabber)
       .setLayer(layer)
@@ -83,6 +69,14 @@ abstract class Macro_Abstract {
     panel = new nWidget(gui, 0, 0)
       .setParent(grabber)
       .setLayer(layer)
+      .stackDown()
+      ;
+    inputs_ref = new nWidget(gui, 0, 0)
+      .setParent(grabber)
+      .stackDown()
+      ;
+    outputs_ref = new nWidget(gui, 0, 0)
+      .setParent(grabber)
       .stackDown()
       ;
     grabber.toLayerTop();
@@ -115,30 +109,7 @@ abstract class Macro_Abstract {
     closer.toLayerTop();
   }
   
-  Macro_Input getInputByIndex(int i) {
-    for (Macro_Input m : inputs) if (m.index == i) return m;
-    return null; }
-  Macro_Output getOutputByIndex(int i) {
-    for (Macro_Output m : outputs) if (m.index == i) return m;
-    return null; }
-    
-  int getFreeInputIndex() {
-    int i = 0;
-    boolean found = false;
-    while (!found) {
-      int t = i;
-      for (Macro_Input m : inputs) if (m.index == i) i++;
-      if (t == i) found = true; }
-    return i; }
   
-  int getFreeOutputIndex() {
-    int i = 0;
-    boolean found = false;
-    while (!found) {
-      int t = i;
-      for (Macro_Output m : outputs) if (m.index == i) i++;
-      if (t == i) found = true; }
-    return i; }
   
   void to_string(String[] s, int id) {
     log("to string abstract");
@@ -207,9 +178,6 @@ abstract class Macro_Abstract {
     return vnb;
   }
   void clear() {
-    for (int i = child_macro.size() - 1 ; i >= 0 ; i--) child_macro.get(i).clear();
-    for (int i = inputs.size() - 1 ; i >= 0 ; i--) inputs.get(i).clear(); inputs.clear();
-    for (int i = outputs.size() - 1 ; i >= 0 ; i--) outputs.get(i).clear(); outputs.clear();
     for (Macro_Input m : extinputs) m.clear(); extinputs.clear();
     for (Macro_Output m : extoutputs) m.clear(); extoutputs.clear();
     if (parent != null) parent.child_macro.remove(this);
@@ -224,6 +192,7 @@ abstract class Macro_Abstract {
     if (outCount > 1) w += macro_size;
     grabber.setSX(w - macro_size * 0.75);
     back.setSX(w);
+    outputs_ref.setPX(w - macro_size);
     return this;
   }
   
@@ -236,7 +205,7 @@ abstract class Macro_Abstract {
   
   void up_back() {
     int h = max(inCount, outCount);
-    back.setSY(h * macro_size * 1.25 + macro_size * 0.75);
+    back.setSY(h * macro_size * 1.125 + macro_size * 0.875);
     if (inCount > 0) panel.setPX(macro_size + macro_size / 8);
   }
   
@@ -244,7 +213,7 @@ abstract class Macro_Abstract {
   int outCount = 0;
   
   Macro_Input addExtInput() {
-    Macro_Input m = new Macro_Input(gui, parent, 0, inCount * macro_size * 1.25 + macro_size / 8 )
+    Macro_Input m = new Macro_Input(gui, parent, 0, inCount * macro_size * 1.125 + macro_size / 8 )
       .setParent(inputs_ref)
       ;
     extinputs.add(m);
@@ -254,7 +223,7 @@ abstract class Macro_Abstract {
   }
   
   Macro_Output addExtOutput() {
-    Macro_Output m = new Macro_Output(gui, parent, 0, outCount * macro_size * 1.25 + macro_size / 8 )
+    Macro_Output m = new Macro_Output(gui, parent, 0, outCount * macro_size * 1.125 + macro_size / 8 )
       .setParent(outputs_ref)
       ;
     extoutputs.add(m);
