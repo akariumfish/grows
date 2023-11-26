@@ -28,17 +28,65 @@ APPLET
 //}
 
 
-//#############    RUNNABLE    #############
-abstract class Runnable {
-  Object builder = null; Runnable() {} Runnable(Object p) { builder = p; } 
-  public abstract void run(); }
+class nSelectZone extends Callable {
+  Hoverable_pile pile;
+  Drawer drawer;
+  Rect select_zone = new Rect();
+  boolean emptyClick = false;
+  int clickDelay = 0;
+  
+  nSelectZone(nGUI _g) {
+    pile = _g.hoverable_pile;
+    pile.addEventNotFound(new Runnable() { public void run() { 
+      if (kb.mouseClick[1]) clickDelay = 5; 
+    } } );
+    drawer = new Drawer(_g.drawing_pile, 25) { public void drawing() {
+      noFill();
+      stroke(255);
+      strokeWeight(2/cam.cam_scale.get());
+      Rect z = new Rect(select_zone);
+      if (z.size.x < 0) { z.pos.x += z.size.x; z.size.x *= -1; }
+      if (z.size.y < 0) { z.pos.y += z.size.y; z.size.y *= -1; }
+      if (emptyClick) z.draw();
+    } };
+    addChannel(_g.GUI_Call);
+  }
+  boolean isUnder(nWidget w) {
+    Rect z = new Rect(select_zone);
+    if (z.size.x < 0) { z.pos.x += z.size.x; z.size.x *= -1; }
+    if (z.size.y < 0) { z.pos.y += z.size.y; z.size.y *= -1; }
+    if (emptyClick && rectCollide(w.getRect(), z)) return true;
+    return false;
+  }
+  void answer(Channel c, float f) {
+    if (clickDelay > 0) {
+      clickDelay--;
+      if (clickDelay == 0) { 
+        emptyClick = true;
+        select_zone.pos.x = cam.getCamMouse().x;
+        select_zone.pos.y = cam.getCamMouse().y;
+      }
+    }
+    if (emptyClick) {
+      if (kb.mouseUClick[1]) emptyClick = false;
+      select_zone.size.x = cam.getCamMouse().x - select_zone.pos.x;
+      select_zone.size.y = cam.getCamMouse().y - select_zone.pos.y;
+    }
+  }
+}
+
 
 class nGUI {
   Channel GUI_Call = new Channel();
   Drawing_pile drawing_pile = new Drawing_pile();
   Hoverable_pile hoverable_pile = new Hoverable_pile();
-  
   nWidget selected_widget = null;
+  
+  nSelectZone szone;
+  
+  nGUI() {
+    szone = newSelectZone();
+  }
   
   void update() {
     hoverable_pile.search(cam.getCamMouse());
@@ -47,7 +95,44 @@ class nGUI {
   void draw() {
     drawing_pile.drawing();
   }
+  nExcludeGroup newExcludeGroup() {
+    return new nExcludeGroup(hoverable_pile); }
+  nSelectZone newSelectZone() {
+    return new nSelectZone(this); }
 }
+
+class nExcludeGroup {
+  Hoverable_pile pile;
+  private ArrayList<nWidget> excludes = new ArrayList<nWidget>();
+  
+  void add(nWidget w) {
+    excludes.add(w);
+    //close others when seton event
+    w.addEventSwitchOn(new Runnable(w) { public void run() { 
+      for (nWidget n : excludes) if (n != (nWidget)builder) n.setOff();
+    } } );
+    
+    //removed when cleared
+    //      todo
+    
+    
+  }
+  
+  void closeAll() {
+    for (nWidget n : excludes) n.setOff();
+  }
+  
+  void clear() {
+    
+  }
+  
+  nExcludeGroup(Hoverable_pile _h) {
+    pile = _h;
+    //close all when hover not found event
+    pile.addEventNotFound(new Runnable() { public void run() { if (kb.mouseClick[0]) closeAll(); } } );
+  }
+}
+
 /*
 
 objet UI multi fonction
@@ -109,12 +194,12 @@ nWidget show()
 positionnement auto par rapport au parent independent sur les deux axes
 nWidget alignUp()
 nWidget alignDown()
-nWidget alignLeft()
-nWidget alignRight()
+nWidget alignLeft()   left side aligned with parent left side
+nWidget alignRight()  right side aligned with parent right side
 nWidget stackUp()
 nWidget stackDown()
-nWidget stackLeft()
-nWidget stackRight()
+nWidget stackLeft()   right side aligned with parent left side
+nWidget stackRight()  left side aligned with parent right side
 
 switch
 boolean isOn()
@@ -216,7 +301,7 @@ class nWidget extends Callable {
   private float mx = 0; float my = 0;
   private boolean showOutline = false;
   private boolean hoverOutline = false;
-  private int outlineWeight = 2;
+  private float outlineWeight = 1;
   
   private boolean alignX = false, stackX = false;
   private boolean alignY = false, stackY = false;
@@ -283,6 +368,9 @@ class nWidget extends Callable {
     init();
   }
   
+  private int cursorCount = 0;
+  private int cursorCycle = 80;
+  
   void init() {
     globalrect = new Rect();
     changePosition();
@@ -292,17 +380,26 @@ class nWidget extends Callable {
       if (isClicked || switchState)                      { fill(clickedColor); } 
       else if (isHovered && (triggerMode || switchMode)) { fill(hoveredColor); } 
       else                                               { fill(standbyColor); }
-      if (showOutline || (hoverOutline && isHovered) ) { stroke(outlineColor); strokeWeight(outlineWeight); } 
-      else noStroke();
-      if (isField && isSelected) { stroke(selectedColor); strokeWeight(outlineWeight); } 
+      noStroke();
       rect(getX(), getY(), getSX(), getSY());
+      
+      noFill();
+      strokeWeight(outlineWeight);
+      if (showOutline || (hoverOutline && isHovered) ) stroke(outlineColor);
+      else if (isField && isSelected) stroke(selectedColor);
+      else noStroke();
+      rect(getX() + outlineWeight/2, getY() + outlineWeight/2, getSX() - outlineWeight, getSY() - outlineWeight);
+      
       textAlign(CENTER);
       textFont(getFont(text_font));
       String l = label;
       if (showCursor) {
         String str = label.substring(0, cursorPos);
         String end = label.substring(cursorPos, label.length());
-        l = str + "|" + end;
+        if (cursorCount < cursorCycle / 2) l = str + "|" + end;
+        else l = str + " " + end;
+        cursorCount++;
+        if (cursorCount > cursorCycle) cursorCount = 0;
       }
       fill(labelColor); text(l, getX() + getSX() / 2, getY() + (text_font / 3.0) + (getLocalSY() / 2.0));
     } } ;
@@ -366,7 +463,7 @@ class nWidget extends Callable {
   
   
   nWidget setOutline(boolean o) { showOutline = o; return this; }
-  nWidget setOutlineWeight(int l) { outlineWeight = l; return this; }
+  nWidget setOutlineWeight(float l) { outlineWeight = l; return this; }
   nWidget setHoveredOutline(boolean o) { hoverOutline = o; return this; }
   
   nWidget setText(String s) { label = s; cursorPos = label.length(); return this; }
@@ -640,7 +737,7 @@ class nWidget extends Callable {
   
   nWidget removeEventFieldChange(Runnable r)  { eventFieldChangeRun.remove(r); return this; }
   
-  void runEvents(ArrayList<Runnable> e) { for (int i = e.size() - 1 ; i >= 0 ; i--) e.get(i).run(); }
+  
   
   void eventFrame() {}
   

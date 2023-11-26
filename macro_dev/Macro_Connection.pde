@@ -55,7 +55,7 @@ class Macro_Sheet_Input {
     if (parent == null) grabber.setPX(-sheet.macro_size);
     out = new Macro_Output(gui, sheet, 0, 0 )
       .setParent(grabber)
-      .setLayer(sheet.layer+2)
+      .setLayer(sheet.layer+3)
       ;
     out.connect.stackRight();
     
@@ -326,6 +326,7 @@ class Macro_Output {
       }
       .setTrigger()
       .setLayer(macro.layer)
+      .setOutlineWeight(macro.macro_size/6)
       .setDrawer(new Drawer(_gui.drawing_pile) { public void drawing() {
         if (connect.isClicked)                     { fill(connect.clickedColor); } 
         else if (connect.isHovered || hasSend > 0) { fill(connect.hoveredColor); } 
@@ -339,7 +340,7 @@ class Macro_Output {
         noStroke();
         ellipseMode(CENTER);
         ellipse(getCenterX(), getCenterY(), 
-                connect.getSX() / 1.7, connect.getSY() / 1.7 );
+                connect.getSX() / 1.9, connect.getSY() / 1.9 );
         if (DEBUG) {
           fill(255);
           textFont(getFont(6));
@@ -408,7 +409,7 @@ class Macro_Output {
   
   float getCenterX() { return connect.getX() + connect.getSX() / 2; }
   float getCenterY() { return connect.getY() + connect.getSY() / 2; }
-  float getSize() { return connect.getSX() / 1.4; }
+  float getSize() { return connect.getSX() / 1.6; }
   Macro_Abstract getMacro() { return macro; }
   
   Macro_Output setParent(nWidget w) { connect.setParent(w); return this; }
@@ -442,18 +443,16 @@ class Macro_Input {
         if (connect.isClicked)      { fill(connect.clickedColor); } 
         else if (connect.isHovered) { fill(connect.hoveredColor); } 
         else                        { fill(connect.standbyColor); }
-        //stroke(connect.outlineColor);
-        //strokeWeight(connect.outlineWeight);
         noStroke();
         rect(connect.getX(), connect.getY(), connect.getSX(), connect.getSY());
         noStroke();
         fill(0);
         ellipseMode(CENTER);
         ellipse(getCenterX(), getCenterY(), 
-                connect.getSX() / 1.7, connect.getSY() / 1.7 );
+                connect.getSX() / 1.9, connect.getSY() / 1.9 );
         if (DEBUG) {
           fill(255);
-          textFont(getFont(6));
+          textFont(getFont(int(macro.macro_size/4)));
           text(""+index, connect.getX()-5, connect.getY()+6);
         }
       } } )

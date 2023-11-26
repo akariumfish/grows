@@ -26,8 +26,8 @@ background englobe automatiquement sont plan
 
 
 class Macro_Sheet extends Macro_Abstract {
-  nWidget smenu,sclear,sfield,ssave,reduc,menu,addSheet,addExtIn,addExtOut,
-    addBang,addSwitch,addDelay,addPulse,addBool,addValue,addComp,addCalc,addNot;
+  nWidget smenu,sclear,sfield,ssave,ssheet,reduc,menu,addSheet,addExtIn,addExtOut;
+    
   
   ArrayList<Macro_Sheet_Input> sheet_inputs = new ArrayList<Macro_Sheet_Input>(0);
   ArrayList<Macro_Sheet_Output> sheet_outputs = new ArrayList<Macro_Sheet_Output>(0);
@@ -59,6 +59,23 @@ class Macro_Sheet extends Macro_Abstract {
     menu.show();
     addSheet.hide();
     sclear.hide();
+  }
+  
+  ArrayList<nWidget> addbuttons = new ArrayList<nWidget>(0);
+  
+  Macro_Sheet newAdd(String name, Runnable run) {
+    nWidget add = new nWidget(gui, name, int(macro_size/1.5), 0, 0, macro_size*5, macro_size)
+      .setTrigger()
+      .setLayer(getBase().menu_layer)
+      .stackDown()
+      .hide()
+      .addEventTrigger(new Runnable() { public void run() { getBase().menugroup.closeAll(); }})
+      .addEventTrigger(run)
+      ;
+    if (addbuttons.size() == 0) add.setParent(addExtOut);
+    else add.setParent(addbuttons.get(addbuttons.size()-1));
+    addbuttons.add(add);
+    return this;
   }
   
   Macro_Sheet(nGUI _gui, Macro_Sheet p, float x, float y) {
@@ -98,7 +115,7 @@ class Macro_Sheet extends Macro_Abstract {
       .stackDown()
       .hide()
       .addEventTrigger(new Runnable() { public void run() {
-        menu.setOff();
+        getBase().menugroup.closeAll();
         addSheet();
       }})
       ;
@@ -109,7 +126,7 @@ class Macro_Sheet extends Macro_Abstract {
       .stackDown()
       .hide()
       .addEventTrigger(new Runnable(this) { public void run() {
-        menu.setOff();
+        getBase().menugroup.closeAll();
         addSheetInput();
       }})
       ;
@@ -120,117 +137,27 @@ class Macro_Sheet extends Macro_Abstract {
       .stackDown()
       .hide()
       .addEventTrigger(new Runnable(this) { public void run() {
-        menu.setOff();
+        getBase().menugroup.closeAll();
         addSheetOutput();
       }})
       ;
-    addBang = new nWidget(_gui, "Bang", int(macro_size/1.5), 0, 0, macro_size*5, macro_size)
-      .setTrigger()
-      .setParent(addExtOut)
-      .setLayer(getBase().menu_layer)
-      .stackDown()
-      .hide()
-      .addEventTrigger(new Runnable() { public void run() {
-        menu.setOff();
-        addBang();
-      }})
-      ;
-    addSwitch = new nWidget(_gui, "Switch", int(macro_size/1.5), 0, 0, macro_size*5, macro_size)
-      .setTrigger()
-      .setParent(addBang)
-      .setLayer(getBase().menu_layer)
-      .stackDown()
-      .hide()
-      .addEventTrigger(new Runnable() { public void run() {
-        menu.setOff();
-        addSwitch();
-      }})
-      ;
-    addDelay = new nWidget(_gui, "Delay", int(macro_size/1.5), 0, 0, macro_size*5, macro_size)
-      .setTrigger()
-      .setParent(addSwitch)
-      .setLayer(getBase().menu_layer)
-      .stackDown()
-      .hide()
-      .addEventTrigger(new Runnable() { public void run() {
-        menu.setOff();
-        addDelay();
-      }})
-      ;
-    addPulse = new nWidget(_gui, "Pulse", int(macro_size/1.5), 0, 0, macro_size*5, macro_size)
-      .setTrigger()
-      .setParent(addDelay)
-      .setLayer(getBase().menu_layer)
-      .stackDown()
-      .hide()
-      .addEventTrigger(new Runnable() { public void run() {
-        menu.setOff();
-        addPulse();
-      }})
-      ;
-    addBool = new nWidget(_gui, "Bool", int(macro_size/1.5), 0, 0, macro_size*5, macro_size)
-      .setTrigger()
-      .setParent(addPulse)
-      .setLayer(getBase().menu_layer)
-      .stackDown()
-      .hide()
-      .addEventTrigger(new Runnable() { public void run() {
-        menu.setOff();
-        addBool();
-      }})
-      ;
     
-    addValue = new nWidget(_gui, "Value", int(macro_size/1.5), 0, 0, macro_size*5, macro_size)
-      .setTrigger()
-      .setParent(addBool)
-      .setLayer(getBase().menu_layer)
-      .stackDown()
-      .hide()
-      .addEventTrigger(new Runnable() { public void run() {
-        menu.setOff();
-        addValue();
-      }})
-      ;
-    addComp = new nWidget(_gui, "Comp", int(macro_size/1.5), 0, 0, macro_size*5, macro_size)
-      .setTrigger()
-      .setParent(addValue)
-      .setLayer(getBase().menu_layer)
-      .stackDown()
-      .hide()
-      .addEventTrigger(new Runnable() { public void run() {
-        menu.setOff();
-        addComp();
-      }})
-      ;
-    addCalc = new nWidget(_gui, "Calc", int(macro_size/1.5), 0, 0, macro_size*5, macro_size)
-      .setTrigger()
-      .setParent(addComp)
-      .setLayer(getBase().menu_layer)
-      .stackDown()
-      .hide()
-      .addEventTrigger(new Runnable() { public void run() {
-        menu.setOff();
-        addCalc();
-      }})
-      ;
-    addNot = new nWidget(_gui, "Not", int(macro_size/1.5), 0, 0, macro_size*5, macro_size)
-      .setTrigger()
-      .setParent(addCalc)
-      .setLayer(getBase().menu_layer)
-      .stackDown()
-      .hide()
-      .addEventTrigger(new Runnable() { public void run() {
-        menu.setOff();
-        addNot();
-      }})
-      ;
-      
+    newAdd("bang", new Runnable() { public void run() { addBang(); }});
+    newAdd("switch", new Runnable() { public void run() { addSwitch(); }});
+    newAdd("delay", new Runnable() { public void run() { addDelay(); }});
+    newAdd("pulse", new Runnable() { public void run() { addPulse(); }});
+    newAdd("bool", new Runnable() { public void run() { addBool(); }});
+    newAdd("value", new Runnable() { public void run() { addValue(); }});
+    newAdd("comp", new Runnable() { public void run() { addComp(); }});
+    newAdd("calc", new Runnable() { public void run() { addCalc(); }});
+    newAdd("not", new Runnable() { public void run() { addNot(); }});
+    newAdd("key", new Runnable() { public void run() { addKeyboard(); }});
+    
     smenu = new nWidget(_gui, "S", int(macro_size/1.5), 0, 0, macro_size, macro_size * 0.75)
       .setSwitch()
       .setParent(menu)
       .setLayer(layer)
       .stackRight()
-      .addExclude(menu)
       .addEventSwitchOn(new Runnable() { public void run() {
         sclear.show();
       }})
@@ -238,7 +165,6 @@ class Macro_Sheet extends Macro_Abstract {
         sclear.hide();
       }})
       ;
-    menu.addExclude(smenu);
     closer.setParent(smenu);
     sclear = new nWidget(_gui, "clear", int(macro_size/1.5), 0, 0, macro_size*5, macro_size)
       .setTrigger()
@@ -248,7 +174,7 @@ class Macro_Sheet extends Macro_Abstract {
       .hide()
       .addEventTrigger(new Runnable() { public void run() {
         empty();
-        smenu.setOff();
+        getBase().menugroup.closeAll();
       }})
       ;
     sfield = new nWidget(_gui, 0, 0, macro_size*5, macro_size)
@@ -271,11 +197,25 @@ class Macro_Sheet extends Macro_Abstract {
       .hide()
       .addEventTrigger(new Runnable() { public void run() {
         do_save();
-        smenu.setOff();
+        getBase().menugroup.closeAll();
       }})
       ;
-    
-    //back.toLayerTop();
+    ssheet = new nWidget(_gui, "as sheet", int(macro_size/1.5), 0, 0, macro_size*5, macro_size)
+      .setTrigger()
+      .setParent(ssave)
+      .setLayer(getBase().menu_layer)
+      .stackDown()
+      .hide()
+      .addEventTrigger(new Runnable() { public void run() {
+        do_load_as();
+        childDragged();
+        getBase().menugroup.closeAll();
+      }})
+      ;
+    if (getBase().menugroup != null) {
+      getBase().menugroup.add(menu);
+      getBase().menugroup.add(smenu);
+    }
     childDragged();
   }
   
@@ -320,19 +260,12 @@ class Macro_Sheet extends Macro_Abstract {
     addSheet.setLayer(getBase().menu_layer);
     addExtIn.setLayer(getBase().menu_layer);
     addExtOut.setLayer(getBase().menu_layer);
-    addBang.setLayer(getBase().menu_layer);
-    addDelay.setLayer(getBase().menu_layer);
-    addPulse.setLayer(getBase().menu_layer);
-    addBool.setLayer(getBase().menu_layer);
-    addSwitch.setLayer(getBase().menu_layer);
-    addNot.setLayer(getBase().menu_layer);
-    addValue.setLayer(getBase().menu_layer);
-    addComp.setLayer(getBase().menu_layer);
-    addCalc.setLayer(getBase().menu_layer);
+    for(nWidget w : addbuttons) w.setLayer(getBase().menu_layer);
     smenu.setLayer(l);
     sfield.setLayer(getBase().menu_layer);
     ssave.setLayer(getBase().menu_layer);
     sclear.setLayer(getBase().menu_layer);
+    ssheet.setLayer(getBase().menu_layer);
     for (Macro_Sheet_Input m : sheet_inputs) m.setLayer(l);
     for (Macro_Sheet_Output m : sheet_outputs) m.setLayer(l);
   }
@@ -343,19 +276,12 @@ class Macro_Sheet extends Macro_Abstract {
     addSheet.toLayerTop();
     addExtIn.toLayerTop();
     addExtOut.toLayerTop();
-    addBang.toLayerTop();
-    addDelay.toLayerTop();
-    addPulse.toLayerTop();
-    addBool.toLayerTop();
-    addSwitch.toLayerTop();
-    addNot.toLayerTop();
-    addValue.toLayerTop();
-    addComp.toLayerTop();
-    addCalc.toLayerTop();
+    for(nWidget w : addbuttons) w.toLayerTop();
     smenu.toLayerTop();
     sfield.toLayerTop();
     ssave.toLayerTop();
     sclear.toLayerTop();
+    ssheet.toLayerTop();
     for (Macro_Sheet_Input m : sheet_inputs) m.toLayerTop();
     for (Macro_Sheet_Output m : sheet_outputs) m.toLayerTop();
   }
@@ -368,18 +294,19 @@ class Macro_Sheet extends Macro_Abstract {
     return vnb;
   }
   void clear() {
-    super.clear();
+    super.clear(); 
     reduc.clear(); menu.clear(); addSheet.clear(); addExtIn.clear(); addExtOut.clear(); 
     
-    addBang.clear(); addSwitch.clear(); addDelay.clear(); addPulse.clear(); addBool.clear(); 
-    addValue.clear(); addComp.clear(); addCalc.clear(); addNot.clear(); 
-    smenu.clear(); sfield.clear(); ssave.clear(); 
-    for (int i = child_macro.size() - 1 ; i >= 0 ; i--) child_macro.get(i).clear();
-    for (int i = inputs.size() - 1 ; i >= 0 ; i--) inputs.get(i).clear(); inputs.clear();
-    for (int i = outputs.size() - 1 ; i >= 0 ; i--) outputs.get(i).clear(); outputs.clear();
+    for (int i = addbuttons.size() - 1 ; i >= 0 ; i--) addbuttons.get(i).clear(); 
     
-    for (int i = sheet_inputs.size() - 1 ; i >= 0 ; i--) sheet_inputs.get(i).clear();
-    for (int i = sheet_outputs.size() - 1 ; i >= 0 ; i--) sheet_outputs.get(i).clear();
+    smenu.clear(); sfield.clear(); ssave.clear(); ssheet.clear(); 
+    
+    for (int i = child_macro.size() - 1 ; i >= 0 ; i--) child_macro.get(i).clear(); 
+    for (int i = inputs.size() - 1 ; i >= 0 ; i--) inputs.get(i).clear(); inputs.clear(); 
+    for (int i = outputs.size() - 1 ; i >= 0 ; i--) outputs.get(i).clear(); outputs.clear(); 
+    
+    for (int i = sheet_inputs.size() - 1 ; i >= 0 ; i--) sheet_inputs.get(i).clear(); 
+    for (int i = sheet_outputs.size() - 1 ; i >= 0 ; i--) sheet_outputs.get(i).clear(); 
   }
   void to_string(String[] s, int id) {
     log("to string sheet ");
@@ -458,12 +385,15 @@ class Macro_Sheet extends Macro_Abstract {
       else if (s[id].equals("not"))  m = new Macro_Not(gui, this, 0, 0);
       else if (s[id].equals("comp"))  m = new Macro_Comp(gui, this, 0, 0);
       else if (s[id].equals("calc"))  m = new Macro_Calc(gui, this, 0, 0);
+      else if (s[id].equals("key"))  m = new Macro_Keyboard(gui, this, 0, 0);
       else if (s[id].equals("sheet")) m = new Macro_Sheet(gui, this, 0, 0);
       m.setLayer(layer+2);
       m.toLayerTop();
       m.from_string(s, id);
       id += m.size();
     }
+    
+    getBase().menugroup.closeAll();
     
     l = int(s[id]);
     log("sheet in connect nb " + id + " " + s[id]);
@@ -518,13 +448,11 @@ class Macro_Sheet extends Macro_Abstract {
   void do_load_as() {
     log("do load as");
     Macro_Sheet ms = addSheet();
-    ms.setLayer(layer+2);
-    ms.toLayerTop();
     String[] sl = loadStrings(savepath);
     ms.from_string(sl, 0);
+    adding(ms);
     log("load as end");
     log("");
-    ms.childDragged();
   }
   void childDragged() {
     float minx = 0, miny = 0, maxx = macro_size*5, maxy = macro_size*0.75;
@@ -560,10 +488,10 @@ class Macro_Sheet extends Macro_Abstract {
       inputs_ref.setPX(minx + macro_size);
       outputs_ref.setPX(maxx - macro_size*0.25);
     } else {
-      back.setPosition(minx - macro_size, miny - macro_size);
-      back.setSize(maxx - minx + macro_size*2, maxy - miny + macro_size*2);
-      inputs_ref.setPX(minx);
-      outputs_ref.setPX(maxx);
+      back.setPosition(minx - macro_size*4, miny - macro_size);
+      back.setSize(maxx - minx + macro_size*8, maxy - miny + macro_size*2);
+      inputs_ref.setPX(minx - macro_size*3);
+      outputs_ref.setPX(maxx + macro_size*3);
     }
     if (parent != null) parent.childDragged();
   }
@@ -580,10 +508,10 @@ class Macro_Sheet extends Macro_Abstract {
     return m;
   }
   
-  float add_pos = macro_size;
+  
   
   Macro_Sheet addSheet() {
-    Macro_Sheet m = new Macro_Sheet(gui, this, 0, 0);
+    Macro_Sheet m = new Macro_Sheet(gui, this, 0, macro_size*1.25);
     adding(m); return m; }
   Macro_Delay addDelay() {
     Macro_Delay m = new Macro_Delay(gui, this, 0, 0);
@@ -612,13 +540,24 @@ class Macro_Sheet extends Macro_Abstract {
   Macro_Not addNot() {
     Macro_Not m = new Macro_Not(gui, this, 0, 0);
     adding(m); return m; }
-    
+  Macro_Keyboard addKeyboard() {
+    Macro_Keyboard m = new Macro_Keyboard(gui, this, 0, 0);
+    adding(m); return m; }
+  
   void adding(Macro_Abstract m) {
-    m.grabber.setPosition(add_pos, macro_size + add_pos);
-    add_pos += macro_size / 2;
+    float add_pos = m.grabber.getLocalY() + macro_size;
+    boolean found = false;
+    while (!found) {
+      m.grabber.setPosition(0, add_pos);
+      add_pos += macro_size*0.375;
+      boolean col = false;
+      for (Macro_Abstract c : child_macro)
+        if (m != c && rectCollide(m.back.getRect(), c.back.getRect())) col = true;
+      if (!col) found = true;
+    }
+    
     m.setLayer(layer+2);
     m.toLayerTop();
-    if (add_pos > macro_size * 3) add_pos = 0;
     childDragged();
   }
   

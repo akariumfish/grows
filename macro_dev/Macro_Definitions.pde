@@ -37,6 +37,54 @@ Macro Custom Connexions:
   
 */
 
+class Macro_Keyboard extends Macro_Abstract {
+  Macro_Output out;
+  nWidget field;
+  Tickable tick;
+  Macro_Keyboard(nGUI _gui, Macro_Sheet p, float x, float y) {
+    super(_gui, p, "key", x, y);
+    setWidth(macro_size*4.5);
+    field = new nWidget(_gui, macro_size / 8, macro_size / 8, macro_size*3, macro_size)
+      .setParent(panel)
+      .setLayer(layer)
+      .setFont(int(macro_size/1.5))
+      .setText("a")
+      .setField(true)
+      ;
+    out = addExtOutput();
+    tick = new Tickable(getBase().tickpile) { public void tick(float t) {
+        if (kb.keyClick && field.getText().length() > 0 && field.getText().charAt(0) == key) out.send(newBang());
+      } }
+      .setLayer(0)
+      ;
+    toLayerTop();
+  }
+  void clear() {
+    super.clear();
+    tick.clear();
+  }
+  void to_string(String[] s, int id) {
+    super.to_string(s, id);
+    id += super.size();
+    s[id] = field.getText();
+  }
+  void from_string(String[] s, int id) {
+    super.from_string(s, id);
+    id += super.size();
+    field.setText(s[id]);
+  }
+  int size() { return 1 + super.size(); }
+  void childDragged() {}
+  void setLayer(int l) {
+    super.setLayer(l);
+    field.setLayer(l);
+  }
+  void toLayerTop() {
+    super.toLayerTop();
+    field.toLayerTop();
+  }
+}
+
 
 
 class Macro_Value extends Macro_Abstract {

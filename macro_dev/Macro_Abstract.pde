@@ -19,9 +19,9 @@ abstract class Macro_Abstract {
   
   nGUI gui;
   
-  float macro_size = 15;
+  float macro_size = 20;
   int layer = 0;
-  nWidget grabber, inputs_ref, outputs_ref, panel, back, closer;
+  nWidget grabber, inputs_ref, outputs_ref, panel, back, closer, front;
   
   float sheet_width = macro_size;
   String name = null;
@@ -63,7 +63,19 @@ abstract class Macro_Abstract {
     back = new nWidget(gui, 0, 0)
       .setParent(grabber)
       .setLayer(layer)
-      .setStandbyColor(color(180, 80))
+      .setStandbyColor(color(180, 60))
+      //.stackDown()
+      ;
+    front = new nWidget(gui, 0, 0)
+      .setParent(back)
+      .setLayer(layer+1)
+      .setStandbyColor(color(255, 0))
+      .setOutlineWeight(macro_size/15)
+      .addEventFrame(new Runnable() { public void run() { 
+        front.setSize(back.getLocalSX(), back.getLocalSY());
+        if (gui.szone.isUnder(front)) front.setOutline(true);
+        else front.setOutline(false);
+      } } )
       //.stackDown()
       ;
     panel = new nWidget(gui, 0, 0)
@@ -97,7 +109,7 @@ abstract class Macro_Abstract {
     layer = l;
     grabber.setLayer(l);
     closer.setLayer(l);
-    back.setLayer(l);
+    back.setLayer(l); front.setLayer(l);
     for (Macro_Input m : extinputs) m.connect.setLayer(l);
     for (Macro_Output m : extoutputs) { m.connect.setLayer(l); m.line_drawer.setLayer(l+1); }
   }
@@ -106,7 +118,7 @@ abstract class Macro_Abstract {
     for (Macro_Input m : extinputs) m.connect.toLayerTop();
     for (Macro_Output m : extoutputs) { m.connect.toLayerTop(); m.line_drawer.toLayerTop(); }
     grabber.toLayerTop();
-    closer.toLayerTop();
+    closer.toLayerTop(); front.toLayerTop();
   }
   
   
@@ -182,7 +194,7 @@ abstract class Macro_Abstract {
     for (Macro_Output m : extoutputs) m.clear(); extoutputs.clear();
     if (parent != null) parent.child_macro.remove(this);
     grabber.clear(); inputs_ref.clear(); outputs_ref.clear(); 
-    panel.clear(); back.clear(); closer.clear();
+    panel.clear(); back.clear(); closer.clear(); front.clear();
     parent.childDragged();
   }
   

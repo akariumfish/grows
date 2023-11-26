@@ -13,7 +13,7 @@ Macro_Output o;
 Macro_Input i;
 
 void mysetup() {
-  ms = new Macro_Main(gui, tickpile, 20, 20);
+  ms = new Macro_Main(gui, tickpile, 70, 20);
   //ms.addSheet();
   //ms.do_load();
   ms.childDragged();
@@ -102,7 +102,8 @@ void draw() {//executé once by frame
   //framerate:
   fill(255); 
   textSize(16);
-  text(int(fr.get()), 10, height - 10 );
+  textAlign(LEFT);
+  text(int(fr.get()) + " " + cam.getCamMouse().x + " " + cam.getCamMouse().y, 10, height - 10 );
 
   //info
   //if (!cp5.getTab("default").isActive()) {

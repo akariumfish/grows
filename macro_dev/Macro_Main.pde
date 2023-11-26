@@ -16,33 +16,24 @@ can create like sheet object
 
 class Macro_Main extends Macro_Sheet {
   Ticking_pile tickpile;
-  nWidget sload,ssheet;
+  nWidget sload;
+  nExcludeGroup menugroup = null;
   int menu_layer = 50;
   Macro_Main(nGUI _gui, Ticking_pile t, float x, float y) {
     super(_gui, null, x, y);
     tickpile = t;
-    
-    
+    menugroup = gui.newExcludeGroup();
+    menugroup.add(menu);
+    menugroup.add(smenu);
+    front.hide();
     sload = new nWidget(_gui, "load", int(macro_size/1.5), 0, 0, macro_size*5, macro_size)
       .setTrigger()
-      .setParent(ssave)
+      .setParent(ssheet)
       .setLayer(menu_layer)
       .stackDown()
       .hide()
       .addEventTrigger(new Runnable() { public void run() {
         do_load();
-        childDragged();
-        smenu.setOff();
-      }})
-      ;
-    ssheet = new nWidget(_gui, "as sheet", int(macro_size/1.5), 0, 0, macro_size*5, macro_size)
-      .setTrigger()
-      .setParent(sload)
-      .setLayer(menu_layer)
-      .stackDown()
-      .hide()
-      .addEventTrigger(new Runnable() { public void run() {
-        do_load_as();
         childDragged();
         smenu.setOff();
       }})
@@ -59,13 +50,12 @@ class Macro_Main extends Macro_Sheet {
   void clear() {
     empty();
     super.clear();
-    sload.clear(); ssheet.clear(); 
+    sload.clear();
   }
   
   void toLayerTop() {
     super.toLayerTop();
     sload.toLayerTop();
-    ssheet.toLayerTop();
   }
   void setLayer(int l) {
     layer = l;
@@ -79,15 +69,16 @@ class Macro_Main extends Macro_Sheet {
     addSheet.setLayer(menu_layer);
     addExtIn.setLayer(menu_layer);
     addExtOut.setLayer(menu_layer);
-    addBang.setLayer(menu_layer);
-    addSwitch.setLayer(menu_layer);
-    addDelay.setLayer(menu_layer);
-    addPulse.setLayer(menu_layer);
-    addValue.setLayer(menu_layer);
-    addComp.setLayer(menu_layer);
-    addCalc.setLayer(menu_layer);
-    addNot.setLayer(menu_layer);
-    addBool.setLayer(menu_layer);
+    //addBang.setLayer(menu_layer);
+    //addSwitch.setLayer(menu_layer);
+    //addDelay.setLayer(menu_layer);
+    //addPulse.setLayer(menu_layer);
+    //addValue.setLayer(menu_layer);
+    //addComp.setLayer(menu_layer);
+    //addCalc.setLayer(menu_layer);
+    //addNot.setLayer(menu_layer);
+    //addBool.setLayer(menu_layer);
+    for(nWidget w : addbuttons) w.setLayer(menu_layer);
     sload.setLayer(menu_layer);
     smenu.setLayer(l);
     sfield.setLayer(menu_layer);

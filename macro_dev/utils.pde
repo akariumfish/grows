@@ -132,6 +132,16 @@ abstract class Callable {
 
 
 
+//#############    RUNNABLE    #############
+abstract class Runnable {
+  Object builder = null; Runnable() {} Runnable(Object p) { builder = p; } 
+  public abstract void run(); }
+  
+void runEvents(ArrayList<Runnable> e) { for (int i = e.size() - 1 ; i >= 0 ; i--) e.get(i).run(); }
+
+
+
+
 //#######################################################################
 //##                         SPECIAL VALUE                             ##
 //#######################################################################

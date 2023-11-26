@@ -65,7 +65,7 @@ class Drawer {
 
 class Drawing_pile {
   ArrayList<Drawer> drawables = new ArrayList<Drawer>();
-  ArrayList<Drawer> top_drawables = new ArrayList<Drawer>();
+  //ArrayList<Drawer> top_drawables = new ArrayList<Drawer>();
   Drawing_pile() { }
   void drawing() {
     int layer = 0;
@@ -105,7 +105,10 @@ class Drawing_pile {
 //parmi une list de rect en layer lequel est en collision avec un point en premier
 class Hoverable_pile {
   ArrayList<Hoverable> hoverables = new ArrayList<Hoverable>();
+  ArrayList<Runnable> eventsNotFound = new ArrayList<Runnable>();
   Hoverable_pile() { }
+  void addEventNotFound(Runnable r) { eventsNotFound.add(r); }
+  void removeEventNotFound(Runnable r) { eventsNotFound.remove(r); }
   void search(PVector pointer) {
     int layer = 0;
     for (Hoverable h : hoverables) { 
@@ -129,6 +132,7 @@ class Hoverable_pile {
       }
       layer--;
     }
+    if (!found) runEvents(eventsNotFound);
   }
 }
 
