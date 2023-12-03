@@ -175,10 +175,10 @@ class nGUI {
   Hoverable_pile hoverable_pile = new Hoverable_pile();
   nWidget selected_widget = null;
   
-  nSelectZone szone;
+  //nSelectZone szone;
   
   nGUI() {
-    szone = newSelectZone();
+    //szone = newSelectZone();
   }
   
   void update() {

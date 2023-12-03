@@ -1,36 +1,7 @@
 /*
-  
-  
- */
 
-nGUI gui = new nGUI();
-
-Ticking_pile tickpile = new Ticking_pile();
-
-Macro_Main ms;
-
-Macro_Output o;
-Macro_Input i;
-
-
-
-
-void mydraw() {
-  gui.update();
-
-  tickpile.tick();
-
-  if (kb.mouseClick[0]) {
-    //o.send( new Macro_Packet("test").addMsg("val") );
-  }
-
-  // apply camera view
-  cam.pushCam();
-
-  gui.draw();
-
-  cam.popCam();
-}
+           
+*/
 
 
 
@@ -41,30 +12,57 @@ void log(String s) {
 
 
 
-
+ControlP5 cp5; //l'objet main pour les menu
 
 SpecialValue simval = new SpecialValue(); 
+
+nGUI gui = new nGUI();
+
+Ticking_pile tickpile = new Ticking_pile();
+
+//Macro_Main macro_main;
 
 sInput kb;
 Camera cam;
 sFramerate fr;
 
+//Simulation sim;
 
-Channel frame_start_chan = new Channel();
-Channel frame_end_chan = new Channel();
+Channel frame_chan = new Channel();
+Channel frameend_chan = new Channel();
+
+//GrowerComu gcom;
+//FlocComu fcom;
+//BoxComu bcom;
 
 void setup() {//executé au demarage
   size(1600, 900);//taille de l'ecran
   //fullScreen();
   noSmooth();//pas d'antialiasing
   //smooth();//anti aliasing
-
+  
   cam = new Camera(-700, -350, 3.0);
   kb = new sInput();
   fr = new sFramerate(60);
-
-  mysetup();
-
+  
+  cp5 = new ControlP5(this);
+  init_Tabs("Menu");
+  
+  mySetup();
+  
+  //macro_main = new Macro_Main(gui, tickpile, 70, 20);
+  
+  //sim = new Simulation();
+  
+  //bcom = new BoxComu(sim);
+  //gcom = new GrowerComu(sim);
+  //fcom = new FlocComu(sim);
+  
+  //sim.building();
+  
+  ////loading(simval, "save.txt");
+  //sim.reset();
+  
   background(0);//fond noir
 }
 
@@ -74,26 +72,35 @@ void draw() {//executé once by frame
   //fill(0,0,0,3);
   //noStroke();
   //rect(-10, -10, 10000, 10000);
-
-
   //framerate
   fr.update();
+  callChannel(frameend_chan);
+  
+  gui.update();
 
-  //check_overable();
-
+  tickpile.tick();
+  
+  //execution de la simulation
+  //sim.frame();
+  
   //call each frame
-  callChannel(frame_start_chan);
-
-  //call each frame
-  callChannel(frame_end_chan);
-
+  callChannel(frame_chan);
+  
   // affichage
-
-  mydraw();
-
-
-
-
+  // apply camera view
+  cam.pushCam();
+  
+  //simulation draw to camera
+  //sim.draw_to_cam();
+  
+  if (cp5.getTab("Macros").isActive() || true) gui.draw();
+  
+  //pop cam view and cam updates
+  cam.popCam();
+  
+  //simulation draw to screen
+  //sim.draw_to_screen();
+  
   //framerate:
   fill(255); 
   textSize(16);
@@ -101,14 +108,14 @@ void draw() {//executé once by frame
   text(int(fr.get()) + " " + cam.getCamMouse().x + " " + cam.getCamMouse().y, 10, height - 10 );
 
   //info
-  //if (!cp5.getTab("default").isActive()) {
-  //  textSize(24);
-  //  text("Click somewhere then hit ESC to quit",700,height - 30 );
-  //}
-
+  if (!cp5.getTab("default").isActive()) {
+    textSize(24);
+    text("Click somewhere then hit ESC to quit",700,height - 30 );
+  }
+  
   //reset des flag de changement des svalue
   simval.unFlagChange();
-
+  
   kb.update(); // input
 }
 
@@ -122,56 +129,49 @@ void draw() {//executé once by frame
 
 class sFramerate {
   int frameRate_cible = 60;
-
+  
   float[] frameR_history = new float[frameRate_cible];
   int hist_it = 0;
   int frameR_update_rate = 10; // frames between update 
   int frameR_update_counter = frameR_update_rate;
-
+  
   float current_time = 0;
   float prev_time = 0;
   float frame_length = 0;
-
+  
   float frame_median = 0;
   sInt value = new sInt(simval, 0);
-
+  
   sInt time = new sInt(simval, 0);
   float reset_time = 0;
-
+  
   sFlt tickrate = new sFlt(simval, 0);
-
+  
   sFramerate(int c) {
     frameRate_cible = c;
     frameRate(frameRate_cible);
-    for (int i = 0; i < frameR_history.length; i++) frameR_history[i] = 1000/frameRate_cible;
+    for (int i = 0 ; i < frameR_history.length ; i++) frameR_history[i] = 1000/frameRate_cible;
   }
-
-  float get() { 
-    return value.get();
-  }
-
-  void reset() { 
-    time.set(0); 
-    reset_time = millis();
-  }
-
+  
+  float get() { return value.get(); }
+  
+  void reset() { time.set(0); reset_time = millis(); }
+  
   void update() {
-
+    
     current_time = millis();
     frame_length = current_time - prev_time;
     prev_time = current_time;
-
+    
     time.set(int((current_time - reset_time) / 1000));
-
+    
     frameR_history[hist_it] = frame_length;
     hist_it++;
-    if (hist_it >= frameR_history.length) { 
-      hist_it = 0;
-    }
-
+    if (hist_it >= frameR_history.length) { hist_it = 0; }
+    
     if (frameR_update_counter == frameR_update_rate) {
       frame_median = 0;
-      for (int i = 0; i < frameR_history.length; i++)  frame_median += frameR_history[i];
+      for (int i = 0 ; i < frameR_history.length ; i++)  frame_median += frameR_history[i];
       frame_median /= frameR_history.length;
       value.set(int(1000/frame_median));
       //tickrate.set(value.get() * sim.tick_by_frame.get());

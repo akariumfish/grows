@@ -24,7 +24,7 @@ abstract class Macro_Abstract {
   
   nGUI gui;
   
-  float macro_size = 20;
+  float macro_size = 40;
   int layer = 0;
   nWidget grabber, inputs_ref, outputs_ref, panel, back, closer, front;
   
@@ -487,6 +487,32 @@ class Macro_Main extends Macro_Sheet {
     
     grabber.setText("MACRO");
     
+    
+    
+    sPanel build_panel = new sPanel(cp5, 100, 200)
+      .setTab("Macros")
+      .addTitle("- NEW  MACRO -", 85, 0, 28)
+      .addSeparator(12)
+      .addDrawer(30)
+        .addButton("", 30, 0)
+          .setSize(100, 30)
+          .addListener(new ControlListener() {
+            public void controlEvent(final ControlEvent ev) {
+              Macro_Custom m = new Macro_Custom(gui, macro_main, 0, 0)
+                .addValueWatcher(gcom.OLD_AGE)
+                  .getMacro()
+                ;
+              macro_main.adding(m);
+              macro_main.childDragged();;
+            } } )
+          .getDrawer()
+        .getPanel()
+      .addLine(12)
+      .addSeparator(5)
+      ;
+    
+    
+    
   }
   void clear() {
     empty();
@@ -540,6 +566,7 @@ objet packet : est transporté
 
 
 class Macro_Sheet_Input {
+  nGUI gui;
   Macro_Sheet sheet,parent;
   Macro_Input in = null;
   Macro_Output out = null;
@@ -659,6 +686,7 @@ class Macro_Sheet_Input {
 
 
 class Macro_Sheet_Output {
+  nGUI gui;
   Macro_Sheet sheet,parent;
   Macro_Input in = null;
   Macro_Output out = null;

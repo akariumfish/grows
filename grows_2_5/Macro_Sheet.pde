@@ -41,8 +41,8 @@ class Macro_Sheet extends Macro_Abstract {
 
   ArrayList<Macro_Abstract> child_macro = new ArrayList<Macro_Abstract>(0);
 
-  String savepath = "save.txt";
-  String templatepath = "templates";
+  String savepath = "macro.txt";
+  //String templatepath = "templates";
 
   ArrayList<nWidget> subMenuWidgets = new ArrayList<nWidget>();
   ArrayList<nWidget> subHeadWidgets = new ArrayList<nWidget>();
