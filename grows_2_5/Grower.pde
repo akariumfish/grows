@@ -1,10 +1,19 @@
 class RandomTryParam extends Callable {
   //constructeur avec param values
-  sFlt DIFFICULTY = new sFlt(simval, 4);
-  sBoo ON = new sBoo(simval, true);
-  sFlt test_by_tick = new sFlt(simval, 0);
+  sFlt DIFFICULTY;
+  sBoo ON;;
+  sFlt test_by_tick;;
   int count = 0;
-  RandomTryParam(float d, boolean b) { DIFFICULTY.set(d); ON.set(b); addChannel(frameend_chan); }
+  RandomTryParam(float d, boolean b) { 
+    DIFFICULTY = new sFlt(simval, 4);
+    ON = new sBoo(simval, true);
+    test_by_tick = new sFlt(simval, 0);
+    DIFFICULTY.set(d); ON.set(b); addChannel(frameend_chan); }
+  RandomTryParam(float d, boolean b, String n) { 
+    DIFFICULTY = new sFlt(simval, 4, n+" dif");
+    ON = new sBoo(simval, true);
+    test_by_tick = new sFlt(simval, 0);
+    DIFFICULTY.set(d); ON.set(b); addChannel(frameend_chan); }
   boolean test() { if(ON.get()) count++; test_by_tick.set(count / sim.tick_by_frame.get()); return ON.get() && crandom(DIFFICULTY.get()) > 0.5; }
   void answer(Channel chan, float v) { count = 0; test_by_tick.set(0); }
 }
@@ -12,15 +21,15 @@ class RandomTryParam extends Callable {
 class GrowerComu extends Community {
   
   //constructeur avec param values
-  sFlt DEVIATION = new sFlt(simval, 8); //drifting (rotation posible en portion de pi (PI/drift))
-  sFlt L_MIN = new sFlt(simval, 20); //longeur minimum de chaque section
-  sFlt L_MAX = new sFlt(simval, 350); //longeur max de chaque section MODIFIABLE PAR MENU MOVE minimum 1 , limité dans l'update de sont bp
-  sFlt L_DIFFICULTY = new sFlt(simval, 180);
-  sFlt OLD_AGE = new sFlt(simval, 666);
+  sFlt DEVIATION = new sFlt(simval, 8, "grow dev"); //drifting (rotation posible en portion de pi (PI/drift))
+  sFlt L_MIN = new sFlt(simval, 20, "grow lmin"); //longeur minimum de chaque section
+  sFlt L_MAX = new sFlt(simval, 350, "grow lmax"); //longeur max de chaque section MODIFIABLE PAR MENU MOVE minimum 1 , limité dans l'update de sont bp
+  sFlt L_DIFFICULTY = new sFlt(simval, 180, "grow ldif");
+  sFlt OLD_AGE = new sFlt(simval, 666, "grow age");
   //int TEEN_AGE = OLD_AGE / 20;
-  RandomTryParam growP = new RandomTryParam(0.5, true);
-  RandomTryParam sproutP = new RandomTryParam(2080, true);
-  RandomTryParam stopP = new RandomTryParam(1.25, true);
+  RandomTryParam growP = new RandomTryParam(0.5, true, "grow grow");
+  RandomTryParam sproutP = new RandomTryParam(2080, true, "grow sprout");
+  RandomTryParam stopP = new RandomTryParam(1.25, true, "grow stop");
   RandomTryParam leafP = new RandomTryParam(2080, true);
   RandomTryParam dieP = new RandomTryParam(3.6, true);
   float MAX_LINE_WIDTH = 1.5; //epaisseur max des ligne, diminuer par l'age, un peut, se vois pas

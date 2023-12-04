@@ -34,6 +34,13 @@ abstract class Macro_Abstract {
   boolean isHided = false;
   
   
+  void parentReduc() {
+    hide();
+  }
+  void parentEnlarg() {
+    show();
+  }
+  
   Macro_Abstract(nGUI _gui, Macro_Sheet p, String n, float x, float y) {
     gui = _gui;
     parent = p;
@@ -147,10 +154,10 @@ abstract class Macro_Abstract {
   
   void toLayerTop() {
     back.toLayerTop();
+    grabber.toLayerTop(); closer.toLayerTop(); 
     for (Macro_Input m : extinputs) m.connect.toLayerTop();
     for (Macro_Output m : extoutputs) { m.connect.toLayerTop(); m.line_drawer.toLayerTop(); }
-    grabber.toLayerTop();
-    closer.toLayerTop(); front.toLayerTop();
+    front.toLayerTop();
   }
   
   Macro_Abstract setWidth(float w) {
@@ -446,7 +453,7 @@ class Macro_Main extends Macro_Sheet {
     menugroup = gui.newExcludeGroup();
     for (nWidget w : menubuttons) menugroup.add(w);
     front.hide();
-    sload = new nWidget(_gui, "load", int(macro_size/1.5), 0, 0, macro_size*5, macro_size)
+    sload = new nWidget(_gui, "Load", int(macro_size/1.5), 0, 0, macro_size*5, macro_size)
       .setTrigger()
       .setParent(ssheet)
       .setLayer(menu_layer)
@@ -459,7 +466,7 @@ class Macro_Main extends Macro_Sheet {
         smenu.setOff();
       }})
       ;
-    ssave = new nWidget(_gui, "save", int(macro_size/1.5), 0, 0, macro_size*5, macro_size)
+    ssave = new nWidget(_gui, "Save", int(macro_size/1.5), 0, 0, macro_size*5, macro_size)
       .setTrigger()
       .setParent(sload)
       .setLayer(getBase().menu_layer)

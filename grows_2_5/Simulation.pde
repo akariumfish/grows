@@ -10,9 +10,9 @@ class Simulation {
   sPanel panel;
   sTextfield file_path_tf;
   
-  sFlt tick = new sFlt(simval, 0); //conteur de tour depuis le dernier reset ou le debut
+  sFlt tick = new sFlt(simval, 0, "tick nb"); //conteur de tour depuis le dernier reset ou le debut
   sBoo pause = new sBoo(simval, false); //permet d'interompre le defilement des tour
-  sFlt tick_by_frame = new sFlt(simval, 16); //nombre de tour a executé par frame
+  sFlt tick_by_frame = new sFlt(simval, 16, "tick by frame"); //nombre de tour a executé par frame
   float tick_pile = 0; //pile des tour
   sInt SEED = new sInt(simval, 548651008); //seed pour l'aleatoire
   sBoo auto_reset = new sBoo(simval, true);

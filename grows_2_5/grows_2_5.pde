@@ -61,7 +61,11 @@ void setup() {//executé au demarage
   loading(simval, "save.txt");
   sim.reset();
   
-  mysetup();
+  new Callable() { public void answer(Channel channel, float value) {
+    tickpile.tick();
+  } }.addChannel(sim.tick_chan);
+  
+  mySetup();
   
   background(0);//fond noir
 }
@@ -77,8 +81,6 @@ void draw() {//executé once by frame
   callChannel(frameend_chan);
   
   gui.update();
-
-  tickpile.tick();
   
   //execution de la simulation
   sim.frame();
@@ -105,7 +107,7 @@ void draw() {//executé once by frame
   fill(255); 
   textSize(16);
   textAlign(LEFT);
-  text(int(fr.get()) + " " + cam.getCamMouse().x + " " + cam.getCamMouse().y, 10, height - 10 );
+  text(int(fr.get()) + " " + cam.getCamMouse().x + " " + cam.getCamMouse().y, 400, height - 10 );
 
   //info
   if (!cp5.getTab("default").isActive()) {

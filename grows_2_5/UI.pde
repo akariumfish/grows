@@ -214,6 +214,10 @@ class nExcludeGroup {
     for (nWidget n : excludes) n.setOff();
   }
   
+  void forceCloseAll() {
+    for (nWidget n : excludes) n.forceOff();
+  }
+  
   void clear() {
     excludes.clear();
   }
@@ -365,6 +369,11 @@ void eventSwitchOff() {}
 */
 
 class nWidget extends Callable {
+  
+  private nPanelDrawer panel_drawer = null;
+  nWidget setPanelDrawer(nPanelDrawer d) { panel_drawer = d; return this; }
+  nPanelDrawer getPanelDrawer() { return panel_drawer; }
+  
   private nGUI gui;
   private Drawing_pile dpile;
   private Drawer drawer;
@@ -653,9 +662,16 @@ class nWidget extends Callable {
     }
   }
   
-  void toLayerTop() {
+  void forceOff() {
+    switchState = false;
+    runEvents(eventSwitchOffRun);
+    eventSwitchOff();
+  }
+  
+  nWidget toLayerTop() {
     drawer.toLayerTop();
     hover.toLayerTop();
+    return this;
   }
   
   nGUI getGUI() { return gui; }
@@ -822,6 +838,7 @@ class nWidget extends Callable {
   ArrayList<Runnable> eventFieldChangeRun = new ArrayList<Runnable>();
   
   nWidget addEventFrame(Runnable r)       { eventFrameRun.add(r); return this; }
+  nWidget addEventFrame_Builder(Runnable r)       { eventFrameRun.add(r); r.builder = this; return this; }
   
   nWidget addEventGrab(Runnable r)       { eventGrabRun.add(r); return this; }
   nWidget addEventDrag(Runnable r)       { eventDragRun.add(r); return this; }
@@ -834,6 +851,7 @@ class nWidget extends Callable {
   nWidget addEventRelease(Runnable r)    { eventReleaseRun.add(r); return this; }
   
   nWidget addEventTrigger(Runnable r)    { eventTriggerRun.add(r); return this; }
+  nWidget addEventTrigger_Builder(Runnable r)    { eventTriggerRun.add(r); r.builder = this; return this; }
   nWidget addEventSwitchOn(Runnable r)   { eventSwitchOnRun.add(r); return this; }
   nWidget addEventSwitchOff(Runnable r)  { eventSwitchOffRun.add(r); return this; }
   
