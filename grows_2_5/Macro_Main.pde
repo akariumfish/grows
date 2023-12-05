@@ -493,33 +493,6 @@ class Macro_Main extends Macro_Sheet {
     grabber.setSX(macro_size*9.25);
     
     grabber.setText("MACRO");
-    
-    
-    
-    sPanel build_panel = new sPanel(cp5, 100, 200)
-      .setTab("Macros")
-      .addTitle("- NEW  MACRO -", 85, 0, 28)
-      .addSeparator(12)
-      .addDrawer(30)
-        .addButton("", 30, 0)
-          .setSize(100, 30)
-          .addListener(new ControlListener() {
-            public void controlEvent(final ControlEvent ev) {
-              Macro_Custom m = new Macro_Custom(gui, macro_main, 0, 0)
-                .addValueWatcher(gcom.OLD_AGE)
-                  .getMacro()
-                ;
-              macro_main.adding(m);
-              macro_main.childDragged();;
-            } } )
-          .getDrawer()
-        .getPanel()
-      .addLine(12)
-      .addSeparator(5)
-      ;
-    
-    
-    
   }
   void clear() {
     empty();
@@ -931,8 +904,8 @@ class Macro_Output {
                 connect.getSX() / 1.9, connect.getSY() / 1.9 );
         if (DEBUG) {
           fill(255);
-          textFont(getFont(6));
-          text(""+index, connect.getX()+25, connect.getY()+6);
+          textFont(getFont(int(macro.macro_size/4)));
+          text(""+index, connect.getX()+macro.macro_size*5/4, connect.getY()+macro.macro_size/4);
         }
       } } )
       .addEventPress(new Runnable() { public void run() {
@@ -1043,7 +1016,7 @@ class Macro_Input {
         if (DEBUG) {
           fill(255);
           textFont(getFont(int(macro.macro_size/4)));
-          text(""+index, connect.getX()-5, connect.getY()+6);
+          text(""+index, connect.getX()-macro.macro_size/4, connect.getY()+macro.macro_size/4);
         }
       } } )
       //.setTrigger()

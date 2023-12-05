@@ -49,7 +49,7 @@ class MC_Value_Watcher extends MC_Connection {
       if (val != null) out.send(newFloat(val.get()));
     }});
     
-    label = new nWidget(parent.gui, "--", int(parent.macro_size/1.5), -parent.macro_size*0.125, 0, parent.macro_size*2.5, parent.macro_size)
+    label = new nWidget(parent.gui, "--", int(parent.macro_size/1.5), -parent.macro_size*0.125, 0, parent.macro_size*5.5, parent.macro_size)
       .setStandbyColor(color(255, 50))
       .setParent(out.connect)
       .stackLeft()
@@ -85,7 +85,7 @@ class MC_Value_Controller extends MC_Connection {
         if (in.getLastPacket().isFloat() && val != null) val.set(in.getLastPacket().asFloat());
       }})
       ;
-    label = new nWidget(parent.gui, "--", int(parent.macro_size/1.5), parent.macro_size*0.125, 0, parent.macro_size*2.5, parent.macro_size)
+    label = new nWidget(parent.gui, "--", int(parent.macro_size/1.5), parent.macro_size*0.125, 0, parent.macro_size*5.5, parent.macro_size)
       .setStandbyColor(color(255, 50))
       .setParent(in.connect)
       .stackRight()
@@ -121,7 +121,7 @@ class Macro_Custom extends Macro_Abstract {
   
   Macro_Custom(nGUI _gui, Macro_Sheet p, float x, float y) {
     super(_gui, p, "custom", x, y);
-    setWidth(macro_size*4);
+    setWidth(macro_size*7);
     
     
     tick = new Tickable(getBase().tickpile) { public void tick(float t) {
