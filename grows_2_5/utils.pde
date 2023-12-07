@@ -140,6 +140,9 @@ abstract class Runnable {
   
 void runEvents(ArrayList<Runnable> e) { for (int i = e.size() - 1 ; i >= 0 ; i--) e.get(i).run(); }
 
+HashMap<String, Runnable> custom_runnable_map = new HashMap<String, Runnable>();
+void addCustomRunnable(String k, Runnable r) { custom_runnable_map.put(k, r); }
+
 
 
 
@@ -162,39 +165,41 @@ class SpecialValue {
     for (sStr i : sstrlist) i.has_changed = false; }
 }
 
+class sVal {
+  String name;
+  sVal(String n) { name = n; }
+}
 
-class sInt {
+
+class sInt extends sVal {
   boolean has_changed = false;
   SpecialValue save;
   int val = 0;
   int id = 0;
-  String name = "int";
-  sInt(SpecialValue s, int v) { save = s; val = v; id = save.sintlist.size(); save.sintlist.add(this); }
-  sInt(SpecialValue s, int v, String n) { name = n; save = s; val = v; id = save.sintlist.size(); save.sintlist.add(this); }
+  sInt(SpecialValue s, int v) { super("int"); save = s; val = v; id = save.sintlist.size(); save.sintlist.add(this); }
+  sInt(SpecialValue s, int v, String n) { super(n); name = n; save = s; val = v; id = save.sintlist.size(); save.sintlist.add(this); }
   int get() { return val; }
   void set(int v) { if (v != val) has_changed = true; val = v; }
 }
 
-class sFlt {
+class sFlt extends sVal {
   boolean has_changed = false;
   SpecialValue save;
   float val = 0;
   int id = 0;
-  String name = "flt";
-  sFlt(SpecialValue s, float v) { save = s; val = v; id = save.sfltlist.size(); save.sfltlist.add(this); }
-  sFlt(SpecialValue s, float v, String n) { name = n; save = s; val = v; id = save.sfltlist.size(); save.sfltlist.add(this); }
+  sFlt(SpecialValue s, float v) { super("flt"); save = s; val = v; id = save.sfltlist.size(); save.sfltlist.add(this); }
+  sFlt(SpecialValue s, float v, String n) { super(n); name = n; save = s; val = v; id = save.sfltlist.size(); save.sfltlist.add(this); }
   float get() { return val; }
   void set(float v) { if (v != val) has_changed = true; val = v; }
 }
 
-class sBoo {
+class sBoo extends sVal {
   boolean has_changed = false;
   SpecialValue save;
   boolean val = false;
   int id = 0;
-  String name = "boo";
-  sBoo(SpecialValue s, boolean v) { save = s; val = v; id = save.sboolist.size(); save.sboolist.add(this); }
-  sBoo(SpecialValue s, boolean v, String n) { name = n; save = s; val = v; id = save.sboolist.size(); save.sboolist.add(this); }
+  sBoo(SpecialValue s, boolean v) { super("boo"); save = s; val = v; id = save.sboolist.size(); save.sboolist.add(this); }
+  sBoo(SpecialValue s, boolean v, String n) { super(n); name = n; save = s; val = v; id = save.sboolist.size(); save.sboolist.add(this); }
   boolean get() { return val; }
   void set(boolean v) { if (v != val) { has_changed = true; val = v; } }
 }

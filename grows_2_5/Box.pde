@@ -37,6 +37,7 @@ class Box extends Entity {
   PVector connect2 = new PVector(0, 0);
   PVector origin_co = new PVector(0, 0); //origin box to ext co
   float space = 0;
+  int age = 0;
   
   Box(BoxComu c) { super(c); }
   
@@ -57,6 +58,7 @@ class Box extends Entity {
     space = com().spacing_min.get();
     rotation = -0.008;
     col = 0;
+    age = 0;
     return this;
   }
   void define_bis(Box b2, float x, float y, String dir) {
@@ -145,6 +147,9 @@ class Box extends Entity {
   boolean blocked = false;
   
   Box tick() {
+    age++;
+    if (age > com().max_age.get()) this.destroy();
+    
     for (Entity e : fcom.list) if (e.active) {
       Floc f = (Floc)e;
       if (rectCollide(f.pos, rect)) {
@@ -259,8 +264,10 @@ class BoxComu extends Community {
   sFlt spacing_max_dist = new sFlt(simval, 10000);
   sFlt box_size_min = new sFlt(simval, 100);
   sFlt box_size_max = new sFlt(simval, 400);
-  sFlt duplicate_prob = new sFlt(simval, 5.0);
+  sFlt duplicate_prob = new sFlt(simval, 5.0, "box duplicate_prob");
   sFlt corner_space = new sFlt(simval, 40);
+  
+  sInt max_age = new sInt(simval, 2000, "box max_age");
   
   //sBoo draw_circle = new sBoo(simval, false);
   
@@ -286,6 +293,8 @@ class BoxComu extends Community {
       .addSeparator(5)
       .addValueController("corner ", sMode.FACTOR, 2, 1.2, corner_space)
       .addSeparator(5)
+      .addValueController("age ", sMode.FACTOR, 2, 1.2, max_age)
+      .addSeparator(5)
       ;
       
     //plane.build_panel.addDrawer(30).addButton("PARAM", 0, 0).setSize(120, 30)
@@ -306,10 +315,10 @@ class BoxComu extends Community {
   void custom_cam_draw_pre_entity() {}
   void custom_reset() { cnt = 0; }
   void custom_cam_draw_post_entity() { 
-    float r = spacing_max_dist.get();  
-    noFill();
-    stroke(255);
-    //ellipse(0, 0, r, r);
+    //float r = spacing_max_dist.get();  
+    //noFill();
+    //stroke(255);
+    ////ellipse(0, 0, r, r);
     
   }//
   

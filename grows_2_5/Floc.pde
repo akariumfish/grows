@@ -1,21 +1,21 @@
 
 class FlocComu extends Community {
   
-  sFlt POURSUITE = new sFlt(simval, 0.6);
-  sFlt FOLLOW = new sFlt(simval, 0.0036);
-  sFlt SPACING = new sFlt(simval, 150);
-  sFlt SPEED = new sFlt(simval, 2);
-  sInt LIMIT = new sInt(simval, 400);
-  sInt AGE = new sInt(simval, 2000);
-  sFlt HALO_SIZE = new sFlt(simval, 20);
-  sFlt HALO_DENS = new sFlt(simval, 0.2);
+  sFlt POURSUITE = new sFlt(simval, 0.6, "floc POURSUITE");
+  sFlt FOLLOW = new sFlt(simval, 0.0036, "floc FOLLOW");
+  sFlt SPACING = new sFlt(simval, 150, "floc SPACING");
+  sFlt SPEED = new sFlt(simval, 2, "floc SPEED");
+  sInt LIMIT = new sInt(simval, 400, "floc limit");
+  sInt AGE = new sInt(simval, 2000, "floc age");
+  sFlt HALO_SIZE = new sFlt(simval, 20, "floc HALO_SIZE");
+  sFlt HALO_DENS = new sFlt(simval, 0.2, "floc HALO_DENS");
   
-  sBoo DRAWMODE_DEF = new sBoo(simval, true);
-  sBoo DRAWMODE_DEBUG = new sBoo(simval, false);
+  sBoo DRAWMODE_DEF = new sBoo(simval, true, "floc DRAWMODE_DEF");
+  sBoo DRAWMODE_DEBUG = new sBoo(simval, false, "floc DRAWMODE_DEBUG");
   
-  sBoo create_grower = new sBoo(simval, true);
-  sBoo point_to_mouse = new sBoo(simval, false);
-  sBoo point_to_center = new sBoo(simval, false);
+  sBoo create_grower = new sBoo(simval, true, "floc create_grower");
+  sBoo point_to_mouse = new sBoo(simval, false, "floc point_to_mouse");
+  sBoo point_to_center = new sBoo(simval, false, "floc point_to_center");
   
   int startbox = 400;
   

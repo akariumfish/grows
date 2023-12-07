@@ -41,6 +41,8 @@ abstract class Macro_Abstract {
     show();
   }
   
+  boolean selected = false;
+  
   Macro_Abstract(nGUI _gui, Macro_Sheet p, String n, float x, float y) {
     gui = _gui;
     parent = p;
@@ -49,7 +51,13 @@ abstract class Macro_Abstract {
     
     grabber = new nWidget(gui, name, int(macro_size/1.5), x, y, sheet_width - macro_size * 0.75, macro_size * 0.75)
       .setLayer(layer)
-      .addEventDrag(new Runnable() { public void run() { if (parent != null) parent.childDragged(); } } )
+      .addEventDrag(new Runnable() { public void run() { 
+        if (selected) for (nWidget w : getBase().selected_macro_grabber) if (w != grabber) {
+          w.setPX(w.getLocalX() + cam.getCamMouse().x - cam.getPCamMouse().x);
+          w.setPY(w.getLocalY() + cam.getCamMouse().y - cam.getPCamMouse().y);
+        }
+        if (parent != null) parent.childDragged(); 
+      } } )
       .setGrabbable()
       .setOutlineColor(color(100))
       .setOutlineWeight(macro_size / 16)
@@ -59,7 +67,11 @@ abstract class Macro_Abstract {
     if (parent != null) grabber.setParent(parent.grabber);
     closer = new nWidget(gui, "X", int(macro_size/1.5), 0, 0, macro_size * 0.75, macro_size * 0.75)
       .setTrigger()
-      .addEventTrigger(new Runnable() { public void run() { clear(); } } )
+      .addEventTrigger(new Runnable() { public void run() { 
+        // selected group clear
+        //if (selected) for (Macro_Abstract w : getBase().selected_macro) if (w.grabber != grabber) w.clear();
+        clear(); 
+      } } )
       .setParent(grabber)
       .stackRight()
       .setLayer(layer)
@@ -74,8 +86,8 @@ abstract class Macro_Abstract {
     }
       .setParent(grabber)
       .setLayer(layer)
-      .setStandbyColor(color(180, 60))
-      .setOutlineColor(color(180, 60))
+      .setStandbyColor(color(50, 200))
+      .setOutlineColor(color(255, 60))
       .setOutlineWeight(macro_size / 8)
       .setOutline(true)
       //.stackDown()
@@ -87,15 +99,25 @@ abstract class Macro_Abstract {
       .setOutlineWeight(macro_size/15)
       .addEventFrame(new Runnable() { public void run() { 
         if (gui.szone.isSelecting()) {
-          if (gui.szone.isUnder(front)) front.setOutline(true);
-          else front.setOutline(false);
+          if (getBase().selecting_sheet == null && gui.szone.isUnder(front)) getBase().selecting_sheet = parent;
+          if (getBase().selecting_sheet == parent) {
+            if (gui.szone.isUnder(front)) front.setOutline(true);
+            else front.setOutline(false);
+          }
         }
       } } )
       //.stackDown()
       ;
+    gui.szone.addEventStartSelect(new Runnable() { public void run() { 
+      selected = false;
+      getBase().selected_macro_grabber.remove(grabber);
+      front.setOutline(false);
+    } } );
     gui.szone.addEventEndSelect(new Runnable() { public void run() { 
-      if (gui.szone.isUnder(front)) front.setOutline(true);
-      else front.setOutline(false);
+      if (getBase().selecting_sheet == parent && gui.szone.isUnder(front))  {
+        getBase().selected_macro_grabber.add(grabber);
+        selected = true;
+      }
     } } );
     
     panel = new nWidget(gui, 0, 0)
@@ -206,7 +228,7 @@ abstract class Macro_Abstract {
     return m;
   }
   
-  Macro_Abstract addLine() { if (inCount >= outCount) inCount++; else outCount++; return this; }
+  Macro_Abstract addLine() { if (inCount >= outCount) inCount++; else outCount++; up_back(); return this; }
   
   float getLastLineY() { 
     if (inCount >= outCount) return (inCount-1) * macro_size + macro_size / 8; 
@@ -221,90 +243,6 @@ abstract class Macro_Abstract {
     panel.clear(); back.clear(); closer.clear(); front.clear();
     parent.childDragged();
   }
-  
-  /*
-  macro basic bloc build order
-  
-  from abstract:
-    position
-    ext co index
-  basic bloc datas
-  
-  */
-  
-  //pos x - pos y
-  //void pos_to_string(String[] s, int id) {
-  //  log("start - to string - abstract - pos");
-  //  s[id] = str(grabber.getLocalX());
-  //  s[id+1] = str(grabber.getLocalY());
-  //  log("id " + id + " px " + s[id] + " py " + s[id+1]);
-  //  log("end - to string - abstract - pos");
-  //}
-  
-  //void pos_from_string(String[] s, int id) {
-  //  log("start - from string - abstract - pos");
-  //  grabber.setPX(float(s[id]))
-  //    .setPY(float(s[id+1]));
-  //  log("id " + id + " px " + s[id] + " py " + s[id+1]);
-  //  log("end - from string - abstract - pos");
-  //}
-  
-  //int pos_string_size() { return 2; }
-  
-  //// extin nb - ext in to string - extout nb - extout to string
-  //void extco_to_string(String[] s, int id) {
-  //  log("start - to string - abstract - extco");
-    
-  //  int vnb = 0;
-  //  for (Macro_Input v : extinputs) vnb += v.size();
-  //  s[id] = str(vnb);
-  //  log("extin nb " + id + " " + s[id]); 
-  //  id++;
-  //  for (Macro_Input v : extinputs) {
-  //    v.to_string(s, id);
-  //    id += v.size(); }
-    
-  //  vnb = 0;
-  //  for (Macro_Output v : extoutputs) vnb += v.size();
-  //  s[id] = str(vnb);
-  //  log("extout nb " + id + " " + s[id]); 
-  //  id++;
-  //  for (Macro_Output v : extoutputs) {
-  //    v.to_string(s, id);
-  //    id += v.size(); }
-    
-  //  log("end - to string - abstract - extco");
-  //}
-  
-  //void extco_from_string(String[] s, int id) {
-  //  log("start - from string - abstract - extco");
-    
-  //  int l = int(s[id]);
-  //  log("ext in nb " + id + " " + s[id]);
-  //  id++;
-  //  for (int i = 0; i < l ; i++) {
-  //    Macro_Input m = extinputs.get(i);
-  //    m.from_string(s, id);
-  //    id += m.size();
-  //  }
-  //  l = int(s[id]);
-  //  log("ext out nb " + id + " " + s[id]);
-  //  id++;
-  //  for (int i = 0; i < l ; i++) {
-  //    Macro_Output m = extoutputs.get(i);
-  //    m.from_string(s, id);
-  //    id += m.size();
-  //  }
-    
-  //  log("end - from string - abstract - extco");
-  //}
-  
-  //int extco_string_size() { 
-  //  int vnb = 2;
-  //  for (Macro_Input v : extinputs) vnb += v.size();
-  //  for (Macro_Output v : extoutputs) vnb += v.size();
-  //  return vnb;
-  //}
   
   void to_save(Save_Bloc sbloc) {
     sbloc.newData("name", name);
@@ -443,12 +381,29 @@ can create like sheet object
 
 
 class Macro_Main extends Macro_Sheet {
+  ArrayList<Runnable> tickAskMethods = new ArrayList<Runnable>();
+  void addTickAskMethod(Runnable r) { tickAskMethods.add(r); }
+  void askTick() { runEvents(tickAskMethods); }
   Ticking_pile tickpile;
   nWidget sload, ssave;
   nExcludeGroup menugroup = null;
   int menu_layer = 50;
-  Macro_Main(nGUI _gui, Ticking_pile t, float x, float y) {
+  nInfo info;
+  Macro_Sheet selecting_sheet = null;
+  ArrayList<nWidget> selected_macro_grabber = new ArrayList<nWidget>();
+  nGUI sgui; // screen gui
+  Macro_Main(nGUI _gui, nGUI _sgui, Ticking_pile t, float x, float y) {
     super(_gui, null, x, y);
+    sgui = _sgui;
+    info = new nInfo(gui, int(macro_size/1.5)).setLayer(menu_layer+1);
+    
+    gui.szone.addEventEndSelect(new Runnable() { public void run() {
+      ;
+    }}).addEventStartSelect(new Runnable() { public void run() {
+      selecting_sheet = null;
+      selected_macro_grabber.clear();
+    }});
+    
     tickpile = t;
     menugroup = gui.newExcludeGroup();
     for (nWidget w : menubuttons) menugroup.add(w);
@@ -493,6 +448,12 @@ class Macro_Main extends Macro_Sheet {
     grabber.setSX(macro_size*9.25);
     
     grabber.setText("MACRO");
+    
+    addPanelBasicMacro();
+    addPanelsFlt();
+    addPanelsInt();
+    addPanelsBoo();
+    addPanelRun();
   }
   void clear() {
     empty();
@@ -574,11 +535,14 @@ class Macro_Sheet_Input {
       } } )
       .setGrabbable()
       .setConstrainX(true)
+      .setOutlineColor(color(100))
+      .setOutlineWeight(sheet.macro_size / 16)
+      .setOutline(true)
       ;
     if (parent == null) grabber.setPX(-sheet.macro_size);
     out = new Macro_Output(gui, sheet, 0, 0 )
       .setParent(grabber)
-      .setLayer(sheet.layer+3)
+      .setLayer(sheet.layer+2)
       ;
     out.connect.stackRight();
     
@@ -650,8 +614,8 @@ class Macro_Sheet_Input {
   
   Macro_Sheet_Input setLayer(int l) {
     grabber.setLayer(l);
-    if (in != null) in.setLayer(l-2);
-    out.setLayer(l);
+    if (in != null) in.setLayer(l);
+    out.setLayer(l+2);
     return this;
   }
   
@@ -694,12 +658,15 @@ class Macro_Sheet_Output {
       } } )
       .setGrabbable()
       .setConstrainX(true)
+      .setOutlineColor(color(100))
+      .setOutlineWeight(sheet.macro_size / 16)
+      .setOutline(true)
       ;
     if (parent == null) grabber.setPX(sheet.macro_size * 0.25);
     if (parent != null) {
       out = new Macro_Output(gui, parent, 0, 0 )
         .setParent(grabber)
-        .setLayer(sheet.layer+2)
+        .setLayer(sheet.layer)
         ;
       out.connect.stackRight();
       sheet.extoutputs.add(out);
@@ -707,7 +674,7 @@ class Macro_Sheet_Output {
     
     in = new Macro_Input(gui, sheet, 0, 0 )
       .setParent(grabber)
-      .setLayer(sheet.layer)
+      .setLayer(sheet.layer+2)
       ;
     in.connect.stackLeft();
     in.direct_connect(out);
@@ -770,8 +737,8 @@ class Macro_Sheet_Output {
   
   Macro_Sheet_Output setLayer(int l) {
     grabber.setLayer(l);
-    in.setLayer(l);
-    if (out != null) out.setLayer(l-2);
+    in.setLayer(l+2);
+    if (out != null) out.setLayer(l);
     return this;
   }
   
@@ -788,9 +755,17 @@ class Macro_Sheet_Output {
 
 
 
-Macro_Packet newBang() { return new Macro_Packet("bang"); }
-Macro_Packet newFloat(float f) { return new Macro_Packet("float").addMsg(str(f)); }
-Macro_Packet newFloat(String f) { return new Macro_Packet("float").addMsg(f); }
+Macro_Packet newPacketBang() { return new Macro_Packet("bang"); }
+
+Macro_Packet newPacketFloat(float f) { return new Macro_Packet("float").addMsg(str(f)); }
+Macro_Packet newPacketFloat(String f) { return new Macro_Packet("float").addMsg(f); }
+
+Macro_Packet newPacketInt(int f) { return new Macro_Packet("int").addMsg(str(f)); }
+
+Macro_Packet newPacketBool(boolean b) { 
+  String r; 
+  if (b) r = "T"; else r = "F"; 
+  return new Macro_Packet("bool").addMsg(r); }
 
 class Macro_Packet {
   String def = new String();
@@ -799,9 +774,16 @@ class Macro_Packet {
     def = d;
   }
   Macro_Packet addMsg(String m) { messages.add(m); return this; }
-  boolean isBang() { return def.equals("bang"); }
+  
+  boolean isBang()  { return def.equals("bang"); }
   boolean isFloat() { return def.equals("float"); }
-  float asFloat() { return float(messages.get(0)); }
+  boolean isInt()   { return def.equals("int"); }
+  boolean isBool()  { return def.equals("bool"); }
+  
+  float   asFloat()   { if (isFloat()) return float(messages.get(0)); else return 0; }
+  int     asInt()   { if (isInt()) return int(messages.get(0)); else return 0; }
+  boolean asBool()   {
+    if (isBool() && messages.get(0).equals("T")) return true; else return false; }
 }
 
 
@@ -859,19 +841,24 @@ class Macro_Output {
       }
       for (Macro_Input m : connected_inputs) {
         if (distancePointToLine(cam.getCamMouse().x, cam.getCamMouse().y, 
-            getCenterX(), getCenterY(), m.getCenterX(), m.getCenterY()) < connect.outlineWeight ) 
-          { fill(connect.selectedColor); stroke(connect.selectedColor); }
+            getCenterX(), getCenterY(), m.getCenterX(), m.getCenterY()) < connect.outlineWeight ) { 
+          if (pack_info != null && hasSend > 0) macro.getBase().info.showText(pack_info);
+          fill(connect.selectedColor); stroke(connect.selectedColor); 
+        }
         else if (sending || hasSend > 0)
           { fill(connect.outlineColor); stroke(connect.outlineColor); }
         else { fill(color(255, 120)); stroke(color(255, 120)); }
         strokeWeight(connect.outlineWeight);
-        line(getCenterX(), getCenterY(), 
-             m.getCenterX(), m.getCenterY());
+        PVector l = new PVector(m.getCenterX() - getCenterX(), m.getCenterY() - getCenterY());
+        PVector lm = new PVector(l.x, l.y);
+        lm.setMag(getSize()/2);
+        line(getCenterX()+lm.x, getCenterY()+lm.y, 
+             getCenterX()+l.x-lm.x, getCenterY()+l.y-lm.y);
         ellipseMode(CENTER);
-        fill(0);
+        fill(255, 0);
         ellipse(m.getCenterX(), m.getCenterY(), 
                 getSize(), getSize() );
-        fill(255);
+        fill(255, 0);
         ellipse(getCenterX(), getCenterY(), 
                 getSize(), getSize() );
       }
@@ -902,6 +889,10 @@ class Macro_Output {
         ellipseMode(CENTER);
         ellipse(getCenterX(), getCenterY(), 
                 connect.getSX() / 1.9, connect.getSY() / 1.9 );
+        fill(0);
+        textFont(getFont(int(macro.macro_size/2.5)));
+        if (last_def != null) text(last_def, connect.getX()+macro.macro_size/2, connect.getY()+macro.macro_size*5/8);
+        
         if (DEBUG) {
           fill(255);
           textFont(getFont(int(macro.macro_size/4)));
@@ -977,11 +968,29 @@ class Macro_Output {
   
   Macro_Output setParent(nWidget w) { connect.setParent(w); return this; }
   
-  void send(Macro_Packet p) {
+  String last_def = null;
+  
+  String pack_info = null;
+  
+  Macro_Output send(Macro_Packet p) {
+    last_def = copy(p.def);
+    pack_info = copy(p.def);
+    for (String m : p.messages) pack_info = pack_info + " " + m;
     sending = true;
     hasSend = 5;
     for (Macro_Input m : connected_inputs) m.receive(p);
+    return this;
   }
+  Macro_Output sendBang() { send(newPacketBang()); return this; }
+  Macro_Output sendFloat(float v) { send(newPacketFloat(v)); return this; }
+  Macro_Output sendInt(int v) { send(newPacketInt(v)); return this; }
+  Macro_Output sendBool(boolean v) { send(newPacketBool(v)); return this; }
+  Macro_Output setDefBang() { last_def = "bang"; return this; }
+  Macro_Output setDefBool() { last_def = "bool"; return this; }
+  Macro_Output setDefInt() { last_def = "int"; return this; }
+  Macro_Output setDefFloat() { last_def = "float"; return this; }
+  Macro_Output setDefNumber() { last_def = "num"; return this; }
+  Macro_Output setDefVal() { last_def = "val"; return this; }
   
 }
 
@@ -1013,8 +1022,10 @@ class Macro_Input {
         ellipseMode(CENTER);
         ellipse(getCenterX(), getCenterY(), 
                 connect.getSX() / 1.9, connect.getSY() / 1.9 );
+        fill(255);
+        textFont(getFont(int(macro.macro_size/3)));
+        if (filter != null) text(filter, connect.getX()+macro.macro_size/2, connect.getY()+macro.macro_size*5/8);
         if (DEBUG) {
-          fill(255);
           textFont(getFont(int(macro.macro_size/4)));
           text(""+index, connect.getX()-macro.macro_size/4, connect.getY()+macro.macro_size/4);
         }
@@ -1069,9 +1080,13 @@ class Macro_Input {
   Macro_Packet getLastPacket() { return last_packet; }
   
   void receive(Macro_Packet p) {
-    last_packet = p;
-    for (Runnable r : eventReceiveRun) r.run();
-    if (direct_out != null) direct_out.send(p);
+    if (filter == null || p.def.equals(filter) || 
+        (filter.equals("num") && (p.def.equals("float") || p.def.equals("int"))) ||
+        (filter.equals("val") && (p.def.equals("float") || p.def.equals("int") || p.def.equals("bool"))) ) {
+      last_packet = p;
+      for (Runnable r : eventReceiveRun) r.run();
+      if (direct_out != null) direct_out.send(p);
+    }
   }
   
   ArrayList<Runnable> eventReceiveRun = new ArrayList<Runnable>();
@@ -1080,6 +1095,33 @@ class Macro_Input {
   
   Macro_Output direct_out = null;
   void direct_connect(Macro_Output o) { direct_out = o; }
+  
+  String filter = null;
+  
+  Macro_Input setFilter(String f) {
+    filter = copy(f);
+    return this; }
+  Macro_Input clearFilter() {
+    filter = null;
+    return this; }
+  Macro_Input setFilterBang() {
+    filter = "bang";
+    return this; }
+  Macro_Input setFilterInt() {
+    filter = "int";
+    return this; }
+  Macro_Input setFilterFloat() {
+    filter = "float";
+    return this; }
+  Macro_Input setFilterNumber() { //int and float
+    filter = "num";
+    return this; }
+  Macro_Input setFilterBool() {
+    filter = "bool";
+    return this; }
+  Macro_Input setFilterValue() { //bool int and float
+    filter = "val";
+    return this; }
 }
 
 

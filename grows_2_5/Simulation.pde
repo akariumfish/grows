@@ -11,14 +11,14 @@ class Simulation {
   sTextfield file_path_tf;
   
   sFlt tick = new sFlt(simval, 0, "tick nb"); //conteur de tour depuis le dernier reset ou le debut
-  sBoo pause = new sBoo(simval, false); //permet d'interompre le defilement des tour
+  sBoo pause = new sBoo(simval, false, "pause"); //permet d'interompre le defilement des tour
   sFlt tick_by_frame = new sFlt(simval, 16, "tick by frame"); //nombre de tour a executé par frame
   float tick_pile = 0; //pile des tour
-  sInt SEED = new sInt(simval, 548651008); //seed pour l'aleatoire
-  sBoo auto_reset = new sBoo(simval, true);
-  sBoo auto_reset_rng_seed = new sBoo(simval, true);
-  sInt auto_reset_turn = new sInt(simval, 4000);
-  sBoo auto_screenshot = new sBoo(simval, false);
+  sInt SEED = new sInt(simval, 548651008, "SEED"); //seed pour l'aleatoire
+  sBoo auto_reset = new sBoo(simval, true, "auto_reset");
+  sBoo auto_reset_rng_seed = new sBoo(simval, true, "auto_reset_rng_seed");
+  sInt auto_reset_turn = new sInt(simval, 4000, "auto_reset_turn");
+  sBoo auto_screenshot = new sBoo(simval, false, "auto_screenshot");
   
   Channel tick_chan = new Channel();
   Channel unpaused_frame_chan = new Channel();
@@ -202,6 +202,12 @@ class Simulation {
     //  .addSeparator(10)
     //  ;
     for (Community c : list) c.building();
+    
+    addCustomRunnable("sim reset", new Runnable() { public void run() { reset(); }});
+    addCustomRunnable("sim rng reset", new Runnable() { public void run() { 
+      SEED.set(int(random(1000000000))); reset(); } } );
+    addCustomRunnable("sim next tick", new Runnable() { public void run() { next_tick = true; }});
+    
   }
   
   void newMacroSimIN1() {
@@ -220,6 +226,7 @@ class Simulation {
   }
   
   void newMacroSimIN2() {
+    
     //new MacroCUSTOM(plane)
     //  .setLabel("SIM RUN")
     //  .setWidth(155)
@@ -309,7 +316,8 @@ class Simulation {
       callChannel(unpaused_frame_chan);
     }
     
-    if (next_tick) { tick(); next_tick = false; }
+    if (pause.get() && next_tick) { next_tick = false; tick(); }
+    if (!pause.get() && next_tick) { next_tick = false; }
     
     //run custom frame methods
     for (Community c : list) c.frame();
@@ -359,7 +367,17 @@ abstract class Community {
   String name = "";
   boolean isFrame = false;
   
-  Community(Simulation _c, String n, int max) { comList = _c; name = n; MAX_ENT.set(max); }
+  Community(Simulation _c, String n, int max) { 
+    comList = _c; name = n; MAX_ENT.set(max); 
+    MAX_ENT.name = "MAX_ENT "+n; 
+    initial_entity.name = "initial_entity "+n;
+    activeEntity.name = "activeEntity "+n;
+    adding_type.name = "adding_type "+n;
+    adding_step.name = "adding_step "+n;
+    
+    addCustomRunnable(n+" add", new Runnable() { public void run() { adding_pile += initial_entity.get(); }});
+    
+  }
   
   Community show_menu() { panel.g.show(); show_menu.set(true); return this; }
   Community hide_menu() { panel.g.hide(); show_menu.set(false); return this; }

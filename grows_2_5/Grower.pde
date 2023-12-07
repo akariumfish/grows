@@ -11,7 +11,7 @@ class RandomTryParam extends Callable {
     DIFFICULTY.set(d); ON.set(b); addChannel(frameend_chan); }
   RandomTryParam(float d, boolean b, String n) { 
     DIFFICULTY = new sFlt(simval, 4, n+" dif");
-    ON = new sBoo(simval, true);
+    ON = new sBoo(simval, true, n+" on");
     test_by_tick = new sFlt(simval, 0);
     DIFFICULTY.set(d); ON.set(b); addChannel(frameend_chan); }
   boolean test() { if(ON.get()) count++; test_by_tick.set(count / sim.tick_by_frame.get()); return ON.get() && crandom(DIFFICULTY.get()) > 0.5; }
@@ -30,16 +30,16 @@ class GrowerComu extends Community {
   RandomTryParam growP = new RandomTryParam(0.5, true, "grow grow");
   RandomTryParam sproutP = new RandomTryParam(2080, true, "grow sprout");
   RandomTryParam stopP = new RandomTryParam(1.25, true, "grow stop");
-  RandomTryParam leafP = new RandomTryParam(2080, true);
-  RandomTryParam dieP = new RandomTryParam(3.6, true);
+  RandomTryParam leafP = new RandomTryParam(2080, true, "grow leaf");
+  RandomTryParam dieP = new RandomTryParam(3.6, true, "grow die");
   float MAX_LINE_WIDTH = 1.5; //epaisseur max des ligne, diminuer par l'age, un peut, se vois pas
   float MIN_LINE_WIDTH = 0.2; //epaisseur min des ligne
   
-  sBoo create_floc = new sBoo(simval, true);
+  sBoo create_floc = new sBoo(simval, true, "grow create floc");
   
   sLabel grower_nb_label;
   
-  sInt activeGrower = new sInt(simval, 0);
+  sInt activeGrower = new sInt(simval, 0, "activeGrower");
   
   sGraph graph = new sGraph();
   
@@ -50,7 +50,9 @@ class GrowerComu extends Community {
   }
   void custom_cam_draw_pre_entity() {}
   void custom_cam_draw_post_entity() {}
-  void custom_pre_tick() {}
+  void custom_pre_tick() {
+    activeGrower.set(grower_Nb());
+  }
   void custom_post_tick() {}
   void custom_build() {
     //creation du menu
@@ -118,6 +120,13 @@ class GrowerComu extends Community {
       .setPanel(panel)
       .setSize(30, 30)
       ;
+    
+    addCustomRunnable("grow kill grower", new Runnable() { public void run() { 
+      for (Entity e : gcom.list) {
+        Grower g = (Grower)e;
+        if (!g.end && g.sprouts == 0) { g.end = true; }
+      }
+    }});
     
     //creation de macro custom
     //plane.build_panel
@@ -218,9 +227,6 @@ class GrowerComu extends Community {
   }
   void custom_frame() {
     graph.update(activeEntity.get(), activeGrower.get());
-  }
-  void custom_tick() {
-    activeGrower.set(grower_Nb());
   }
   void custom_screen_draw() {
     graph.draw();

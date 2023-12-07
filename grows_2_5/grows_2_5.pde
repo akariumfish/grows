@@ -16,9 +16,9 @@ ControlP5 cp5; //l'objet main pour les menu
 
 SpecialValue simval = new SpecialValue(); 
 
-nGUI gui = new nGUI();
+nGUI cam_gui,screen_gui;
 
-Ticking_pile tickpile = new Ticking_pile();
+Ticking_pile tickpile;
 
 Macro_Main macro_main;
 
@@ -46,9 +46,12 @@ void setup() {//executé au demarage
   fr = new sFramerate(60);
   
   cp5 = new ControlP5(this);
-  init_Tabs("Macros");
+  init_Tabs("Menu");
   
-  macro_main = new Macro_Main(gui, tickpile, 900, 20);
+  cam_gui = new nGUI();
+  screen_gui = new nGUI();
+  screen_gui.on_screen = true;
+  screen_gui.szone.ON = false;
   
   sim = new Simulation();
   
@@ -61,9 +64,13 @@ void setup() {//executé au demarage
   loading(simval, "save.txt");
   sim.reset();
   
-  new Callable() { public void answer(Channel channel, float value) {
-    tickpile.tick();
-  } }.addChannel(sim.tick_chan);
+  tickpile = new Ticking_pile();
+  macro_main = new Macro_Main(cam_gui, screen_gui, tickpile, 900, 20);
+  new Callable() { public void answer(Channel channel, float value) { tickpile.tick(); } }
+    .addChannel(sim.tick_chan);
+  macro_main.addTickAskMethod(new Runnable() { public void run() { sim.next_tick = true; } } );
+  
+  macro_main.sdata_load();
   
   mySetup();
   
@@ -80,7 +87,9 @@ void draw() {//executé once by frame
   fr.update();
   callChannel(frameend_chan);
   
-  gui.update();
+  String m_tab = "Menu";
+  cam_gui.update(cp5.getTab(m_tab).isActive());
+  screen_gui.update(cp5.getTab(m_tab).isActive());
   
   //execution de la simulation
   sim.frame();
@@ -95,13 +104,15 @@ void draw() {//executé once by frame
   //simulation draw to camera
   sim.draw_to_cam();
   
-  if (cp5.getTab("Macros").isActive()) gui.draw();
+  if (cp5.getTab(m_tab).isActive()) cam_gui.draw();
   
   //pop cam view and cam updates
   cam.popCam();
   
   //simulation draw to screen
   sim.draw_to_screen();
+  
+  if (cp5.getTab(m_tab).isActive()) screen_gui.draw();
   
   //framerate:
   fill(255); 
@@ -142,7 +153,7 @@ class sFramerate {
   float frame_length = 0;
   
   float frame_median = 0;
-  sInt value = new sInt(simval, 0);
+  sInt value = new sInt(simval, 0, "sFramerate");
   
   sInt time = new sInt(simval, 0);
   float reset_time = 0;
@@ -213,6 +224,9 @@ class Camera {
 
   PVector getCamMouse() { 
     return screen_to_cam(new PVector(mouseX, mouseY));
+  }
+  PVector getPCamMouse() { 
+    return screen_to_cam(new PVector(pmouseX, pmouseY));
   }
 
   PVector cam_to_screen(PVector p) {

@@ -90,24 +90,24 @@ APPLET
 class nWidgetPile {
   ArrayList<nWidget> pile = new ArrayList<nWidget>();
   
-  nWidget newWidget(String name) {
-    nWidget add = new nWidget(gui, name, 12, 0, 0, 50, 10)
-      .setTrigger()
-      //.setLayer(getBase().menu_layer)
-      .stackDown()
-      .hide()
-    //  .addEventTrigger(new Runnable() { 
-    //  public void run() { 
-    //    getBase().menugroup.closeAll();
-    //  }
-    //}
-    //)
-      ;
-    //if (addbuttons.size() == 0) add.setParent(addExtOut);
-    //else add.setParent(addbuttons.get(addbuttons.size()-1));
-    //addbuttons.add(add);
-    return add;
-  }
+  //nWidget newWidget(String name) {
+  //  nWidget add = new nWidget(gui, name, 12, 0, 0, 50, 10)
+  //    .setTrigger()
+  //    //.setLayer(getBase().menu_layer)
+  //    .stackDown()
+  //    .hide()
+  //  //  .addEventTrigger(new Runnable() { 
+  //  //  public void run() { 
+  //  //    getBase().menugroup.closeAll();
+  //  //  }
+  //  //}
+  //  //)
+  //    ;
+  //  //if (addbuttons.size() == 0) add.setParent(addExtOut);
+  //  //else add.setParent(addbuttons.get(addbuttons.size()-1));
+  //  //addbuttons.add(add);
+  //  return add;
+  //}
   
 }
 
@@ -118,17 +118,21 @@ class nSelectZone extends Callable {
   Rect select_zone = new Rect();
   boolean emptyClick = false;
   int clickDelay = 0;
+  boolean ON = true;
   
   nSelectZone addEventEndSelect(Runnable r)  { eventEndSelect.add(r); return this; }
   nSelectZone removeEventEndSelect(Runnable r)       { eventEndSelect.remove(r); return this; }
   ArrayList<Runnable> eventEndSelect = new ArrayList<Runnable>();
+  nSelectZone addEventStartSelect(Runnable r)  { eventStartSelect.add(r); return this; }
+  nSelectZone removeEventStartSelect(Runnable r)       { eventStartSelect.remove(r); return this; }
+  ArrayList<Runnable> eventStartSelect = new ArrayList<Runnable>();
   
   boolean isSelecting() { return emptyClick; }
   
   nSelectZone(nGUI _g) {
     pile = _g.hoverable_pile;
     pile.addEventNotFound(new Runnable() { public void run() { 
-      if (kb.mouseClick[1]) clickDelay = 5; 
+      if (ON && kb.mouseClick[1]) clickDelay = 1; 
     } } );
     drawer = new Drawer(_g.drawing_pile, 25) { public void drawing() {
       noFill();
@@ -137,7 +141,7 @@ class nSelectZone extends Callable {
       Rect z = new Rect(select_zone);
       if (z.size.x < 0) { z.pos.x += z.size.x; z.size.x *= -1; }
       if (z.size.y < 0) { z.pos.y += z.size.y; z.size.y *= -1; }
-      if (emptyClick) z.draw();
+      if (ON && emptyClick) z.draw();
     } };
     addChannel(_g.GUI_Call);
   }
@@ -145,26 +149,30 @@ class nSelectZone extends Callable {
     Rect z = new Rect(select_zone);
     if (z.size.x < 0) { z.pos.x += z.size.x; z.size.x *= -1; }
     if (z.size.y < 0) { z.pos.y += z.size.y; z.size.y *= -1; }
-    if (emptyClick && rectCollide(w.getRect(), z)) return true;
+    if (emptyClick && !w.isHided() && rectCollide(w.getRect(), z)) return true;
     return false;
   }
   void answer(Channel c, float f) {
-    if (clickDelay > 0) {
-      clickDelay--;
-      if (clickDelay == 0) { 
-        emptyClick = true;
-        select_zone.pos.x = cam.getCamMouse().x;
-        select_zone.pos.y = cam.getCamMouse().y;
+    if (ON) {
+      if (clickDelay > 0) {
+        clickDelay--;
+        if (clickDelay == 0) { 
+          emptyClick = true;
+          runEvents(eventStartSelect);
+          select_zone.pos.x = cam.getCamMouse().x;
+          select_zone.pos.y = cam.getCamMouse().y;
+        }
+      }
+      if (emptyClick) {
+        select_zone.size.x = cam.getCamMouse().x - select_zone.pos.x;
+        select_zone.size.y = cam.getCamMouse().y - select_zone.pos.y;
+        if (kb.mouseUClick[1]) { 
+          runEvents(eventEndSelect);
+          emptyClick = false; 
+        }
       }
     }
-    if (emptyClick) {
-      select_zone.size.x = cam.getCamMouse().x - select_zone.pos.x;
-      select_zone.size.y = cam.getCamMouse().y - select_zone.pos.y;
-      if (kb.mouseUClick[1]) { 
-        runEvents(eventEndSelect);
-        emptyClick = false; 
-      }
-    }
+    if (!kb.mouseButtons[1]) emptyClick = false;
   }
 }
 
@@ -179,10 +187,11 @@ class nGUI {
   
   nGUI() {
     szone = newSelectZone();
+    //szone.ON = false;
   }
   
-  void update() {
-    hoverable_pile.search(cam.getCamMouse());
+  void update(boolean b) {
+    if (b) hoverable_pile.search(getMouse());
     callChannel(GUI_Call);
   }
   void draw() {
@@ -192,6 +201,11 @@ class nGUI {
     return new nExcludeGroup(hoverable_pile); }
   nSelectZone newSelectZone() {
     return new nSelectZone(this); }
+  boolean on_screen = false;
+  PVector getMouse() {
+    if (on_screen) return new PVector(mouseX, mouseY);
+    return cam.getCamMouse();
+  }
 }
 
 class nExcludeGroup {
@@ -399,7 +413,7 @@ class nWidget extends Callable {
   private boolean showCursor = false;
   private int cursorPos = 0;
   private ArrayList<nWidget> excludes = new ArrayList<nWidget>();
-  private float mx = 0; float my = 0;
+  private float mx = 0, my = 0, pmx = 0, pmy = 0;
   private boolean showOutline = false;
   private boolean hoverOutline = false;
   private float outlineWeight = 1;
@@ -713,6 +727,7 @@ class nWidget extends Callable {
   
   boolean isClicked() { return isClicked; }
   boolean isHovered() { return isHovered; }
+  boolean isField() { return isField; }
   boolean isHided() { return hide; }
   
   void customPositionChange() {}
@@ -754,9 +769,10 @@ class nWidget extends Callable {
     if (grabbable) {
       if (isHovered) {
         if (kb.mouseClick[0]) {
-          mx = getLocalX() - cam.getCamMouse().x;
-          my = getLocalY() - cam.getCamMouse().y;
+          mx = getLocalX() - gui.getMouse().x;
+          my = getLocalY() - gui.getMouse().y;
           cam.GRAB = false; //deactive le deplacement camera
+          //gui.szone.ON = false;
           isGrabbed = true;
           runEvents(eventGrabRun);
           eventGrab();
@@ -765,12 +781,13 @@ class nWidget extends Callable {
       if (isGrabbed && kb.mouseUClick[0]) {
         isGrabbed = false;
         cam.GRAB = true;
+        //gui.szone.ON = true;
         runEvents(eventLiberateRun);
         eventLiberate();
       }
       if (isGrabbed && isClicked) {
-        if (!constrainX) setPX(cam.getCamMouse().x + mx);
-        if (!constrainY) setPY(cam.getCamMouse().y + my);
+        if (!constrainX) setPX(gui.getMouse().x + mx);
+        if (!constrainY) setPY(gui.getMouse().y + my);
         runEvents(eventDragRun);
         eventDrag();
       }

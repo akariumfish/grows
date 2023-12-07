@@ -2,43 +2,200 @@
 
 objet macro extended de l'abstract pour les fonction de base
 
-
-
-
-
-
 Basic Macro:
-  Pulse
-  MacroVAL
-  MacroDELAY
-  MacroCOMP
-  MacroBOOL
-  MacroCALC
+  bg : bang
+  b ; bool
+  i : int
+  f : float
+  n : number : i f
+  v : value : b i f
 
-nouvel objet macro, on peut y ajouté des entré/sortie customizable
+  Pulse n > bg
+  MacroDELAY n all > all
+    show msg waiting
+  MacroGATE b all > all
+  
+  MacroCOMP n n > b
+  MacroBOOL b b > b
+  MacroCALC n n > f
+  MacroVAL b v > v
+  MacroKeyboard trig > bg state > b
+  not b > b
+  Switch b
+  bang bg
+  
+  comment
 
-MACROCustom
-  addConnexion
 
-Macro Custom Connexions:
-  >MCListen(Channel) outB value
-  >MCCall(Channel) inB value
-  
-  >MCsValueWatcher(sFlt) outF value
-  >MCsValueWatcher(sBoo) outB value
-  >MCsValueController(sFlt) inF value      BEUG!!!!
-  >MCsValueController(sBoo) inB value
-  
-  >MCRun( code ) inB bang
-  >MCKeyboard(key) outB bang
-  
-  MCsValueModifier(sFlt)
-    inB bang, inF value, select : 'x' / '/' / '+' / '-'
-  
 */
 
-class Macro_Keyboard extends Macro_Abstract {
+class Macro_Comment extends Macro_Abstract {
+  nWidget field;
+  Macro_Comment(nGUI _gui, Macro_Sheet p, float x, float y) {
+    super(_gui, p, "com", x, y);
+    addLine();
+    field = new nWidget(_gui, - macro_size * 7 / 8, macro_size * 1 / 8, macro_size*8, macro_size)
+      .setParent(panel)
+      .setLayer(layer)
+      .setFont(int(macro_size/1.5))
+      .setText("")
+      .setField(true)
+      ;
+    
+    toLayerTop();
+    setWidth(macro_size*8.5);
+  }
+  //void to_string(String[] s, int id) {
+  //  super.to_string(s, id);
+  //  id += super.size();
+  //  s[id] = field.getText();
+  //  log("value " + id + " " + s[id]);
+  //}
+  //void from_string(String[] s, int id) {
+  //  super.from_string(s, id);
+  //  id += super.size();
+  //  field.setText(s[id]);
+  //  log("value " + id + " " + s[id]);
+  //}
+  void to_save(Save_Bloc bloc) {
+    super.to_save(bloc);
+    bloc.newData("value", field.getText());
+  }
+  void from_save(Save_Bloc bloc) {
+    super.from_save(bloc);
+    field.setText(bloc.getData("value"));
+  }
+  //int size() { return 1 + super.size(); }
+  void childDragged() {}
+  void setLayer(int l) {
+    super.setLayer(l);
+    field.setLayer(l);
+  }
+  void toLayerTop() {
+    super.toLayerTop();
+    field.toLayerTop();
+  }
+}
+
+
+
+class Macro_Value extends Macro_Abstract {
   Macro_Output out;
+  Macro_Input in_bang,in_val;
+  nWidget button,field;
+  Macro_Packet pack;
+  Macro_Value setBool() { 
+    pack = newPacketBool(false); field.setField(false); 
+    field.setTrigger(); field.setText("false"); 
+    return this; }
+  Macro_Value(nGUI _gui, Macro_Sheet p, float x, float y) {
+    super(_gui, p, "value", x, y);
+    button = new nWidget(_gui, macro_size / 8, macro_size / 8, macro_size*2, macro_size)
+      .setTrigger()
+      .setParent(panel)
+      .setLayer(layer)
+      .stackDown()
+      .addEventTrigger(new Runnable() { public void run() {
+        send();
+      }})
+      ;
+      
+    pack = newPacketFloat(0);
+    
+    field = new nWidget(_gui, macro_size / 8, macro_size * 10 / 8, macro_size*2, macro_size)
+      .setParent(panel)
+      .setLayer(layer)
+      .setFont(int(macro_size/1.5))
+      .setText("0.0")
+      .setField(true)
+      .addEventFieldChange(new Runnable() { public void run() {
+        if (pack != null && pack.isFloat()) pack = newPacketFloat(field.getText());
+        if (pack != null && pack.isInt()) pack = newPacketInt(int(float(field.getText())));
+        if (pack == null) pack = newPacketFloat(field.getText());
+      }})
+      .addEventTrigger(new Runnable() { public void run() {
+        if (pack != null && pack.isBool()) pack = newPacketBool(!pack.asBool());
+        if (pack == null || (pack != null && !pack.isBool())) pack = newPacketBool(false);
+        if (pack.asBool()) field.setText("true"); else field.setText("false");
+      }})
+      ;
+    
+    in_bang = addExtInput()
+      .addEventReceive(new Runnable() { public void run() {
+        if (in_bang.getLastPacket().isBang()) send();
+      }})
+      .setFilterBang()
+      ;
+    in_val = addExtInput()
+      .addEventReceive(new Runnable() { public void run() {
+        pack = in_val.getLastPacket();
+        if (pack.isFloat()) { field.setPassif(); field.setField(true); field.setText(trimStringFloat(pack.asFloat())); }
+        if (pack.isInt()) { field.setPassif(); field.setField(true); field.setText(str(pack.asInt())); }
+        if (pack.isBool() && pack.asBool()) { field.setField(false); field.setTrigger(); field.setText("true"); }
+        if (pack.isBool() && !pack.asBool()) { field.setField(false); field.setTrigger(); field.setText("false"); }
+      }})
+      .setFilterValue()
+      ;
+    out = addExtOutput()
+      .setDefVal();
+    toLayerTop();
+    setWidth(macro_size*3.5);
+  }
+  void send() {
+    if (pack != null) out.send(pack);
+  }
+  void to_string(String[] s, int id) {
+    super.to_string(s, id);
+    id += super.size();
+    s[id] = field.getText();
+    log("value " + id + " " + s[id]);
+  }
+  void from_string(String[] s, int id) {
+    super.from_string(s, id);
+    id += super.size();
+    field.setText(s[id]);
+    log("value " + id + " " + s[id]);
+  }
+  void to_save(Save_Bloc bloc) {
+    super.to_save(bloc);
+    if (pack == null) return;
+    else if (pack.isFloat()) bloc.newData("f", pack.asFloat());
+    else if (pack.isInt()) bloc.newData("i", pack.asFloat());
+    else if (pack.isBool()) bloc.newData("b", pack.asFloat());
+  }
+  void from_save(Save_Bloc bloc) {
+    super.from_save(bloc);
+    if (bloc.getData("f") != null) {
+      pack = newPacketFloat(bloc.getFloat("f"));
+      field.setText(str(bloc.getFloat("f"))); }
+    if (bloc.getData("i") != null) {
+      pack = newPacketInt(bloc.getInt("i"));
+      field.setText(str(bloc.getInt("i"))); }
+    if (bloc.getData("b") != null) {
+      pack = newPacketBool(bloc.getBoolean("b"));
+      if (pack.asBool()) field.setText("true"); 
+      else field.setText("false"); }
+  }
+  int size() { return 1 + super.size(); }
+  void childDragged() {}
+  void setLayer(int l) {
+    super.setLayer(l);
+    button.setLayer(l);
+    field.setLayer(l);
+  }
+  void toLayerTop() {
+    super.toLayerTop();
+    button.toLayerTop();
+    field.toLayerTop();
+  }
+}
+
+
+
+
+
+class Macro_Keyboard extends Macro_Abstract {
+  Macro_Output out_t,out_s;
   nWidget field;
   Tickable tick;
   Macro_Keyboard(nGUI _gui, Macro_Sheet p, float x, float y) {
@@ -51,9 +208,15 @@ class Macro_Keyboard extends Macro_Abstract {
       .setText("a")
       .setField(true)
       ;
-    out = addExtOutput();
+    out_t = addExtOutput()
+      .setDefBang();
+    out_s = addExtOutput()
+      .setDefBool();
     tick = new Tickable(getBase().tickpile) { public void tick(float t) {
-        if (kb.keyClick && field.getText().length() > 0 && field.getText().charAt(0) == key) out.send(newBang());
+        if (kb.keyClick && field.getText().length() > 0 && field.getText().charAt(0) == key) out_t.send(newPacketBang());
+        if (kb.keyButton && field.getText().length() > 0 && field.getText().charAt(0) == key) 
+          out_s.send(newPacketBool(true));
+        else out_s.send(newPacketBool(false));
       } }
       .setLayer(0)
       ;
@@ -89,90 +252,6 @@ class Macro_Keyboard extends Macro_Abstract {
   }
   void toLayerTop() {
     super.toLayerTop();
-    field.toLayerTop();
-  }
-}
-
-
-
-class Macro_Value extends Macro_Abstract {
-  Macro_Output out;
-  Macro_Input in_bang,in_val;
-  nWidget button,field;
-  Macro_Value(nGUI _gui, Macro_Sheet p, float x, float y) {
-    super(_gui, p, "value", x, y);
-    button = new nWidget(_gui, macro_size / 8, macro_size / 8, macro_size*2, macro_size)
-      .setTrigger()
-      .setParent(panel)
-      .setLayer(layer)
-      .stackDown()
-      .addEventTrigger(new Runnable() { public void run() {
-        send();
-      }})
-      ;
-    
-    field = new nWidget(_gui, macro_size / 8, macro_size * 10 / 8, macro_size*2, macro_size)
-      .setParent(panel)
-      .setLayer(layer)
-      .setFont(int(macro_size/1.5))
-      .setText("0")
-      .setField(true)
-      .addEventFieldChange(new Runnable() { public void run() {
-        String s = field.getText();
-      }})
-      ;
-    
-    in_bang = addExtInput()
-      .addEventReceive(new Runnable() { public void run() {
-        if (in_bang.getLastPacket().isBang()) send();
-      }})
-      ;
-    in_val = addExtInput()
-      .addEventReceive(new Runnable() { public void run() {
-        Macro_Packet pack = in_val.getLastPacket();
-        if (pack.isFloat()) {
-          float f = pack.asFloat();
-          field.setText(str(f));
-        }
-      }})
-      ;
-    out = addExtOutput();
-    toLayerTop();
-    setWidth(macro_size*3.5);
-  }
-  void send() {
-    out.send(newFloat(field.getText()));
-  }
-  void to_string(String[] s, int id) {
-    super.to_string(s, id);
-    id += super.size();
-    s[id] = field.getText();
-    log("value " + id + " " + s[id]);
-  }
-  void from_string(String[] s, int id) {
-    super.from_string(s, id);
-    id += super.size();
-    field.setText(s[id]);
-    log("value " + id + " " + s[id]);
-  }
-  void to_save(Save_Bloc bloc) {
-    super.to_save(bloc);
-    bloc.newData("value", field.getText());
-  }
-  void from_save(Save_Bloc bloc) {
-    super.from_save(bloc);
-    field.setText(bloc.getData("value"));
-  }
-  int size() { return 1 + super.size(); }
-  void childDragged() {}
-  void setLayer(int l) {
-    super.setLayer(l);
-    button.setLayer(l);
-    field.setLayer(l);
-  }
-  void toLayerTop() {
-    super.toLayerTop();
-    button.toLayerTop();
     field.toLayerTop();
   }
 }
@@ -228,9 +307,12 @@ class Macro_Comp extends Macro_Abstract {
         Macro_Packet pack = in_val1.getLastPacket();
         if (pack.isFloat()) {
           float f = pack.asFloat();
-          field1.setText(str(f));
-        }
+          field1.setText(str(f)); }
+        if (pack.isInt()) {
+          float f = pack.asInt();
+          field1.setText(str(f)); }
       }})
+      .setFilterNumber()
       ;
     addLine();
     in_val2 = addExtInput()
@@ -238,17 +320,22 @@ class Macro_Comp extends Macro_Abstract {
         Macro_Packet pack = in_val2.getLastPacket();
         if (pack.isFloat()) {
           float f = pack.asFloat();
-          field2.setText(str(f));
-        }
+          field2.setText(str(f)); }
+        if (pack.isInt()) {
+          float f = pack.asInt();
+          field2.setText(str(f)); }
       }})
+      .setFilterNumber()
       ;
-    out = addExtOutput();
+    out = addExtOutput()
+      .setDefBool();
     tick = new Tickable(getBase().tickpile) { public void tick(float t) {
         float f1 = float(field1.getText());
         float f2 = float(field2.getText());
-        if (modeEQ.isOn() && f1 == f2) out.send(newBang());
-        if (modeSUP.isOn() && f1 > f2) out.send(newBang());
-        if (modeINF.isOn() && f1 < f2) out.send(newBang());
+        if      (modeEQ.isOn() && f1 == f2) out.send(newPacketBool(true));
+        else if (modeSUP.isOn() && f1 > f2) out.send(newPacketBool(true));
+        else if (modeINF.isOn() && f1 < f2) out.send(newPacketBool(true));
+        else if (modeEQ.isOn() || modeSUP.isOn() || modeINF.isOn()) out.send(newPacketBool(false));
       } }
       .setLayer(0)
       ;
@@ -370,9 +457,12 @@ class Macro_Calc extends Macro_Abstract {
         Macro_Packet pack = in_val1.getLastPacket();
         if (pack.isFloat()) {
           float f = pack.asFloat();
-          field1.setText(str(f));
-        }
+          field1.setText(str(f)); }
+        if (pack.isInt()) {
+          float f = pack.asInt();
+          field1.setText(str(f)); }
       }})
+      .setFilterNumber()
       ;
     addLine();
     in_val2 = addExtInput()
@@ -380,18 +470,22 @@ class Macro_Calc extends Macro_Abstract {
         Macro_Packet pack = in_val2.getLastPacket();
         if (pack.isFloat()) {
           float f = pack.asFloat();
-          field2.setText(str(f));
-        }
+          field2.setText(str(f)); }
+        if (pack.isInt()) {
+          float f = pack.asInt();
+          field2.setText(str(f)); }
       }})
+      .setFilterNumber()
       ;
-    out = addExtOutput();
+    out = addExtOutput()
+      .setDefFloat();
     tick = new Tickable(getBase().tickpile) { public void tick(float t) {
         float f1 = float(field1.getText());
         float f2 = float(field2.getText());
-        if (modeADD.isOn()) out.send(newFloat(str(f1 + f2)));
-        if (modeSUP.isOn()) out.send(newFloat(str(f1 - f2)));
-        if (modeMUL.isOn()) out.send(newFloat(str(f1 * f2)));
-        if (modeDIV.isOn() && f2 != 0) out.send(newFloat(str(f1 / f2)));
+        if (modeADD.isOn()) out.send(newPacketFloat(str(f1 + f2)));
+        if (modeSUP.isOn()) out.send(newPacketFloat(str(f1 - f2)));
+        if (modeMUL.isOn()) out.send(newPacketFloat(str(f1 * f2)));
+        if (modeDIV.isOn() && f2 != 0) out.send(newPacketFloat(str(f1 / f2)));
       } }
       .setLayer(0)
       ;
@@ -474,9 +568,11 @@ class Macro_Bang extends Macro_Abstract {
       .stackDown()
       .addEventTrigger(new Runnable() { public void run() {
         out.send(new Macro_Packet("bang"));
+        getBase().askTick(); 
       }})
       ;
-    out = addExtOutput();
+    out = addExtOutput()
+      .setDefBang();
     toLayerTop();
     setWidth(macro_size*3.5);
   }
@@ -515,10 +611,14 @@ class Macro_Switch extends Macro_Abstract {
       .setParent(panel)
       .setLayer(layer)
       .stackDown()
+      .addEventSwitchOn(new Runnable() { public void run() { getBase().askTick(); } } )
+      .addEventSwitchOff(new Runnable() { public void run() { getBase().askTick(); } } )
       ;
-    out = addExtOutput();
+    out = addExtOutput()
+      .setDefBool();
     tick = new Tickable(getBase().tickpile) { public void tick(float t) {
-        if (button.isOn()) out.send(new Macro_Packet("bang"));
+        if (button.isOn()) out.send(newPacketBool(true));
+        else out.send(newPacketBool(false));
       } }
       .setLayer(0)
       ;
@@ -562,13 +662,14 @@ class Macro_Switch extends Macro_Abstract {
 
 class Macro_Pulse extends Macro_Abstract {
   Macro_Output out;
+  Macro_Input in_t;
   nWidget time_field;
   Tickable tick;
   int time = 20;
   int count = 0;
   Macro_Pulse(nGUI _gui, Macro_Sheet p, float x, float y) {
     super(_gui, p, "pulse", x, y);
-    setWidth(macro_size*4.5);
+    setWidth(macro_size*5.5);
     time_field = new nWidget(_gui, macro_size / 8, macro_size / 8, macro_size*3, macro_size)
       .setParent(panel)
       .setLayer(layer)
@@ -582,11 +683,21 @@ class Macro_Pulse extends Macro_Abstract {
         count = time;
       }})
       ;
-    out = addExtOutput();
+    out = addExtOutput()
+      .setDefBang();
+    in_t = addExtInput()
+      .addEventReceive(new Runnable() { public void run() {
+        if (in_t.getLastPacket().isInt()) time = in_t.getLastPacket().asInt();
+        if (in_t.getLastPacket().isFloat()) time = int(in_t.getLastPacket().asFloat());
+        if (in_t.getLastPacket().isInt() || in_t.getLastPacket().isFloat()) 
+          { time_field.setText(str(time)); count = time; }
+      }})
+      .setFilterNumber()
+      ;
     tick = new Tickable(getBase().tickpile) { public void tick(float t) {
         if (count > 0) { 
           count--; 
-          if (count == 0) { count = time; out.send(new Macro_Packet("bang")); }
+          if (count == 0) { count = time; out.send(newPacketBang()); }
         }
       } }
       .setLayer(0)
@@ -636,7 +747,7 @@ class Macro_Pulse extends Macro_Abstract {
 
 
 class Macro_Delay extends Macro_Abstract {
-  Macro_Input in;
+  Macro_Input in_m,in_t;
   Macro_Output out;
   nWidget time_field;
   Tickable tick;
@@ -660,11 +771,20 @@ class Macro_Delay extends Macro_Abstract {
       }})
       ;
     out = addExtOutput();
-    in = addExtInput()
+    in_m = addExtInput()
       .addEventReceive(new Runnable() { public void run() {
-        pack = in.getLastPacket();
+        pack = in_m.getLastPacket();
         count = time;
       }})
+      ;
+    in_t = addExtInput()
+      .addEventReceive(new Runnable() { public void run() {
+        if (in_t.getLastPacket().isInt()) time = in_t.getLastPacket().asInt();
+        if (in_t.getLastPacket().isFloat()) time = int(in_t.getLastPacket().asFloat());
+        if (in_t.getLastPacket().isInt() || in_t.getLastPacket().isFloat()) 
+          { time_field.setText(str(time)); count = 0; }
+      }})
+      .setFilterNumber()
       ;
     tick = new Tickable(getBase().tickpile) { public void tick(float time) {
         if (count > 0) { count--; if (count == 0) out.send(pack); }
@@ -714,6 +834,66 @@ class Macro_Delay extends Macro_Abstract {
 
 
 
+class Macro_Gate extends Macro_Abstract {
+  Macro_Input in_b, in_m;
+  Macro_Output out;
+  Tickable tick;
+  Macro_Packet pack_b,pack_m;
+  
+  Macro_Gate(nGUI _gui, Macro_Sheet p, float x, float y) {
+    super(_gui, p, "gate", x, y);
+    setWidth(macro_size*5.5);
+    out = addExtOutput();
+    in_m = addExtInput()
+      .addEventReceive(new Runnable() { public void run() {
+        pack_m = in_m.getLastPacket();
+      }})
+      ;
+    in_b = addExtInput()
+      .addEventReceive(new Runnable() { public void run() {
+        pack_b = in_b.getLastPacket();
+      }})
+      .setFilterBool()
+      ;
+    tick = new Tickable(getBase().tickpile) { public void tick(float time) {
+        if (pack_b != null && pack_m != null && pack_b.isBool() && pack_b.asBool()) out.send(pack_m);
+        pack_b = null; pack_m = null;
+      } }
+      .setLayer(0)
+      ;
+    toLayerTop();
+  }
+  void clear() {
+    super.clear();
+    tick.clear();
+  }
+  void to_string(String[] s, int id) {
+    super.to_string(s, id);
+    id += super.size();
+  }
+  void from_string(String[] s, int id) {
+    super.from_string(s, id);
+    id += super.size();
+  }
+  void to_save(Save_Bloc bloc) {
+    super.to_save(bloc);
+  }
+  void from_save(Save_Bloc bloc) {
+    super.from_save(bloc);
+  }
+  int size() { return 0 + super.size(); }
+  void childDragged() {}
+  void setLayer(int l) {
+    super.setLayer(l);
+  }
+  void toLayerTop() {
+    super.toLayerTop();
+  }
+}
+
+
+
+
 class Macro_Bool extends Macro_Abstract {
   Macro_Input in1,in2;
   Macro_Output out;
@@ -738,16 +918,19 @@ class Macro_Bool extends Macro_Abstract {
       ;
     modeAND.addExclude(modeOR);
     
-    out = addExtOutput();
+    out = addExtOutput()
+      .setDefBool();
     in1 = addExtInput()
       .addEventReceive(new Runnable() { public void run() {
         pack1 = in1.getLastPacket();
       }})
+      .setFilterBool()
       ;
     in2 = addExtInput()
       .addEventReceive(new Runnable() { public void run() {
         pack2 = in2.getLastPacket();
       }})
+      .setFilterBool()
       ;
     tick = new Tickable(getBase().tickpile) { public void tick(float time) {
         test();
@@ -760,10 +943,14 @@ class Macro_Bool extends Macro_Abstract {
     outputs_ref.setPY(macro_size * 4 / 8);
   }
   void test() {
-    if (modeAND.isOn() && pack1 != null && pack1.isBang() && pack2 != null && pack2.isBang() ) {
-      out.send(newBang()); }
-    if (modeOR.isOn() && ((pack1 != null && pack1.isBang()) || (pack2 != null && pack2.isBang())) ) {
-      out.send(newBang()); }
+    if (modeAND.isOn() && 
+        pack1 != null && pack1.isBool() && 
+        pack2 != null && pack2.isBool() ) {
+      out.send(newPacketBool(pack1.asBool() && pack2.asBool())); }
+    if (modeOR.isOn() &&  
+        pack1 != null && pack1.isBool() && 
+        pack2 != null && pack2.isBool() ) {
+      out.send(newPacketBool(pack1.asBool() || pack2.asBool())); }
   }
   void clear() {
     super.clear();
@@ -809,33 +996,24 @@ class Macro_Bool extends Macro_Abstract {
 class Macro_Not extends Macro_Abstract {
   Macro_Input in;
   Macro_Output out;
-  Tickable tick;
-  Macro_Packet pack = null;
   
   Macro_Not(nGUI _gui, Macro_Sheet p, float x, float y) {
     super(_gui, p, "not", x, y);
     
-    out = addExtOutput();
+    out = addExtOutput()
+      .setDefBool();
     in = addExtInput()
       .addEventReceive(new Runnable() { public void run() {
-        pack = in.getLastPacket();
+        Macro_Packet pack = in.getLastPacket();
+        if (pack != null && pack.isBool()) { out.send(newPacketBool(!pack.asBool())); }
       }})
-      ;
-    tick = new Tickable(getBase().tickpile) { public void tick(float time) {
-        test();
-        pack = null;
-      } }
-      .setLayer(0)
+      .setFilterBool()
       ;
     toLayerTop();
     setWidth(macro_size*2.25);
   }
-  void test() {
-    if (pack == null || !pack.isBang()) { out.send(newBang()); }
-  }
   void clear() {
     super.clear();
-    tick.clear();
   }
   void to_string(String[] s, int id) {
     super.to_string(s, id);

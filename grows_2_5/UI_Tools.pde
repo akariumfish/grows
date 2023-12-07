@@ -1,7 +1,49 @@
 
 void mySetup() {
   
+}
+
+class nInfo {
+  nWidget ref,label;
+  nGUI gui;
+  int count = 0;
+  void showText(String t) { 
+    label.setPX(-t.length()*(ref.getLocalSX() / 1.5) / 2).setSX(t.length()*(ref.getLocalSX() / 1.5));
+    label.setText(t); ref.show(); count = 2; 
+  }
   
+  nInfo(nGUI _g, float f) {
+    gui = _g;
+    ref = new nWidget(gui, 0, 0, f, f)
+      .setDrawer(new Drawer(_g.drawing_pile) { public void drawing() {
+        fill(ref.standbyColor);
+        noStroke();
+        triangle(ref.getX(), ref.getY(), 
+                 ref.getX() - ref.getSX(), ref.getY() - ref.getSY(), 
+                 ref.getX() + ref.getSX(), ref.getY() - ref.getSY() );
+      } } )
+      .addEventFrame_Builder(new Runnable() { public void run() {
+        count--;
+        nWidget w = ((nWidget)builder);
+        w.setPosition(cam.getCamMouse().x, cam.getCamMouse().y);
+        if (count == 0) w.hide();
+      } } );
+    label = new nWidget(gui, "", int(f), 0, -f, 0, f*1.5)
+      .setParent(ref)
+      .stackUp()
+      ;
+    ref.hide();
+  }
+  nInfo setLayer(int l) {
+    label.setLayer(l);
+    ref.setLayer(l);
+    return this;
+  }
+  nInfo toLayerTop() {
+    label.toLayerTop();
+    ref.toLayerTop();
+    return this;
+  }
 }
 
 class nPanelDrawer {
@@ -432,9 +474,14 @@ class nScroll {
         ;
   }
   void update_cursor() {
-    float h = haut - (larg*2);
-    float d = h / entry_nb;
-    curs.setSY(d*entry_view)
-      .setPY(d*entry_pos);
+    if (entry_view <= entry_nb) {
+      float h = haut - (larg*2);
+      float d = h / entry_nb;
+      curs.setSY(d*entry_view)
+        .setPY(d*entry_pos);
+    } else {
+      curs.setSY(haut - (larg*2))
+        .setPY(0);
+    }
   }
 }
