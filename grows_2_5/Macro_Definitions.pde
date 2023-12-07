@@ -18,7 +18,7 @@ Basic Macro:
   MacroCOMP n n > b
   MacroBOOL b b > b
   MacroCALC n n > f
-  MacroVAL b v > v
+  MacroVAL bg v > v
   MacroKeyboard trig > bg state > b
   not b > b
   Switch b

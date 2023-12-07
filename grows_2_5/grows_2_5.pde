@@ -36,8 +36,8 @@ FlocComu fcom;
 BoxComu bcom;
 
 void setup() {//executé au demarage
-  size(1600, 900);//taille de l'ecran
-  //fullScreen();
+  //size(1600, 900);//taille de l'ecran
+  fullScreen();
   noSmooth();//pas d'antialiasing
   //smooth();//anti aliasing
   

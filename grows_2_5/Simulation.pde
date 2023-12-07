@@ -375,7 +375,10 @@ abstract class Community {
     adding_type.name = "adding_type "+n;
     adding_step.name = "adding_step "+n;
     
-    addCustomRunnable(n+" add", new Runnable() { public void run() { adding_pile += initial_entity.get(); }});
+    addCustomRunnable(n+" add", new Runnable() { public void run() { 
+      if (!adding_type.get()) adding_tick = true;
+      if (adding_type.get()) adding_pile = initial_entity.get();
+    }});
     
   }
   
@@ -552,15 +555,13 @@ abstract class Community {
     comList.list.add(this);
     init_array();
   }
-  
+  boolean adding_tick = false;
   void reset() { //deactivate all then create starting situation from parameters
     this.destroy_All();
-    if (MAX_ENT.get() != list.size()) init_array();
-    if (!adding_type.get()) 
-      for (int j = 0; j < initial_entity.get(); j++)
-        initialEntity();
-    if (adding_type.get()) adding_pile = initial_entity.get();
     custom_reset();
+    if (MAX_ENT.get() != list.size()) init_array();
+    if (!adding_type.get()) adding_tick = true;
+    if (adding_type.get()) adding_pile = initial_entity.get();
   }
   
   void frame() {
@@ -568,6 +569,11 @@ abstract class Community {
   }
   
   void tick() {
+    if (adding_tick && !adding_type.get()) {
+      adding_tick = false;
+      for (int j = 0; j < initial_entity.get(); j++)
+        initialEntity();
+    }
     if (adding_type.get() && adding_pile >= 1) {
       adding_counter++;
       if (adding_counter >= adding_step.get()) {

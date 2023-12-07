@@ -449,11 +449,11 @@ class Macro_Main extends Macro_Sheet {
     
     grabber.setText("MACRO");
     
-    addPanelBasicMacro();
-    addPanelsFlt();
-    addPanelsInt();
-    addPanelsBoo();
-    addPanelRun();
+    //addPanelBasicMacro();
+    //addPanelsFlt();
+    //addPanelsInt();
+    //addPanelsBoo();
+    //addPanelRun();
   }
   void clear() {
     empty();
