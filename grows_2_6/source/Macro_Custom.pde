@@ -7,14 +7,20 @@ MACROCustom
 
 Macro Custom Connexions:
   >MCsValueWatcher f i b
+    widget preview
+    in bang or button to send / on change / always
   >MCsValueController f i b
-  >MCRun( code ) bang
+    inV set, 
+    inV factor, inB do fact x, inB do fact /, 
+    inV increment, inB do incr +, inB do incr -
+    button ctrl
+  >MCRun( code ) bang 
+    button bang
   
   MCListen Channel bang value
   MCCall Channel bang value
-  MCsValueModifier
-    bang, value, select : 'x' / '/' / '+' / '-'
   
+  MCJoystick out manette inputs
 */
 
 

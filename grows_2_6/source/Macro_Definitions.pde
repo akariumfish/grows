@@ -13,18 +13,32 @@ Basic Macro:
   Pulse n > bg
   MacroDELAY n all > all
     show msg waiting
+    multiple msg in waiting at dif count
   MacroGATE b all > all
+    switch widget for activ
   
   MacroCOMP n n > b
   MacroBOOL b b > b
   MacroCALC n n > f
+    out only on change ? or in bang to do calc?
   MacroVAL bg v > v
+    multiples value
   MacroKeyboard trig > bg state > b
   not b > b
-  Switch b
+  Switch bg > b
+    switch widget for activ
   bang bg
   
+  initBang send bang first tick after creation
+  tick bang
+  random min max bang > f
+  set reset bg bg > b bg
+  sequenceur bg > multi bg
+  matrice select i, activ b, in all > multi out all
+    switch widget for activ
+  
   comment
+    change width, multiline
 
 
 */
