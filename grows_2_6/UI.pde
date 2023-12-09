@@ -1,4 +1,3 @@
-import java.util.Map;
 
 
 /*
@@ -146,7 +145,6 @@ class nGUI {
   
   nWidget selected_widget = null;
   
-  
   ArrayList<Runnable> eventsFrame = new ArrayList<Runnable>();
   nGUI addEventFrame(Runnable r) { eventsFrame.add(r); return this; }
   nGUI addEventNotFound(Runnable r) { hoverable_pile.addEventNotFound(r); return this; }
@@ -164,7 +162,6 @@ class nGUI {
   void frame(boolean b) {
     if (b) hoverable_pile.search(mouseVector);
     runEvents(eventsFrame);
-    //callChannel(GUI_Call);
   }
   void draw() {
     drawing_pile.drawing();
@@ -233,55 +230,34 @@ class nWidget {
   nWidget setConstrainY(boolean b) { constrainY = b; return this; }
   
   nWidget(nGUI g) {
-    gui = g;
-    dpile = g.drawing_pile;
-    hpile = g.hoverable_pile;
-    //addChannel(g.GUI_Call);
     label = ""; text_font = 24;
     localrect = new Rect();
-    init();
-  }
+    init(g); }
   nWidget(nGUI g, float x, float y) {
-    gui = g;
-    dpile = g.drawing_pile;
-    hpile = g.hoverable_pile;
-    //addChannel(g.GUI_Call);
     text_font = 24;
     localrect = new Rect(x, y, 0, 0);
-    init();
-  }
+    init(g); }
   nWidget(nGUI g, float x, float y, float w, float h) {
-    gui = g;
-    dpile = g.drawing_pile;
     hpile = g.hoverable_pile;
-    //addChannel(g.GUI_Call);
     text_font = 24;
     localrect = new Rect(x, y, w, h);
-    init();
-  }
+    init(g); }
   nWidget(nGUI g, String _label, int _text_font, float x, float y) {
-    gui = g;
-    dpile = g.drawing_pile;
-    hpile = g.hoverable_pile;
-    //addChannel(g.GUI_Call);
     label = _label; text_font = _text_font;
     localrect = new Rect(x, y, label.length() * text_font, text_font);
-    init();
-  }
+    init(g); }
   nWidget(nGUI g, String _label, int _text_font, float x, float y, float w, float h) {
-    gui = g;
-    dpile = g.drawing_pile;
-    hpile = g.hoverable_pile;
-    //addChannel(g.GUI_Call);
     label = _label; text_font = _text_font;
     localrect = new Rect(x, y, w, h);
-    init();
-  }
+    init(g); }
   
   private int cursorCount = 0;
   private int cursorCycle = 80;
   
-  void init() {
+  void init(nGUI g) {
+    gui = g;
+    dpile = g.drawing_pile;
+    hpile = g.hoverable_pile;
     gui.addEventFrame(new Runnable() { public void run() { frame(); } } );
     globalrect = new Rect();
     changePosition();
@@ -550,11 +526,11 @@ class nWidget {
       isHovered = false;
     }
     if (triggerMode || switchMode) {
-      if (gui.in.mouseUClick[0]) {
+      if (gui.in.getUnClick("MouseLeft")) {
         if (isClicked) { runEvents(eventReleaseRun); eventRelease(); }
         isClicked = false;
       }
-      if (gui.in.mouseClick[0] && isHovered && !isClicked) {
+      if (gui.in.getClick("MouseLeft") && isHovered && !isClicked) {
         runEvents(eventPressRun);
         eventPress();
         isClicked = true;
@@ -565,7 +541,7 @@ class nWidget {
     }
     if (grabbable) {
       if (isHovered) {
-        if (gui.in.mouseClick[0]) {
+        if (gui.in.getClick("MouseLeft")) {
           mx = getLocalX() - gui.mouseVector.x;
           my = getLocalY() - gui.mouseVector.y;
           gui.in.cam.GRAB = false; //deactive le deplacement camera
@@ -575,7 +551,7 @@ class nWidget {
           eventGrab();
         }
       }
-      if (isGrabbed && gui.in.mouseUClick[0]) {
+      if (isGrabbed && gui.in.getUnClick("MouseLeft")) {
         isGrabbed = false;
         gui.in.cam.GRAB = true;
         //gui.szone.ON = true;
@@ -590,7 +566,7 @@ class nWidget {
       }
     }
     if (isSelectable) {
-      if (isHovered && gui.in.mouseClick[0]) {
+      if (isHovered && gui.in.getClick("MouseLeft")) {
         isSelected = !isSelected;
         if (isSelected) {
           if (gui.selected_widget != null) gui.selected_widget.showOutline = false;
@@ -602,38 +578,57 @@ class nWidget {
           showOutline = false;
           if (isField) showCursor = false;
         }
-      } else if (!isHovered && gui.in.mouseClick[0] && isSelected) {
+      } else if (!isHovered && gui.in.getClick("MouseLeft") && isSelected) {
         gui.selected_widget = null;
         showOutline = false;
         if (isField) showCursor = false;
         isSelected = false;
       }
     }
-    if (isField && isSelected && gui.in.keyClick) {
-      if (key == CODED) {
-        if (keyCode == LEFT) {
-          cursorPos = max(0, cursorPos-1);
-        } else if (keyCode == RIGHT) {
-          cursorPos = min(cursorPos+1, label.length());
-        } 
-      } else {
-        if (key == BACKSPACE && cursorPos > 0) {
-          String str = label.substring(0, cursorPos-1);
-          String end = label.substring(cursorPos, label.length());
-          label = str + end;
-          cursorPos--;
-          runEvents(eventFieldChangeRun);
-        } else if (key == BACKSPACE || key == ENTER) {
-          
-        } else {
-          String str = label.substring(0, cursorPos);
-          String end = label.substring(cursorPos, label.length());
-          label = str + key + end;
-          cursorPos++;
-          runEvents(eventFieldChangeRun);
-        }
+    if (isField && isSelected) {
+      if (gui.in.getClick("Left")) cursorPos = max(0, cursorPos-1);
+      else if (gui.in.getClick("Right")) cursorPos = min(cursorPos+1, label.length());
+      else if (gui.in.getClick("Backspace") && cursorPos > 0) {
+        String str = label.substring(0, cursorPos-1);
+        String end = label.substring(cursorPos, label.length());
+        label = str + end;
+        cursorPos--;
+        runEvents(eventFieldChangeRun);
+      }
+      else if (gui.in.getClick("Enter") || gui.in.getClick("Backspace")) {}
+      else if (gui.in.getClick("All")) {
+        String str = label.substring(0, cursorPos);
+        String end = label.substring(cursorPos, label.length());
+        label = str + gui.in.getLastKey() + end;
+        cursorPos++;
+        runEvents(eventFieldChangeRun);
       }
     }
+    //if (isField && isSelected && gui.in.keyClick) {
+    //  if (key == CODED) {
+    //    if (keyCode == LEFT) {
+    //      cursorPos = max(0, cursorPos-1);
+    //    } else if (keyCode == RIGHT) {
+    //      cursorPos = min(cursorPos+1, label.length());
+    //    } 
+    //  } else {
+    //    if (key == BACKSPACE && cursorPos > 0) {
+    //      String str = label.substring(0, cursorPos-1);
+    //      String end = label.substring(cursorPos, label.length());
+    //      label = str + end;
+    //      cursorPos--;
+    //      runEvents(eventFieldChangeRun);
+    //    } else if (key == BACKSPACE || key == ENTER) {
+          
+    //    } else {
+    //      String str = label.substring(0, cursorPos);
+    //      String end = label.substring(cursorPos, label.length());
+    //      label = str + key + end;
+    //      cursorPos++;
+    //      runEvents(eventFieldChangeRun);
+    //    }
+    //  }
+    //}
     runEvents(eventFrameRun);
     eventFrame();
   }
@@ -752,19 +747,17 @@ boolean rectCollide(PVector p, Rect rect) {
 //drawing
 class Drawer {
   Drawing_pile pile = null;
-  int layer;
+  int layer = 0;
   boolean active = true;
+  Drawer setPile(Drawing_pile p) {
+    pile = p; pile.drawables.add(this);
+    return this; }
   Drawer() {}
   Drawer(Drawing_pile p) {
-    layer = 0;
-    pile = p;
-    pile.drawables.add(this);
-  }
+    pile = p; pile.drawables.add(this); }
   Drawer(Drawing_pile p, int l) {
     layer = l;
-    pile = p;
-    pile.drawables.add(this);
-  }
+    pile = p; pile.drawables.add(this); }
   void clear() { if (pile != null) pile.drawables.remove(this); }
   void toLayerTop() { pile.drawables.remove(this); pile.drawables.add(0, this); }
   void toLayerBottom() { pile.drawables.remove(this); pile.drawables.add(this); }

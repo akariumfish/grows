@@ -1,5 +1,10 @@
 
 
+
+
+import java.util.Map;
+
+
 //#############    RUNNABLE    #############
 abstract class Runnable {
   Object builder = null; Runnable() {} Runnable(Object p) { builder = p; } 
@@ -14,9 +19,10 @@ void runEvents(ArrayList<Runnable> e) { for (int i = e.size() - 1 ; i >= 0 ; i--
 
 /*
   class special value : svalue
-    ref, type, val, changeevents(call each change / one by changing frame)
+    ref, type, val, changeevents(call one by changing frame)
     can has limits (min max, float precision, vect mag or angle ...)
     
+    for bool int float string vector color(is int?)
 */
 class sValue {
   sValueBloc bloc;
@@ -26,12 +32,10 @@ class sValue {
     bloc = b; 
     while (bloc.values.get(r) != null) r = r + "'";
     type = t; ref = r; 
-    bloc.values.put(ref, this);
-    
-  }
-  
-  ArrayList<Runnable> eventsIsSet = new ArrayList<Runnable>();
-  ArrayList<Runnable> eventsHasChanged = new ArrayList<Runnable>();
+    bloc.values.put(ref, this); }
+  void frame() { if (has_changed) runEvents(eventsChange); has_changed = false; }
+  sValue addEventChange(Runnable r) { eventsChange.add(r); return this; }
+  ArrayList<Runnable> eventsChange = new ArrayList<Runnable>();
 }
 
 
@@ -40,6 +44,7 @@ class sInt extends sValue {
   sInt(sValueBloc b, int v, String n) { super(b, "int", n); val = v; }
   int get() { return val; }
   void set(int v) { if (v != val) has_changed = true; val = v; }
+  void add(int v) { if (v != 0) has_changed = true; val += v; }
 }
 
 class sFlt extends sValue {
@@ -47,6 +52,7 @@ class sFlt extends sValue {
   sFlt(sValueBloc b, float v, String n) { super(b, "flt", n); val = v; }
   float get() { return val; }
   void set(float v) { if (v != val) has_changed = true; val = v; }
+  void add(float v) { if (v != 0) has_changed = true; val += v; }
 }
 
 class sBoo extends sValue {
@@ -56,21 +62,54 @@ class sBoo extends sValue {
   void set(boolean v) { if (v != val) { has_changed = true; val = v; } }
 }
 
+class sStr extends sValue {
+  String val = null;
+  sStr(sValueBloc b, String v, String n) { super(b, "str", n); val = copy(v); }
+  String get() { return copy(val); }
+  void set(String v) { if (!v.equals(val)) { has_changed = true; val = copy(v); } }
+}
+
+class sVec extends sValue {
+  private PVector val = new PVector();
+  sVec(sValueBloc b, String n) { super(b, "vec", n); }
+  float x() { return val.x; }
+  float y() { return val.y; }
+  sVec x(float v) { if (v != val.x) { has_changed = true; val.x = v; } return this; }
+  sVec y(float v) { if (v != val.y) { has_changed = true; val.y = v; } return this; }
+  sVec set(PVector v) { x(v.x); y(v.y); return this; }
+  sVec set(float _x, float _y) { x(_x); y(_y); return this; }
+  sVec add(float _x, float _y) { x(_x+val.x); y(_y+val.y); return this; }
+  sVec mult(float m) { x(val.x*m); y(val.y*m); return this; }
+}
+
 /*
   class svalue bloc : svaluebloc
     string ref
+    svalbloc parent
+    svalbloc map child bloc
     svalue map<string name, svalue>
-      for bool int float string vector color
 */
 class sValueBloc {
-  DataHolding data;
+  DataHolder data;
+  sValueBloc parent = null;
   String ref;
   HashMap<String, sValue> values = new HashMap<String, sValue>();
-  sValueBloc(DataHolding d, String r) { 
+  HashMap<String, sValueBloc> blocs = new HashMap<String, sValueBloc>();
+  sValueBloc(DataHolder d, String r) { 
     data = d; 
     while (data.blocs.get(r) != null) r = r + "'";
     ref = r; 
     data.blocs.put(ref, this);
+  }
+  sValueBloc(sValueBloc b, String r) { 
+    data = b.data; parent = b;
+    while (b.blocs.get(r) != null) r = r + "'";
+    ref = r; 
+    b.blocs.put(ref, this);
+  }
+  void frame() {
+    for (Map.Entry b : values.entrySet()) { sValue s = (sValue)b.getValue(); s.frame(); }
+    for (Map.Entry b : blocs.entrySet()) { sValueBloc s = (sValueBloc)b.getValue(); s.frame(); }
   }
 }
 /*
@@ -83,13 +122,13 @@ DataHolding
     for bloc : map runFrameEventsIf() unFlagChanges()
 */
 
-class DataHolding {
+class DataHolder {
   HashMap<String, sValueBloc> blocs = new HashMap<String, sValueBloc>();
   sValueBloc newBloc(String r) { return new sValueBloc(this, r); }
   HashMap<String, Runnable> refered_runnable_map = new HashMap<String, Runnable>();
   void addReferedRunnable(String k, Runnable r) { refered_runnable_map.put(k, r); }
   void frame() {
-    
+    for (Map.Entry b : blocs.entrySet()) { sValueBloc s = (sValueBloc)b.getValue(); s.frame(); }
   }
 }
 
@@ -99,7 +138,9 @@ class DataHolding {
 
 
 
-
+//#######################################################################
+//##                        SAVING N LOADING                           ##
+//#######################################################################
 
 /*
   class sdata
@@ -267,55 +308,8 @@ class Save_Bloc {
 class Iterator<T> { public void run(T t) {} public void run(T t, int c) {} }
 
 
-//#######################################################################
-//##                         SPECIAL VALUE                             ##
-//#######################################################################
 
 
-//class SpecialValue {
-//  ArrayList<sInt> sintlist = new ArrayList<sInt>();
-//  ArrayList<sFlt> sfltlist = new ArrayList<sFlt>();
-//  ArrayList<sBoo> sboolist = new ArrayList<sBoo>();
-//  ArrayList<sVec> sveclist = new ArrayList<sVec>();
-//  ArrayList<sStr> sstrlist = new ArrayList<sStr>();
-//  void unFlagChange() {
-//    for (sInt i : sintlist) i.has_changed = false;
-//    for (sFlt i : sfltlist) i.has_changed = false;
-//    for (sBoo i : sboolist) i.has_changed = false;
-//    for (sVec i : sveclist) i.has_changed = false; 
-//    for (sStr i : sstrlist) i.has_changed = false; }
-//}
-
-
-
-//class sVec {
-//  boolean has_changed = false;
-//  PVector val = new PVector();
-//  int id = 0;
-//  String name = "vec";
-//  sVec(SpecialValue s, PVector v) { save = s; val = v; id = save.sveclist.size(); save.sveclist.add(this); }
-//  sVec(SpecialValue s, PVector v, String n) { name = n; save = s; val = v; id = save.sveclist.size(); save.sveclist.add(this); }
-//  PVector get() { return new PVector(val.x, val.y); }
-//  void set(PVector v) { if (v.x != val.x || v.y != val.y) { has_changed = true; val.x = v.x; val.y = v.y; } }
-//}
-
-//class sStr {
-//  boolean has_changed = false;
-//  SpecialValue save;
-//  String val = new String();
-//  int id = 0;
-//  String name = "str";
-//  sStr(SpecialValue s, String v) { save = s; val = v; id = save.sstrlist.size(); save.sstrlist.add(this); }
-//  sStr(SpecialValue s, String v, String n) { name = n; save = s; val = v; id = save.sstrlist.size(); save.sstrlist.add(this); }
-//  String get() { return new String(val); }
-//  void set(String v) { if (!v.equals(val)) { has_changed = true; val = v; } }
-//}
-
-
-
-//#######################################################################
-//##                        SAVING N LOADING                           ##
-//#######################################################################
 
 
 

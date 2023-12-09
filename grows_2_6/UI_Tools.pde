@@ -25,7 +25,7 @@ class nInfo {
       .addEventFrame_Builder(new Runnable() { public void run() {
         count--;
         nWidget w = ((nWidget)builder);
-        w.setPosition(gui.in.cam.getCamMouse().x, gui.in.cam.getCamMouse().y);
+        w.setPosition(gui.in.cam.mouse.x, gui.in.cam.mouse.y);
         if (count == 0) w.hide();
       } } );
     label = new nWidget(gui, "", int(f), 0, -f, 0, f*1.5)
@@ -590,7 +590,7 @@ class nSelectZone extends Callable {
     gui = _g;
     pile = _g.hoverable_pile;
     pile.addEventNotFound(new Runnable() { public void run() { 
-      if (ON && gui.in.mouseClick[1]) clickDelay = 1; 
+      if (ON && gui.in.getClick("MouseRight")) clickDelay = 1; 
     } } );
     drawer = new Drawer(_g.drawing_pile, 25) { public void drawing() {
       noFill();
@@ -617,20 +617,20 @@ class nSelectZone extends Callable {
         if (clickDelay == 0) { 
           emptyClick = true;
           runEvents(eventStartSelect);
-          select_zone.pos.x = gui.in.cam.getCamMouse().x;
-          select_zone.pos.y = gui.in.cam.getCamMouse().y;
+          select_zone.pos.x = gui.in.cam.mouse.x;
+          select_zone.pos.y = gui.in.cam.mouse.y;
         }
       }
       if (emptyClick) {
-        select_zone.size.x = gui.in.cam.getCamMouse().x - select_zone.pos.x;
-        select_zone.size.y = gui.in.cam.getCamMouse().y - select_zone.pos.y;
-        if (gui.in.mouseUClick[1]) { 
+        select_zone.size.x = gui.in.cam.mouse.x - select_zone.pos.x;
+        select_zone.size.y = gui.in.cam.mouse.y - select_zone.pos.y;
+        if (gui.in.getUnClick("MouseRight")) { 
           runEvents(eventEndSelect);
           emptyClick = false; 
         }
       }
     }
-    if (!gui.in.mouseButtons[1]) emptyClick = false;
+    if (!gui.in.getState("MouseRight")) emptyClick = false;
   }
 }
 
@@ -669,6 +669,6 @@ class nExcludeGroup {
     gui = _g;
     pile = gui.hoverable_pile;
     //close all when hover not found event
-    pile.addEventNotFound(new Runnable() { public void run() { if (gui.in.mouseClick[0]) closeAll(); } } );
+    pile.addEventNotFound(new Runnable() { public void run() { if (gui.in.getClick("MouseLeft")) closeAll(); } } );
   }
 }
