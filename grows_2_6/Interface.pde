@@ -30,37 +30,53 @@
       map of size and name
     map<name, widget> models
       methods to directly build a widget from models
+      
+    
   
 */
 
 
 
-class sInterface extends sInput {
+class sInterface {
+  
+  nToolPanel toolpanel;
+  
+  void build_default_ui(float ref_size) {
+    build_tools_theme(gui_theme, ref_size);
+    toolpanel = new nToolPanel(screen_gui, ref_size);
+  }
+  
+  sInput input;
+  nTheme gui_theme;
   nGUI screen_gui, cam_gui;
   Camera cam;
   DataHolder data; sValueBloc sbloc;
   sFramerate framerate;
+  Macro_Main macro_main;
+  
+  float size = 30;
   
   sInterface() {
-    super();
+    input = new sInput();
     data = new DataHolder();
     sbloc = data.newBloc("interface");
-    cam = new Camera(this);
-    framerate = new sFramerate(data, 60);
-    screen_gui = new nGUI(this);
-    cam_gui = new nGUI(this)
+    cam = new Camera(input, sbloc);
+    framerate = new sFramerate(sbloc, 60);
+    gui_theme = new nTheme();
+    screen_gui = new nGUI(input, gui_theme);
+    cam_gui = new nGUI(input, gui_theme)
       .setMouse(cam.mouse)
+      .setView(cam.view)
       .addEventNotFound(new Runnable() { public void run() { 
         if (!screen_gui.hoverable_pile.found) runEvents(eventsHoverNotFound);  
       } } )
       ;
-    
-    //new nWidget(cam_gui, 10, 10, 100, 50).setField(true);
-    
+    build_default_ui(size);
+    macro_main = new Macro_Main(this);
   }
   
-  nWidget newCamWidget() { return new nWidget(cam_gui); }
-  nWidget newScreenWidget() { return new nWidget(screen_gui); }
+  //nWidget camWidget(String r) { return gui_theme.newWidget(cam_gui, r); }
+  //nWidget screenWidget(String r) { return gui_theme.newWidget(screen_gui, r); }
   
   sInterface addCamDrawer(Drawer d) { d.setPile(cam_gui.drawing_pile); return this; }
   sInterface addScreenDrawer(Drawer d) { d.setPile(screen_gui.drawing_pile); return this; }
@@ -79,23 +95,23 @@ class sInterface extends sInput {
     runEvents(eventsFrame);
     
     cam.pushCam();
-    cam_gui.frame(true);
-    cam_gui.draw();
+    cam_gui.frame();
     cam.popCam();
     
-    screen_gui.frame(true);
-    screen_gui.draw();
+    screen_gui.frame();
     
     //framerate:
     fill(255); 
     textSize(18);
     textAlign(LEFT);
-    text(framerate.get() + " " + trimStringFloat(cam.mouse.x) + 
-         " " + trimStringFloat(cam.mouse.y), 10, height - 12 );
+    text(framerate.get() + " C " + trimStringFloat(cam.mouse.x) + 
+         "," + trimStringFloat(cam.mouse.y), 10, 24 );
+    text("S " + trimStringFloat(input.mouse.x) + 
+         "," + trimStringFloat(input.mouse.y), 250, 24 );
     
     data.frame();
     framerate.frame();
-    super.frame();
+    input.frame();
   }
   
 }
@@ -112,23 +128,24 @@ class sInterface extends sInput {
 
 
 class Camera {
-  sInterface inter;
+  sInput input;
   sValueBloc sbloc;
+  Rect view;
   sVec cam_pos; //position de la camera
   sFlt cam_scale; //facteur de grossicement
   float ZOOM_FACTOR = 1.1; //facteur de modification de cam_scale quand on utilise la roulette de la sourie
   boolean GRAB = true;
   sBoo grid; //show grid
   boolean screenshot = false; //enregistre une image de la frame sans les menu si true puis se desactive
-
   boolean matrixPushed = false; //track if in or out of the cam matrix
   
-  Camera(sInterface i) { 
-    sbloc = new sValueBloc(i.sbloc, "cam");
+  Camera(sInput i, sValueBloc d) { 
+    sbloc = new sValueBloc(d, "camera");
     grid = new sBoo(sbloc, true, "show grid");
     cam_scale = new sFlt(sbloc, 1.0, "cam scale");
     cam_pos = new sVec(sbloc, "cam pos");
-    inter = i; 
+    view = new Rect(0, 0, width, height);
+    input = i; 
   }
   
   ArrayList<Runnable> eventsZoom = new ArrayList<Runnable>();
@@ -141,9 +158,9 @@ class Camera {
   PVector mmouse = new PVector(); //mouvement
   
   void pushCam() {
-    PVector tm = screen_to_cam(inter.mouse);
-    PVector tpm = screen_to_cam(inter.pmouse);
-    PVector tmm = screen_to_cam(inter.mmouse);
+    PVector tm = screen_to_cam(input.mouse);
+    PVector tpm = screen_to_cam(input.pmouse);
+    PVector tmm = screen_to_cam(input.mmouse);
     mouse.x = tm.x; mouse.y = tm.y;
     pmouse.x = tpm.x; pmouse.y = tpm.y;
     mmouse.x = tmm.x; mmouse.y = tmm.y;
@@ -189,22 +206,24 @@ class Camera {
     screenshot = false;
 
     //permet le cliquer glisser le l'ecran
-    if (inter.getState("MouseLeft") && GRAB) { 
+    if (input.getState("MouseLeft") && GRAB) { 
       cam_pos.add(mouseX - pmouseX, mouseY - pmouseY);
       runEvents(eventsDrag);
     }
 
     //permet le zoom
-    if (inter.mouseWheelUp) { 
+    if (input.mouseWheelUp) { 
       cam_scale.set(cam_scale.get()*1/ZOOM_FACTOR); 
       cam_pos.mult(1/ZOOM_FACTOR); 
       runEvents(eventsZoom);
     }
-    if (inter.mouseWheelDown) {
+    if (input.mouseWheelDown) {
       cam_scale.set(cam_scale.get()*ZOOM_FACTOR); 
       cam_pos.mult(ZOOM_FACTOR); 
       runEvents(eventsZoom);
     }
+    view.pos.set(screen_to_cam(new PVector(0, 0)));
+    view.size.set(screen_to_cam(new PVector(width, height)).sub(view.pos));
   }
   
   PVector cam_to_screen(PVector p) {
@@ -291,13 +310,13 @@ class sFramerate {
 
   int get() { return int(median_framerate.get()); }
   
-  sFramerate(DataHolder d, int c) {
+  sFramerate(sValueBloc d, int c) {
     frameRate_cible = c;
     frameRate(frameRate_cible);
     frameR_history = new float[frameRate_cible];
     for (int i = 0 ; i < frameR_history.length ; i++) frameR_history[i] = 1000/frameRate_cible;
     
-    bloc = d.newBloc("framerate");
+    bloc = new sValueBloc(d, "framerate");
     sec_since_reset = new sInt(bloc, 0, "sec_since_reset");
     frame_since_reset = new sInt(bloc, 0, "frame_since_reset");
     median_framerate = new sFlt(bloc, 0, "median_framerate");
@@ -352,28 +371,6 @@ Inputs
     joystick / manette 
   frame()
 */
-
-void mouseWheel(MouseEvent event) { 
-  interf.mouseWheelEvent(event);
-}  
-void keyPressed() { 
-  interf.keyPressedEvent();
-}  
-void keyReleased() { 
-  interf.keyReleasedEvent();
-}
-void mousePressed() { 
-  interf.mousePressedEvent();
-}
-void mouseReleased() { 
-  interf.mouseReleasedEvent();
-}
-void mouseDragged() { 
-  //interf.mouseDraggedEvent();
-}
-void mouseMoved() { 
-  //interf.mouseMovedEvent();
-}
 
 class sInput_Button {
   boolean state = false, trigClick = false, trigUClick = false;

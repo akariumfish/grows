@@ -46,8 +46,19 @@
 */
 
 class Simulation {
+  nWidget pauseW;
+  void build_ui(float ref_size) {
+    pauseW = inter.toolpanel.addModel("Switch-S1", ref_size / 8, ref_size / 8)
+      .addEventSwitchOn(new Runnable() { public void run() { pause.set(true); } } )
+      .addEventSwitchOff(new Runnable() { public void run() { pause.set(false); } } )
+      .setText("pause");
+    pause.addEventChange(new Runnable() { public void run() { pauseW.setSwitchState(pause.get()); } } );
+  }
+  
   sInterface inter;
   sValueBloc sbloc;
+  
+  Ticking_pile ticking_pile;
   
   ArrayList<Community> list = new ArrayList<Community>();
   
@@ -59,7 +70,7 @@ class Simulation {
   sBoo auto_reset, auto_reset_rng_seed, auto_reset_screenshot;
   sInt auto_reset_turn;
   
-  float tick_pile = 0; //pile des tour
+  float tick_pile = 0; //pile des tick a exec
   
   Simulation(sInterface _int) {
     inter = _int;
@@ -86,6 +97,7 @@ class Simulation {
     inter.data.addReferedRunnable("sim next tick", new Runnable() { public void run() { 
       force_next_tick.set(true); } } );
     
+    build_ui(inter.size);
   }
   
   ArrayList<Runnable> eventsReset = new ArrayList<Runnable>();
