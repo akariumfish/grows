@@ -4,6 +4,21 @@
   Simulation(Input, Data, Interface)
     Build with interface
       toolPanel down left to down center with main function
+        right
+          next tick,  pause,  next frame
+          tick/frame            5 widget
+          time counter,     tick counter
+          framerate,            tickrate
+        
+        down left
+          Hide all
+        
+        left
+                open menus      <align to panel top
+                  title
+            Quick save, load
+            restart,    RNG
+        
         time control (tick by frame, pause, trigger tick by tick or frame by frame)
         restart control and RNG
         Quick save / load
@@ -46,13 +61,40 @@
 */
 
 class Simulation {
-  nWidget pauseW;
   void build_ui(float ref_size) {
-    pauseW = inter.toolpanel.addModel("Switch-S1", ref_size / 8, ref_size / 8)
-      .addEventSwitchOn(new Runnable() { public void run() { pause.set(true); } } )
-      .addEventSwitchOff(new Runnable() { public void run() { pause.set(false); } } )
-      .setText("pause");
-    pause.addEventChange(new Runnable() { public void run() { pauseW.setSwitchState(pause.get()); } } );
+    
+    new nBuilder(inter.cam_gui, ref_size)
+      .addModel("Button-S1")
+        .setPosition(-ref_size/2, -ref_size/2)
+        .setTrigger()
+        .setOutlineConstant(true);
+    inter.toolpanel.addShelf()
+      .addDrawer()
+        .getShelfPanel()
+    .addShelf()
+      .addDrawer()
+        .getShelf()
+      .addDrawer()
+      //  .getShelf()
+        ;
+    //inter.toolpanel
+    //  .getDrawer(0, 1)
+    //    .addWatcherModel("Label-S3")
+    //      .setLinkedValue(tick_counter).getShelfPanel()
+    //  .getDrawer(0, 0)
+    //    .addLinkedModel("Button-S3", "Pause")
+    //      .setLinkedValue(pause).getShelfPanel()
+    //  .getDrawer(1, 0)
+    //    .addCtrlModel("Button-S1", "P")
+    //      .setLinkedValue(pause).getShelfPanel()
+    //  .getDrawer(0, 2)
+    //    .addLinkedModel("Field-S2-P1")
+    //      .setLinkedValue(tick_by_frame).getDrawer()
+    //    .addLinkedModel("Field-S2-P2")
+    //      .setLinkedValue(auto_reset_turn).getDrawer()
+    //    .addLinkedModel("Field-S2-P3")
+    //      .setLinkedValue(tick_by_frame).getDrawer()
+    //  ;
   }
   
   sInterface inter;
@@ -87,8 +129,8 @@ class Simulation {
     SEED = new sInt(sbloc, 548651008, "SEED");
     
     inter.addEventFrame(new Runnable() { public void run() { frame(); }});
-    inter.addCamDrawer(new Drawer() { public void drawing() { draw_to_cam(); } } );
-    inter.addScreenDrawer(new Drawer() { public void drawing() { draw_to_screen(); } } );
+    inter.addCamDrawer(new Drawable() { public void drawing() { draw_to_cam(); } } );
+    inter.addScreenDrawer(new Drawable() { public void drawing() { draw_to_screen(); } } );
     
     inter.data.addReferedRunnable("sim reset", new Runnable() { public void run() { 
       reset(); } } );

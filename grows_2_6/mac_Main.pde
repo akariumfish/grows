@@ -701,7 +701,7 @@ class Macro_Packet {
 
 class Macro_Output {
   Macro_Sheet macro;
-  Drawer line_drawer;
+  Drawable line_drawer;
   nWidget connect;
   
   boolean buildingLine = false;
@@ -732,7 +732,7 @@ class Macro_Output {
     index = macro.getFreeOutputIndex();
     macro.outputs.add(this);
     
-    line_drawer = new Drawer(_gui.drawing_pile, macro.layer + 1) { public void drawing() {
+    line_drawer = new Drawable(_gui.drawing_pile, macro.layer + 1) { public void drawing() {
       if (buildingLine) {
         stroke(connect.look.outlineColor);
         strokeWeight(connect.look.outlineWeight);
@@ -783,7 +783,7 @@ class Macro_Output {
       .setTrigger()
       .setLayer(macro.layer)
       .setOutlineWeight(macro.ref_size/6)
-      .setDrawer(new Drawer(_gui.drawing_pile) { public void drawing() {
+      .setDrawable(new Drawable(_gui.drawing_pile) { public void drawing() {
         if (connect.isClicked)                     { fill(connect.look.pressColor); } 
         else if (connect.isHovered || hasSend > 0) { fill(connect.look.hoveredColor); } 
         else                                       { fill(connect.look.standbyColor); }
@@ -910,7 +910,7 @@ class Macro_Input {
     macro.inputs.add(this);
     connect = new nWidget(_gui, x, y, macro.ref_size, macro.ref_size)
       .setLayer(macro.layer)
-      .setDrawer(new Drawer(_gui.drawing_pile) { public void drawing() {
+      .setDrawable(new Drawable(_gui.drawing_pile) { public void drawing() {
         if (connect.isClicked)      { fill(connect.look.pressColor); } 
         else if (connect.isHovered) { fill(connect.look.hoveredColor); } 
         else                        { fill(connect.look.standbyColor); }

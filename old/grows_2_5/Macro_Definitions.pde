@@ -174,8 +174,8 @@ class Macro_Value extends Macro_Abstract {
     super.to_save(bloc);
     if (pack == null) return;
     else if (pack.isFloat()) bloc.newData("f", pack.asFloat());
-    else if (pack.isInt()) bloc.newData("i", pack.asFloat());
-    else if (pack.isBool()) bloc.newData("b", pack.asFloat());
+    else if (pack.isInt()) bloc.newData("i", pack.asInt());
+    else if (pack.isBool()) bloc.newData("b", pack.asBool());
   }
   void from_save(Save_Bloc bloc) {
     super.from_save(bloc);

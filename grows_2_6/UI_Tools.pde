@@ -1,8 +1,18 @@
 /*
 
   Complex Widget Objects
+    Info
+      can appear on top of the mouse with text
     Hilightable Front
       selectable, run event when selected
+    linkedValue switch <> bool , field <> int float
+    watcherValue field < int float
+    ControlValue trigger > runnable , bool (switch it) , int float (increment / factor it)
+    H / V Cursor > svalue
+    Graph from sValue
+      rectangular canvas with value history has graph
+      auto scale, can do multi value
+  Complex GUI Objects
     Menubar : series of horizontal switch mutualy exclusive
       auto adjust largeur
       each open a dropdown list of trigger button who close the menus
@@ -12,20 +22,11 @@
       possibly react in a bigger zone than himself to acomodate scroll list
     Scrollable list from string list
       trigger / one select / multi select
-    H / V Cursor > svalue
-    Graph from sValue
-      rectangular canvas with value history has graph
-      auto scale, can do multi value
-    sValue controller widget for easy svalue change by increment or factor
-      ex: trig x - text value - trig /
-  Complex GUI Objects
-    Info
-      can appear on top of the mouse with text
     SelectZone
       draw a rectangular zone by click n dragging
       Hilightable front activated inside when releasing are marqued has selected
       they have event when selected / unselected
-      
+    
     Tool panel fixe on screen but collapsable (button to enlarg appear when mouse is close)
       can move away if camera move toward him
       all methods for widgets and complex widget creation
@@ -37,7 +38,8 @@
       can has : 
         grabbable title, close button, reduc/enlarg button, 
         hilightable front for selection, 
-        collapse to taskbar button, menubar, tab bar
+        collapse to taskbar button, 
+        menu bar, tab bar
       can add : menu, menu entry(trigger), tab
       tab : group of tabDrawer on top of background, one tab shown at a time
         can permit Y scroll through drawer
@@ -46,89 +48,317 @@
         tabs can change the panel back height
         TabDrawer
            all methods for widgets and complex widget creation
-  
-  Widget typical Objects
-    Trigger run command
-    switch ctrl sbool
-    label can watch snumber
-    separating line
-
 */
 
-void build_tools_theme(nTheme t, float ref_size) {
-  t.addModel("hard_back", new nWidget()
-    .setStandbyColor(color(50))
-    .setOutlineColor(color(255, 60))
-    .setOutlineWeight(ref_size / 8)
-    .setOutline(true)
-    );
-  t.addModel("label", new nWidget()
-    .setFont(int(ref_size/1.5))
-    .setText("--")
-    );
-  t.addModel("Trigger", new nWidget()
-    .setTrigger()
-    .setOutlineColor(color(255, 60))
-    .setOutlineWeight(ref_size / 8)
-    .setOutline(true)
-    );
-  t.addModel("Switch", new nWidget()
-    .setSwitch()
-    .setOutlineColor(color(255, 60))
-    .setOutlineWeight(ref_size / 8)
-    .setOutline(true)
-    );
-  t.addModel("Trigger-S1", t.newWidget("Trigger")
-      .setSize(ref_size*5, ref_size)
-    );
-  t.addModel("Switch-S1", t.newWidget("Switch")
-      .setSize(ref_size*5, ref_size)
-    );
-}
 
-void linkToSwitch(sBoo boo, nWidget w) {
-  //boo.addEventChange(new Runnable() { public void run() { w.set(get()); } } );
-  //w.addEventSwitchOn(new Runnable() { public void run() { boo.set(true); } } );
-  //w.addEventSwitchOff(new Runnable() { public void run() { boo.set(false); } } );
-}
 
-class nToolPanel {
+class nBuilder { // base pour les class constructrice de nwidget basic
   
-  nWidget addLabel(String r, float x, float y) { return addModel("label",x ,y).setText(r); }
-  nWidget addTrigger(String r, float x, float y) { return addModel("Trigger",x ,y).setText(r); }
-  nWidget addSwitch(String r, float x, float y) { return addModel("Switch",x ,y).setText(r); }
-  
-  nWidget panel;
-  nGUI gui; 
-  
-  ArrayList<nWidget> widgets = new ArrayList<nWidget>();
-  
-  nToolPanel(nGUI _g, float ref_size) {
-    gui = _g;
-    panel = addModel("hard_back", 
-       gui.view.pos.x, gui.view.pos.y + gui.view.size.y - ref_size*4.625, 
-       ref_size*40, ref_size*4.625);
-  }
+  nWidget addRef(float x, float y) { 
+    nWidget w = gui.theme.newWidget(gui, "ref").setPosition(x, y); customBuild(w);
+    widgets.add(w); w.toLayerTop(); return w; }
+    
   nWidget addModel(String r) { 
-    nWidget w = gui.theme.newWidget(gui, r).setParent(panel);
+    nWidget w = gui.theme.newWidget(gui, r); customBuild(w);
+    widgets.add(w); w.toLayerTop(); return w; }
+  nWidget addModel(String r, String t) { 
+    nWidget w = gui.theme.newWidget(gui, r).setText(t); customBuild(w);
     widgets.add(w); w.toLayerTop(); return w; }
   nWidget addModel(String r, float x, float y) { 
-    nWidget w = gui.theme.newWidget(gui, r).setParent(panel).setPosition(x, y);
+    nWidget w = gui.theme.newWidget(gui, r).setPosition(x, y); customBuild(w);
+    widgets.add(w); w.toLayerTop(); return w; }
+  nWidget addModel(String r, String t, float x, float y) { 
+    nWidget w = gui.theme.newWidget(gui, r).setPosition(x, y).setText(t); customBuild(w);
     widgets.add(w); w.toLayerTop(); return w; }
   nWidget addModel(String r, float x, float y, float w, float h) { 
-    nWidget nw = gui.theme.newWidget(gui, r).setParent(panel).setPosition(x, y).setSize(w, h);
+    nWidget nw = gui.theme.newWidget(gui, r).setPosition(x, y).setSize(w, h); customBuild(nw);
     widgets.add(nw); nw.toLayerTop(); return nw; }
-  nToolPanel setLayer(int l) { 
-    panel.setLayer(l); 
-    for (nWidget w : widgets) w.setLayer(l);
-    return this; 
+  nWidget addModel(String r, String t, float x, float y, float w, float h) { 
+    nWidget nw = gui.theme.newWidget(gui, r).setPosition(x, y).setSize(w, h).setText(t); customBuild(nw);
+    widgets.add(nw); nw.toLayerTop(); return nw; }
+      
+  nLinkedWidget addLinkedModel(String r) { 
+    nLinkedWidget w = gui.theme.newLinkedWidget(gui, r); customBuild(w);
+    widgets.add(w); w.toLayerTop(); return w; }
+  nLinkedWidget addLinkedModel(String r, String t) { 
+    nLinkedWidget w = gui.theme.newLinkedWidget(gui, r); w.setText(t); customBuild(w);
+    widgets.add(w); w.toLayerTop(); return w; }
+  nLinkedWidget addLinkedModel(String r, float x, float y) { 
+    nLinkedWidget w = gui.theme.newLinkedWidget(gui, r); w.setPosition(x, y); customBuild(w);
+    widgets.add(w); w.toLayerTop(); return w; }  
+  nLinkedWidget addLinkedModel(String r, String t, float x, float y) { 
+    nLinkedWidget w = gui.theme.newLinkedWidget(gui, r); w.setPosition(x, y).setText(t); customBuild(w);
+    widgets.add(w); w.toLayerTop(); return w; }    
+    
+  nWatcherWidget addWatcherModel(String r) { 
+    nWatcherWidget w = gui.theme.newWatcherWidget(gui, r); customBuild(w);
+    widgets.add(w); w.toLayerTop(); return w; }
+  nWatcherWidget addWatcherModel(String r, String t) { 
+    nWatcherWidget w = gui.theme.newWatcherWidget(gui, r); w.setText(t); customBuild(w);
+    widgets.add(w); w.toLayerTop(); return w; }
+  nWatcherWidget addWatcherModel(String r, float x, float y) { 
+    nWatcherWidget w = gui.theme.newWatcherWidget(gui, r); w.setPosition(x, y); customBuild(w);
+    widgets.add(w); w.toLayerTop(); return w; }
+  nWatcherWidget addWatcherModel(String r, String t, float x, float y) { 
+    nWatcherWidget w = gui.theme.newWatcherWidget(gui, r); w.setPosition(x, y).setText(t); customBuild(w);
+    widgets.add(w); w.toLayerTop(); return w; }
+      
+  nCtrlWidget addCtrlModel(String r) { 
+    nCtrlWidget w = gui.theme.newCtrlWidget(gui, r); customBuild(w);
+    widgets.add(w); w.toLayerTop(); return w; }
+  nCtrlWidget addCtrlModel(String r, String t) { 
+    nCtrlWidget w = gui.theme.newCtrlWidget(gui, r); w.setText(t); customBuild(w);
+    widgets.add(w); w.toLayerTop(); return w; }
+  nCtrlWidget addCtrlModel(String r, float x, float y) { 
+    nCtrlWidget w = gui.theme.newCtrlWidget(gui, r); w.setPosition(x, y); customBuild(w);
+    widgets.add(w); w.toLayerTop(); return w; }
+  nCtrlWidget addCtrlModel(String r, String t, float x, float y) { 
+    nCtrlWidget w = gui.theme.newCtrlWidget(gui, r); w.setPosition(x, y).setText(t); customBuild(w);
+    widgets.add(w); w.toLayerTop(); return w; }
+  
+  nGUI gui; 
+  ArrayList<nWidget> widgets = new ArrayList<nWidget>();
+  float ref_size = 30;
+  
+  nBuilder setLayer(int l) { for (nWidget w : widgets) w.setLayer(l); return this; }
+  nBuilder toLayerTop() { for (nWidget w : widgets) w.toLayerTop(); return this; }
+  nWidget customBuild(nWidget w) { return w; }
+  
+  nBuilder(nGUI _g, float s) {
+    gui = _g; ref_size = s;
+    gui.theme.addModel("ref", new nWidget()
+      );
+    gui.theme.addModel("Hard_Back", new nWidget()
+      .setStandbyColor(color(50))
+      .setOutlineColor(color(255, 60))
+      .setOutlineWeight(ref_size / 16)
+      .setOutline(true)
+      );
+    gui.theme.addModel("Soft_Back", new nWidget()
+      .setStandbyColor(color(60, 100))
+      .setOutlineColor(color(255, 60))
+      .setOutlineWeight(ref_size / 8)
+      .setOutline(true)
+      );
+    gui.theme.addModel("Label", new nWidget()
+      .setFont(int(ref_size/1.5))
+      .setStandbyColor(color(255, 0))
+      );
+    gui.theme.addModel("Label_Back", new nWidget()
+      .setFont(int(ref_size/1.5))
+      .setStandbyColor(color(70))
+      );
+    gui.theme.addModel("Button", new nWidget()
+      .setFont(int(ref_size/1.5))
+      );
+    gui.theme.addModel("Button_Outline", new nWidget()
+      .setOutlineColor(color(255, 60))
+      .setOutlineWeight(ref_size / 8)
+      .setOutline(true)
+      .setFont(int(ref_size/1.5))
+      );
+    gui.theme.addModel("Button_Check", new nWidget()
+      .setStandbyColor(color(20))
+      .setOutlineColor(color(255, 120))
+      .setOutlineWeight(ref_size / 8)
+      .setOutline(true)
+      );
+    gui.theme.addModel("Field", new nWidget()
+      .setStandbyColor(color(20))
+      .setOutlineColor(color(255, 120))
+      .setOutlineSelectedColor(color(255, 120))
+      .setOutlineWeight(ref_size / 10)
+      .setFont(int(ref_size/1.5))
+      );
+    make("Label");
+    make("Button");
+    make("Label_Back");
+    make("Button_Outline");
+    make("Button_Check");
+    make("Field");
   }
-  nToolPanel toLayerTop() { 
-    panel.toLayerTop(); 
-    for (nWidget w : widgets) w.toLayerTop();
-    return this; 
+  void do_sizes(String base, String post, float w, float h) {
+    gui.theme.addModel(base+post, gui.theme.newWidget(base).setSize(w, h));}
+  void do_places(String base, String post, float x, float y, float w, float h) {
+    gui.theme.addModel(base+post, gui.theme.newWidget(base).setSize(w, h).setPosition(x, y));}
+  
+  void make(String base) {
+    do_sizes(base, "-S1", ref_size, ref_size);
+    do_sizes(base, "-S2", ref_size*2.5, ref_size);
+    do_sizes(base, "-S3", ref_size*4, ref_size);
+    do_sizes(base, "-S4", ref_size*10, ref_size);
+    
+    do_places(base, "-S3-P1", ref_size*0.5, 0, ref_size*4, ref_size);
+    do_places(base, "-S3-P2", ref_size*5.5, 0, ref_size*4, ref_size);
+    
+    do_places(base, "-S2-P1", ref_size*0.5, 0, ref_size*2.5, ref_size);
+    do_places(base, "-S2-P2", ref_size*3.75, 0, ref_size*2.5, ref_size);
+    do_places(base, "-S2-P3", ref_size*7, 0, ref_size*2.5, ref_size);
   }
 }
+
+class nDrawer extends nBuilder {
+  nShelf getShelf() { return shelf; }
+  nShelfPanel getShelfPanel() { return shelf.shelfPanel; }
+  nShelf shelf;
+  nWidget ref;
+  float drawer_height = 0;
+  nDrawer(nShelf s, float h) {
+    super(s.gui, s.ref_size);
+    ref = addModel("ref"); shelf = s;
+    drawer_height = h; }
+  nDrawer setLayer(int l) { super.setLayer(l); ref.setLayer(l); return this; }
+  nDrawer toLayerTop() { super.toLayerTop(); ref.toLayerTop(); return this; }
+  nWidget customBuild(nWidget w) { return w.setParent(ref).setDrawer(this); }
+  
+  //preset drawer for svalue ctrl
+  nDrawer setValueCtrl() {
+    
+    return this;
+  }
+}
+
+class nShelf extends nBuilder {
+  nDrawer getDrawer(int s) { return drawers.get(s); }
+  nShelfPanel getShelfPanel() { return shelfPanel; }
+  nShelf setPosition(nWidget p, float x, float y) { ref.setParent(p).setPosition(x, y); return this; }
+  nDrawer addDrawer(float h) {
+    if (max_drawer == 0 || drawers.size() < max_drawer) {
+      total_height += h;
+      if (eventHeight != null) eventHeight.run();
+      nDrawer d = new nDrawer(this, h);
+      if (drawers.size() == 0) d.ref.setParent(ref);
+      else {
+        nDrawer prev = drawers.get(drawers.size()-1);
+        d.ref.setParent(prev.ref)
+          .setPY(prev.drawer_height);  }
+      drawers.add(d); return d;  }
+    return null;
+  }
+  nDrawer addDrawer() { return addDrawer(ref_size); }
+  nShelf addSeparator(float h) { addDrawer(h); return this; }
+  nShelf setMax(int m) { max_drawer = m; return this; }
+  
+  nShelfPanel shelfPanel;
+  nWidget ref;
+  ArrayList<nDrawer> drawers = new ArrayList<nDrawer>();
+  int max_drawer = 0; // 0 = no limit
+  float total_height = 0;
+  Runnable eventHeight;
+  
+  nShelf(nShelfPanel s) {
+    super(s.gui, s.ref_size);
+    shelfPanel = s;
+    ref = addModel("ref");
+  }
+  nShelf addEventHeight(Runnable r) { eventHeight = r; return this; }
+  nShelf setLayer(int l) { super.setLayer(l); 
+    ref.setLayer(l); for (nDrawer d : drawers) d.setLayer(l); return this; }
+  nShelf toLayerTop() { super.toLayerTop(); 
+    ref.toLayerTop(); for (nDrawer d : drawers) d.toLayerTop(); return this; }
+  nWidget customBuild(nWidget w) { return w.setParent(ref); }
+}
+
+
+
+class nShelfPanel extends nBuilder {
+  
+  nDrawer getDrawer(int c, int r) { return shelfs.get(c).drawers.get(r); }
+  nShelf getShelf(int s) { return shelfs.get(s); }
+  
+  nShelf addShelf() {
+    nShelf s = new nShelf(this);
+    s.setPosition(panel, shelfs.size()*ref_size*(width_factor+space_factor)+ref_size*space_factor, 
+                         ref_size*space_factor);
+    s.addEventHeight(new Runnable(s) { public void run() { 
+      float n = ((nShelf)builder).total_height; if (n > max_height) setHeight(n); } } );
+    shelfs.add(s);
+    panel.setSX(shelfs.size()*ref_size*(width_factor+space_factor)+ref_size*space_factor);
+    return s;
+  }
+  nShelfPanel addGrid(int c, int r) {
+    for (int i = 0 ; i < c ; i++) {
+      nShelf s = addShelf();
+      for (int j = 0 ; j < r ; j++) s.addDrawer(ref_size*(1+space_factor));
+    }
+    panel.setSize(c*ref_size*(width_factor+space_factor)+ref_size*space_factor, 
+               r*ref_size*(1+space_factor)+ref_size*space_factor);
+    return this;
+  }
+  
+  
+  nShelfPanel setHeight(float h) { panel.setSY(h+2*space_factor); return this; }
+    
+  nShelfPanel(nGUI _g, float ref_size, float _width_factor, float _space_factor, int c, int r) {
+    super(_g, ref_size);
+    width_factor = _width_factor; space_factor = _space_factor;
+    panel = addModel("Hard_Back")
+      .setSize(c*ref_size*(width_factor+space_factor)+ref_size*space_factor, 
+               r*ref_size*(1+space_factor)+ref_size*space_factor);
+    for (int i = 0 ; i < c ; i++) {
+      nShelf s = new nShelf(this)
+        .setPosition(panel, i*ref_size*(width_factor+space_factor)+ref_size*space_factor, 
+                            ref_size*space_factor)
+        .setMax(r);
+      for (int j = 0 ; j < r ; j++) s.addDrawer(ref_size*(1+space_factor));
+      shelfs.add(s);
+    }
+  }
+  nShelfPanel(nGUI _g, float ref_size, float _width_factor, float height_factor, float _space_factor) {
+    super(_g, ref_size);
+    panel = addModel("Hard_Back");
+    panel.setSY(ref_size*(height_factor+_space_factor)+_space_factor);
+    width_factor = _width_factor; space_factor = _space_factor;
+  }
+  
+  float width_factor, space_factor, max_height = 0;
+  nWidget panel;
+  ArrayList<nShelf> shelfs = new ArrayList<nShelf>();
+  
+  nShelfPanel setLayer(int l) { super.setLayer(l); 
+    panel.setLayer(l); for (nShelf d : shelfs) d.setLayer(l); return this; }
+  nShelfPanel toLayerTop() { super.toLayerTop(); 
+    panel.toLayerTop(); for (nShelf d : shelfs) d.toLayerTop(); return this; }
+  nWidget customBuild(nWidget w) { return w.setParent(panel); }
+}
+
+
+class nToolPanel extends nShelfPanel {
+  nCtrlWidget reduc;
+  boolean hide = false, right = false, top = true;
+  nToolPanel(nGUI _g, float ref_size) {
+    super(_g, ref_size, 10, 0, 0.125); }
+  nToolPanel setTop(boolean sd) {
+    top = sd;
+    if (sd) panel.setPY(0); 
+    else panel.setPY(gui.view.pos.y + gui.view.size.y - panel.getSY()); 
+    return this; }
+  nToolPanel addReduc(boolean sd) {
+    right = sd;
+    if (sd) panel.setPX(gui.view.pos.x); 
+    else panel.setPX(gui.view.pos.x + gui.view.size.x - panel.getSX());
+    reduc = addCtrlModel("Button", "<")
+      .setRunnable(new Runnable(this) { public void run() { 
+        if      (hide && right)  { panel.setPX(gui.view.pos.x).show(); reduc.setText("<"); } 
+        else if (hide && !right) { 
+          panel.show().setPX(gui.view.pos.x + gui.view.size.x - panel.getSX()); reduc.setText(">"); } 
+        else if (!hide && right)  { panel.hide(); reduc.show().setText(">"); }
+        else                     { 
+          panel.hide().setPX(gui.view.pos.x + gui.view.size.x); reduc.show().setText("<"); }
+        hide = !hide;
+      } } );
+    reduc.setSize(ref_size, panel.getSY())
+      .stackRight();
+    if (!sd) reduc.setText(">").stackLeft();
+    return this;
+  }
+  nToolPanel setHeight(float h) { 
+    super.setHeight(h); 
+    if (reduc != null) reduc.setSY(h+2*space_factor);
+    if (!top) panel.setPY(panel.getLocalY() - (h+2*space_factor)); //make widget stack aroud pos even wout parent
+    return this; }
+}
+
 
 
 
@@ -160,7 +390,7 @@ class nInfo {
   nInfo(nGUI _g, float f) {
     gui = _g;
     ref = new nWidget(gui, 0, 0, f, f)
-      .setDrawer(new Drawer(_g.drawing_pile) { public void drawing() {
+      .setDrawable(new Drawable(_g.drawing_pile) { public void drawing() {
         fill(ref.look.standbyColor);
         noStroke();
         triangle(ref.getX(), ref.getY(), 

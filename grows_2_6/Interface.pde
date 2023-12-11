@@ -42,8 +42,10 @@ class sInterface {
   nToolPanel toolpanel;
   
   void build_default_ui(float ref_size) {
-    build_tools_theme(gui_theme, ref_size);
+    logln("start models: "+gui_theme.models.size());
     toolpanel = new nToolPanel(screen_gui, ref_size);
+    toolpanel.setTop(false).addReduc(true);
+    logln("end models: "+gui_theme.models.size());
   }
   
   sInput input;
@@ -60,7 +62,11 @@ class sInterface {
     input = new sInput();
     data = new DataHolder();
     sbloc = data.newBloc("interface");
-    cam = new Camera(input, sbloc);
+    cam = new Camera(input, sbloc)
+      .addEventZoom(new Runnable() { public void run() { 
+        cam_gui.updateScale();  
+      } } )
+      ;
     framerate = new sFramerate(sbloc, 60);
     gui_theme = new nTheme();
     screen_gui = new nGUI(input, gui_theme);
@@ -78,8 +84,8 @@ class sInterface {
   //nWidget camWidget(String r) { return gui_theme.newWidget(cam_gui, r); }
   //nWidget screenWidget(String r) { return gui_theme.newWidget(screen_gui, r); }
   
-  sInterface addCamDrawer(Drawer d) { d.setPile(cam_gui.drawing_pile); return this; }
-  sInterface addScreenDrawer(Drawer d) { d.setPile(screen_gui.drawing_pile); return this; }
+  sInterface addCamDrawer(Drawable d) { d.setPile(cam_gui.drawing_pile); return this; }
+  sInterface addScreenDrawer(Drawable d) { d.setPile(screen_gui.drawing_pile); return this; }
   
   ArrayList<Runnable> eventsFrame = new ArrayList<Runnable>();
   ArrayList<Runnable> eventsHoverNotFound = new ArrayList<Runnable>();
