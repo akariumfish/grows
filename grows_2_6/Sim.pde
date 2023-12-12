@@ -61,83 +61,104 @@
 */
 
 class Simulation {
+  
   void build_ui(float ref_size) {
     
-    new nBuilder(inter.cam_gui, ref_size)
-      .addModel("Button-S1")
-        .setPosition(-ref_size/2, -ref_size/2)
-        .setTrigger()
-        .setOutlineConstant(true);
-    inter.toolpanel.addShelf()
-      .addDrawer()
+    new nBuilder(inter.cam_gui, ref_size).addModel("Cursor-S1")
+      .setPosition(
+      600
+      -ref_size/2, -ref_size/2)
+      .setGrabbable();
+    
+    inter.toolpanel.getShelf(0)
+      .addDrawer(10,0.75)
+        .addModel("Label-S4", "-  Simulation Control  -").setFont(int(ref_size)).getShelf()
+      .addDrawer(0.25)
+      .addDrawer(10, 1)
+        .addCtrlModel("Button-S3-P1", "RESET")
+          .setRunnable(new Runnable() { public void run() { reset(); } }).getDrawer()
+        .addCtrlModel("Button-S3-P2", "RESET RNG")
+          .setRunnable(new Runnable() { public void run() { resetRng(); } }).getShelf()
+      .addDrawer(10, 1)
+        .addCtrlModel("Button-S3-P1", "Quick Save")
+          .setRunnable(new Runnable() { public void run() {  } }).getDrawer()
+        .addCtrlModel("Button-S3-P2", "Quick Load")
+          .setRunnable(new Runnable() { public void run() {  } }).getDrawer()
         .getShelfPanel()
     .addShelf()
-      .addDrawer()
-        .getShelf()
-      .addDrawer()
-      //  .getShelf()
-        ;
-    //inter.toolpanel
-    //  .getDrawer(0, 1)
-    //    .addWatcherModel("Label-S3")
-    //      .setLinkedValue(tick_counter).getShelfPanel()
-    //  .getDrawer(0, 0)
-    //    .addLinkedModel("Button-S3", "Pause")
-    //      .setLinkedValue(pause).getShelfPanel()
-    //  .getDrawer(1, 0)
-    //    .addCtrlModel("Button-S1", "P")
-    //      .setLinkedValue(pause).getShelfPanel()
-    //  .getDrawer(0, 2)
-    //    .addLinkedModel("Field-S2-P1")
-    //      .setLinkedValue(tick_by_frame).getDrawer()
-    //    .addLinkedModel("Field-S2-P2")
-    //      .setLinkedValue(auto_reset_turn).getDrawer()
-    //    .addLinkedModel("Field-S2-P3")
-    //      .setLinkedValue(tick_by_frame).getDrawer()
-    //  ;
+      .addDrawer(10, 1)
+        .addCtrlModel("Button-S2-P1", "tick").setRunnable(new Runnable() { public void run() { 
+          force_next_tick.set(1); } }).getDrawer()
+        .addLinkedModel("Button-S2-P2", "PAUSE").setLinkedValue(pause).getDrawer()
+        .addCtrlModel("Button-S2-P3", "frame").setRunnable(new Runnable() { public void run() { 
+          force_next_tick.set(int(tick_by_frame.get())); } }).getShelf()
+      .addDrawer(10, 1)
+        .addCtrlModel("Button-S1-P2", "<<").setLinkedValue(tick_by_frame).setFactor(0.5).getDrawer()
+        .addCtrlModel("Button-S1-P3", "<").setLinkedValue(tick_by_frame).setFactor(0.8).getDrawer()
+        .addWatcherModel("Label_Back-S2-P2", "--").setLinkedValue(tick_by_frame).getDrawer()
+        .addCtrlModel("Button-S1-P7", ">").setLinkedValue(tick_by_frame).setFactor(1.25).getDrawer()
+        .addCtrlModel("Button-S1-P8", ">>").setLinkedValue(tick_by_frame).setFactor(2).getShelf()
+      .addDrawer(10, 1)
+        .addWatcherModel("Label_Back-S3-P1")
+          //.setLinkedValue(inter.framerate.sec_since_reset)
+          .getDrawer()
+        .addWatcherModel("Label_Back-S3-P2").setLinkedValue(tick_counter).getShelf()
+      .addDrawer(10, 1)
+        .addWatcherModel("Label_Back-S3-P1")
+          .setLinkedValue(inter.framerate.median_framerate).getDrawer()
+        .addLinkedModel("Button-S1-P9", "S")
+          .setLinkedValue(show_com)
+          .getShelfPanel()
+    ;
   }
   
   sInterface inter;
   sValueBloc sbloc;
+  nGUI cam_gui;
   
   Ticking_pile ticking_pile;
+  Tickable macromain_tickable;
   
   ArrayList<Community> list = new ArrayList<Community>();
   
   sInt tick_counter; //conteur de tour depuis le dernier reset ou le debut
   sBoo pause; //permet d'interompre le defilement des tour
-  sBoo force_next_tick; 
+  sInt force_next_tick; 
   sFlt tick_by_frame; //nombre de tour a executé par frame
   sInt SEED; //seed pour l'aleatoire
-  sBoo auto_reset, auto_reset_rng_seed, auto_reset_screenshot;
+  sBoo auto_reset, auto_reset_rng_seed, auto_reset_screenshot, show_com;
   sInt auto_reset_turn;
   
   float tick_pile = 0; //pile des tick a exec
   
   Simulation(sInterface _int) {
     inter = _int;
-    sbloc = new sValueBloc(inter.sbloc, "Simulation");
-    
+    cam_gui = inter.cam_gui;
+    sbloc = new sValueBloc(inter.data, "Simulation");
+    ticking_pile = new Ticking_pile();
     tick_counter = new sInt(sbloc, 0, "tick_counter");
-    tick_by_frame = new sFlt(sbloc, 16, "tick by frame");
+    tick_by_frame = new sFlt(sbloc, 2, "tick by frame");
     pause = new sBoo(sbloc, false, "pause");
-    force_next_tick = new sBoo(sbloc, false, "force_next_tick");
+    force_next_tick = new sInt(sbloc, 0, "force_next_tick");
     auto_reset = new sBoo(sbloc, true, "auto_reset");
     auto_reset_rng_seed = new sBoo(sbloc, true, "auto_reset_rng_seed");
     auto_reset_screenshot = new sBoo(sbloc, false, "auto_rest_screenshot");
+    show_com = new sBoo(sbloc, false, "show_com");
     auto_reset_turn = new sInt(sbloc, 4000, "auto_reset_turn");
     SEED = new sInt(sbloc, 548651008, "SEED");
     
     inter.addEventFrame(new Runnable() { public void run() { frame(); }});
-    inter.addCamDrawer(new Drawable() { public void drawing() { draw_to_cam(); } } );
-    inter.addScreenDrawer(new Drawable() { public void drawing() { draw_to_screen(); } } );
+    inter.addToCamDrawerPile(new Drawable() { public void drawing() { draw_to_cam(); } } );
+    inter.addToScreenDrawerPile(new Drawable() { public void drawing() { draw_to_screen(); } } );
+    
+    macromain_tickable = new Tickable(ticking_pile) { public void tick(float f) { inter.macro_main.tick(); } };
     
     inter.data.addReferedRunnable("sim reset", new Runnable() { public void run() { 
       reset(); } } );
     inter.data.addReferedRunnable("sim rng reset", new Runnable() { public void run() { 
-      SEED.set(int(random(1000000000))); reset(); } } );
+      resetRng(); } } );
     inter.data.addReferedRunnable("sim next tick", new Runnable() { public void run() { 
-      force_next_tick.set(true); } } );
+      force_next_tick.add(1); } } );
     
     build_ui(inter.size);
   }
@@ -151,7 +172,7 @@ class Simulation {
   Simulation addEventUnpausedFrame(Runnable r) { eventsUnpausedFrame.add(r); return this; }
   Simulation addEventTick(Runnable r) { eventsTick.add(r); return this; }
   
-  
+  void resetRng() { SEED.set(int(random(1000000000))); reset(); }
   void reset() {
     randomSeed(SEED.get());
     tick_counter.set(0);
@@ -179,8 +200,9 @@ class Simulation {
     }
     
     // tick by tick control
-    if (pause.get() && force_next_tick.get()) { force_next_tick.set(false); tick(); }
-    if (!pause.get() && force_next_tick.get()) { force_next_tick.set(false); }
+    if (pause.get() && force_next_tick.get() > 0) { 
+      for (int i = 0 ; i < force_next_tick.get() ; i++) tick(); force_next_tick.set(0); }
+    if (!pause.get() && force_next_tick.get() > 0) { force_next_tick.set(0); }
     
     //run custom frame methods
     for (Community c : list) c.frame();
@@ -197,6 +219,8 @@ class Simulation {
       reset();
     }
     
+    ticking_pile.tick();
+    
     //tick communitys
     for (Community c : list) c.tick();
     
@@ -206,11 +230,11 @@ class Simulation {
     tick_counter.set(tick_counter.get()+1);
   }
   
-  void draw_to_cam() {
+  void draw_to_cam() { if (show_com.get()) {
     for (Community c : list) if (c.show_entity.get()) c.custom_cam_draw_pre_entity();
     for (Community c : list) if (c.show_entity.get()) c.draw_Cam();
     for (Community c : list) if (c.show_entity.get()) c.custom_cam_draw_post_entity();
-  }
+  } }
   void draw_to_screen() { for (Community c : list) if (c.show_entity.get()) c.draw_Screen(); }
 }
 
@@ -241,6 +265,8 @@ abstract class Community {
     adding_entity_nb = new sInt(sbloc, 10, "adding_entity_nb " + n);
     adding_step = new sInt(sbloc, 0, "adding_step " + n);
     show_entity = new sBoo(sbloc, true, "show_entity " + n);
+    
+    sim.inter.main_menu.addEntry(n, new Runnable() { public void run() { ; } });
     
     max_entity.set(max); 
     
@@ -313,9 +339,9 @@ abstract class Community {
 
 abstract class Entity { 
   Community com;
-  int age = 0;
+  int age = 0, id;
   boolean active = false;
-  Entity(Community c) { com = c; }
+  Entity(Community c) { com = c; id = com.list.size(); }
   Entity activate() {
     if (!active) { active = true; age = 0; init(); }
     return this;

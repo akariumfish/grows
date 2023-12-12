@@ -38,22 +38,44 @@
 
 
 class sInterface {
-  
   nToolPanel toolpanel;
+  nDropMenu main_menu;
+  nTaskPanel taskpanel;
+  nWindowPanel window;
   
   void build_default_ui(float ref_size) {
-    logln("start models: "+gui_theme.models.size());
-    toolpanel = new nToolPanel(screen_gui, ref_size);
-    toolpanel.setTop(false).addReduc(true);
-    logln("end models: "+gui_theme.models.size());
+    
+    taskpanel = new nTaskPanel(screen_gui, ref_size, 0.125);
+    window = new nWindowPanel(screen_gui, taskpanel);
+    window.addShelf()
+      .addDrawer(4,1)
+      ;
+    
+    main_menu = new nDropMenu(screen_gui, ref_size, 10, false)
+      .addEntry("Files", new Runnable() { public void run() { ; } });
+    toolpanel = new nToolPanel(screen_gui, ref_size, 0.125, false, false);
+    toolpanel.addShelf()
+      .addDrawer(10,0.625)
+        .addCtrlModel("Menu_Button_Small_Outline-SS4", "MENU", -0.125, -0.125).setTrigger()
+          .addEventTrigger_Builder(new Runnable() { public void run() { 
+            main_menu.drop(((nWidget)builder), toolpanel.panel.getX(), toolpanel.panel.getY()); } })
+          .setFont(int(ref_size/1.9)).getDrawer()
+        .addLinkedModel("Menu_Button_Small_Outline-SS1", "M")
+          .setLinkedValue(macro_main.show_macro)
+          .setPosition(ref_size*9.125, -ref_size*0.125)
+          .setFont(int(ref_size/1.9)).getDrawer();
   }
   
   sInput input;
+  DataHolder data; sValueBloc sbloc;
+  
   nTheme gui_theme;
   nGUI screen_gui, cam_gui;
+  nExcludeGroup exclude_group;
+  
   Camera cam;
-  DataHolder data; sValueBloc sbloc;
   sFramerate framerate;
+  
   Macro_Main macro_main;
   
   float size = 30;
@@ -63,29 +85,28 @@ class sInterface {
     data = new DataHolder();
     sbloc = data.newBloc("interface");
     cam = new Camera(input, sbloc)
-      .addEventZoom(new Runnable() { public void run() { 
-        cam_gui.updateScale();  
-      } } )
-      ;
+      .addEventZoom(new Runnable() { public void run() { cam_gui.updateScale(); } } );
     framerate = new sFramerate(sbloc, 60);
     gui_theme = new nTheme();
-    screen_gui = new nGUI(input, gui_theme);
+    exclude_group = new nExcludeGroup();
+    screen_gui = new nGUI(input, gui_theme)
+      .addEventFound(new Runnable() { public void run() { cam.GRAB = false; cam_gui.override = true; } } )
+      .addEventNotFound(new Runnable() { public void run() { cam.GRAB = true; cam_gui.override = false; } } );
     cam_gui = new nGUI(input, gui_theme)
-      .setMouse(cam.mouse)
+      .setMouse(cam.mouse).setpMouse(cam.pmouse)
       .setView(cam.view)
+      .addEventFound(new Runnable() { public void run() { cam.GRAB = false; } } )
       .addEventNotFound(new Runnable() { public void run() { 
-        if (!screen_gui.hoverable_pile.found) runEvents(eventsHoverNotFound);  
-      } } )
-      ;
+        if (!screen_gui.hoverable_pile.found) { cam.GRAB = true; runEvents(eventsHoverNotFound); } } } );
+    
+    macro_main = new Macro_Main(cam_gui, screen_gui, data);
+    macro_main.show_macro.set(false);
+    
     build_default_ui(size);
-    macro_main = new Macro_Main(this);
   }
   
-  //nWidget camWidget(String r) { return gui_theme.newWidget(cam_gui, r); }
-  //nWidget screenWidget(String r) { return gui_theme.newWidget(screen_gui, r); }
-  
-  sInterface addCamDrawer(Drawable d) { d.setPile(cam_gui.drawing_pile); return this; }
-  sInterface addScreenDrawer(Drawable d) { d.setPile(screen_gui.drawing_pile); return this; }
+  sInterface addToCamDrawerPile(Drawable d) { d.setPile(cam_gui.drawing_pile); return this; }
+  sInterface addToScreenDrawerPile(Drawable d) { d.setPile(screen_gui.drawing_pile); return this; }
   
   ArrayList<Runnable> eventsFrame = new ArrayList<Runnable>();
   ArrayList<Runnable> eventsHoverNotFound = new ArrayList<Runnable>();
@@ -93,31 +114,28 @@ class sInterface {
   sInterface addEventFrame(Runnable r) { eventsFrame.add(r); return this; }
   
   void frame() {
+    input.frame_str(); // track mouse
+    framerate.frame(); // calc last frame
     background(0);
-    //fill(0,0,0,3);
-    //noStroke();
-    //rect(-10, -10, 10000, 10000);
     
-    runEvents(eventsFrame);
-    
-    cam.pushCam();
-    cam_gui.frame();
-    cam.popCam();
+    runEvents(eventsFrame); // << sim runs here
     
     screen_gui.frame();
+    cam.pushCam(); // matrice d'affichage
+    cam_gui.frame();
+    cam_gui.draw();
+    cam.popCam();
+    screen_gui.draw();
     
-    //framerate:
-    fill(255); 
-    textSize(18);
-    textAlign(LEFT);
+    //info:
+    fill(255); textSize(18); textAlign(LEFT);
     text(framerate.get() + " C " + trimStringFloat(cam.mouse.x) + 
          "," + trimStringFloat(cam.mouse.y), 10, 24 );
     text("S " + trimStringFloat(input.mouse.x) + 
          "," + trimStringFloat(input.mouse.y), 250, 24 );
     
-    data.frame();
-    framerate.frame();
-    input.frame();
+    data.frame(); // reset flags
+    input.frame_end(); // reset flags
   }
   
 }
@@ -140,7 +158,7 @@ class Camera {
   sVec cam_pos; //position de la camera
   sFlt cam_scale; //facteur de grossicement
   float ZOOM_FACTOR = 1.1; //facteur de modification de cam_scale quand on utilise la roulette de la sourie
-  boolean GRAB = true;
+  boolean GRAB = false, grabbed = false;
   sBoo grid; //show grid
   boolean screenshot = false; //enregistre une image de la frame sans les menu si true puis se desactive
   boolean matrixPushed = false; //track if in or out of the cam matrix
@@ -151,6 +169,8 @@ class Camera {
     cam_scale = new sFlt(sbloc, 1.0, "cam scale");
     cam_pos = new sVec(sbloc, "cam pos");
     view = new Rect(0, 0, width, height);
+    view.pos.set(screen_to_cam(new PVector(0, 0)));
+    view.size.set(screen_to_cam(new PVector(width, height)).sub(view.pos));
     input = i; 
   }
   
@@ -164,12 +184,6 @@ class Camera {
   PVector mmouse = new PVector(); //mouvement
   
   void pushCam() {
-    PVector tm = screen_to_cam(input.mouse);
-    PVector tpm = screen_to_cam(input.pmouse);
-    PVector tmm = screen_to_cam(input.mmouse);
-    mouse.x = tm.x; mouse.y = tm.y;
-    pmouse.x = tpm.x; pmouse.y = tpm.y;
-    mmouse.x = tmm.x; mmouse.y = tmm.y;
     pushMatrix();
     translate(width / 2, height / 2);
     scale(cam_scale.get());
@@ -210,9 +224,18 @@ class Camera {
       saveFrame("image/shot-########.png");
     }
     screenshot = false;
-
+    
+    PVector tm = screen_to_cam(input.mouse);
+    PVector tpm = screen_to_cam(input.pmouse);
+    PVector tmm = screen_to_cam(input.mmouse);
+    mouse.x = tm.x; mouse.y = tm.y;
+    pmouse.x = tpm.x; pmouse.y = tpm.y;
+    mmouse.x = tmm.x; mmouse.y = tmm.y;
+    
     //permet le cliquer glisser le l'ecran
-    if (input.getState("MouseLeft") && GRAB) { 
+    if (input.getClick("MouseLeft") && GRAB) grabbed = true; 
+    if (!input.getState("MouseLeft") && grabbed) grabbed = false; 
+    if (input.getState("MouseLeft") && grabbed) { 
       cam_pos.add(mouseX - pmouseX, mouseY - pmouseY);
       runEvents(eventsDrag);
     }
@@ -228,8 +251,10 @@ class Camera {
       cam_pos.mult(ZOOM_FACTOR); 
       runEvents(eventsZoom);
     }
+    
     view.pos.set(screen_to_cam(new PVector(0, 0)));
     view.size.set(screen_to_cam(new PVector(width, height)).sub(view.pos));
+    
   }
   
   PVector cam_to_screen(PVector p) {
@@ -444,12 +469,12 @@ public class sInput {
     sInput_Button n = new sInput_Button("k", k); buttons.add(n);
     return n; }
   
-  void frame() {
+  void frame_str() {
     mouse.x = mouseX; mouse.y = mouseY; pmouse.x = pmouseX; pmouse.y = pmouseY;
     mmouse.x = mouseX - pmouseX; mmouse.y = mouseY - pmouseY;
-    
+  }
+  void frame_end() {
     mouseWheelUp = false; mouseWheelDown = false;
-    
     for (sInput_Button b : buttons) b.frame();
   }
 

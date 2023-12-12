@@ -25,8 +25,11 @@ void logln(String s) {
 
 sInterface interf;
 
-Simulation sim;
+Simulation simul;
+
 GrowerComu gcom;
+BoxComu bcom;
+FlocComu fcom;
 
 
 void setup() {//executé au demarage
@@ -36,9 +39,16 @@ void setup() {//executé au demarage
   //smooth();//anti aliasing
   
   interf = new sInterface();
-  sim = new Simulation(interf);
-  gcom = new GrowerComu(sim);
+  simul = new Simulation(interf);
   
+  bcom = new BoxComu(simul);
+  gcom = new GrowerComu(simul);
+  fcom = new FlocComu(simul);
+  
+  //interf.toolpanel.reduc();
+  //simsimul.pause.set(true);
+  
+  logln("end models: "+interf.gui_theme.models.size());
   background(0);//fond noir
 }
 

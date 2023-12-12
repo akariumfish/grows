@@ -185,13 +185,13 @@ class Grower extends Entity {
     
     // stop growing
     if (start == 1 && !end && sprouts == 0 && com().stopP.test()) {
-      //if (com().create_floc.get()) {
-      //  Floc f = fcom.newEntity();
-      //  if (f != null) {
-      //    f.pos.x = pos.x;
-      //    f.pos.y = pos.y;
-      //  }
-      //}
+      if (com().create_floc.get()) {
+        Floc f = fcom.newEntity();
+        if (f != null) {
+          f.pos.x = pos.x;
+          f.pos.y = pos.y;
+        }
+      }
       end = true;
     }
     
@@ -210,9 +210,9 @@ class Grower extends Entity {
     int ca = 255;
     if (age > com().OLD_AGE.get() / 2) ca = (int)constrain(255 + int(com().OLD_AGE.get()/2) - int(age/1.2), 90, 255);
     //if (!end && sprouts == 0) { stroke(255, 0, 0); strokeWeight(param.MAX_LINE_WIDTH+1 / cam_scale); } //BIG red head
-    if (!end && sprouts == 0) { stroke(255); strokeWeight((com().MAX_LINE_WIDTH+1) / sim.inter.cam.cam_scale.get()); }
-    else if (end) { stroke(0, ca, 0); strokeWeight((com().MAX_LINE_WIDTH+1) / sim.inter.cam.cam_scale.get()); }
-    else { stroke(ca, ca, ca); strokeWeight(((float)com().MIN_LINE_WIDTH + ((float)com().MAX_LINE_WIDTH * (float)ca / 255.0)) / sim.inter.cam.cam_scale.get()); }              
+    if (!end && sprouts == 0) { stroke(255); strokeWeight((com().MAX_LINE_WIDTH+1) / com.sim.inter.cam.cam_scale.get()); }
+    else if (end) { stroke(0, ca, 0); strokeWeight((com().MAX_LINE_WIDTH+1) / com.sim.inter.cam.cam_scale.get()); }
+    else { stroke(ca, ca, ca); strokeWeight(((float)com().MIN_LINE_WIDTH + ((float)com().MAX_LINE_WIDTH * (float)ca / 255.0)) / com.sim.inter.cam.cam_scale.get()); }              
     
     PVector e = new PVector(dir.x, dir.y);
     if (start < 1) e = e.setMag(e.mag() * start);

@@ -90,27 +90,21 @@ class sVec extends sValue {
     svalue map<string name, svalue>
 */
 class sValueBloc {
-  DataHolder data;
-  sValueBloc parent = null;
-  String ref;
+  sValueBloc getBloc(String r) { return blocs.get(r); }
+  sValue getValue(String r) { return values.get(r); }
+  
+  DataHolder data; sValueBloc parent = null; String ref;
   HashMap<String, sValue> values = new HashMap<String, sValue>();
   HashMap<String, sValueBloc> blocs = new HashMap<String, sValueBloc>();
   sValueBloc(DataHolder d, String r) { 
-    data = d; 
-    while (data.blocs.get(r) != null) r = r + "'";
-    ref = r; 
-    data.blocs.put(ref, this);
-  }
+    while (d.blocs.get(r) != null) r = r + "'";
+    d.blocs.put(r, this); data = d; ref = r; }
   sValueBloc(sValueBloc b, String r) { 
-    data = b.data; parent = b;
     while (b.blocs.get(r) != null) r = r + "'";
-    ref = r; 
-    b.blocs.put(ref, this);
-  }
+    b.blocs.put(r, this); data = b.data; parent = b; ref = r; }
   void frame() {
     for (Map.Entry b : values.entrySet()) { sValue s = (sValue)b.getValue(); s.frame(); }
-    for (Map.Entry b : blocs.entrySet()) { sValueBloc s = (sValueBloc)b.getValue(); s.frame(); }
-  }
+    for (Map.Entry b : blocs.entrySet()) { sValueBloc s = (sValueBloc)b.getValue(); s.frame(); } }
 }
 /*
   
@@ -123,13 +117,14 @@ DataHolding
 */
 
 class DataHolder {
-  HashMap<String, sValueBloc> blocs = new HashMap<String, sValueBloc>();
+  sValueBloc getBloc(String r) { return blocs.get(r); }
   sValueBloc newBloc(String r) { return new sValueBloc(this, r); }
-  HashMap<String, Runnable> refered_runnable_map = new HashMap<String, Runnable>();
   void addReferedRunnable(String k, Runnable r) { refered_runnable_map.put(k, r); }
-  void frame() {
-    for (Map.Entry b : blocs.entrySet()) { sValueBloc s = (sValueBloc)b.getValue(); s.frame(); }
-  }
+  
+  HashMap<String, sValueBloc> blocs = new HashMap<String, sValueBloc>();
+  HashMap<String, Runnable> refered_runnable_map = new HashMap<String, Runnable>();
+  void frame() { 
+    for (Map.Entry b : blocs.entrySet()) { sValueBloc s = (sValueBloc)b.getValue(); s.frame(); } }
 }
 
 
@@ -306,8 +301,6 @@ class Save_Bloc {
 }
 
 class Iterator<T> { public void run(T t) {} public void run(T t, int c) {} }
-
-
 
 
 
