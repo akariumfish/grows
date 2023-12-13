@@ -1,8 +1,6 @@
 /*
 
   Complex Widget Objects
-    Info
-      can appear on top of the mouse with text
     Hilightable Front
       selectable, run event when selected
     linkedValue switch <> bool , field <> int float
@@ -13,6 +11,8 @@
       rectangular canvas with value history has graph
       auto scale, can do multi value
   Complex GUI Objects
+    Info
+      can appear on top of the mouse with text
     Menubar : series of horizontal switch mutualy exclusive
       auto adjust largeur
       each open a dropdown list of trigger button who close the menus
@@ -115,6 +115,8 @@ class nConstructor {
     make_outline("Button");
     make_outline("Menu_Button");
     make_outline("Head_Button");
+    make_outline("Label");
+    make_outline("Label_Back");
     make("Label");
     make("Button");
     make("Menu_Button");
@@ -185,6 +187,9 @@ class nConstructor {
 
 
 class nBuilder { // base pour les class constructrice de nwidget basic
+
+  nWidget addWidget(nWidget w) { 
+    customBuild(w); widgets.add(w); w.toLayerTop(); return w; }
   
   nWidget addRef(float x, float y) { 
     nWidget w = gui.theme.newWidget(gui, "ref").setPosition(x*ref_size, y*ref_size); customBuild(w);
@@ -274,27 +279,36 @@ class nBuilder { // base pour les class constructrice de nwidget basic
 
 class nDropMenu extends nBuilder {
   
-  nDropMenu drop(nWidget op, float x, float y) { openner = op; ref.setPosition(x, y).show(); return this; }
+  nDropMenu drop(nWidget op, float x, float y) { 
+    opener = op; 
+    ref.setPosition(x, y).show(); 
+    return this; }
+  nDropMenu drop(nGUI g) { 
+    float p_y = g.mouseVector.y + haut/2;
+    float total_haut = haut*menu_widgets.size();
+    if (p_y - total_haut < g.view.pos.y) p_y += g.view.pos.y - (p_y - total_haut);
+    //openner = op; 
+    ref.setPosition(g.mouseVector.x - larg/2, p_y).show(); return this; }
   nDropMenu close() { ref.hide(); return this; }
   
-  nWidget ref,openner;
+  nWidget ref, opener;
   ArrayList<nWidget> menu_widgets = new ArrayList<nWidget>();
   ArrayList<Runnable> events = new ArrayList<Runnable>();
-  int layer = 0;  float haut, larg;  boolean down;
+  int layer = 0;  float haut, larg;  boolean down, ephemere = false;
   
-  nDropMenu(nGUI _gui, float ref_size, float width_factor, boolean _down) {
+  nDropMenu(nGUI _gui, float ref_size, float width_factor, boolean _down, boolean _ephemere) {
     super(_gui, ref_size);
-    haut = ref_size; larg = haut*width_factor; down = _down;
+    haut = ref_size; larg = haut*width_factor; down = _down; ephemere = _ephemere;
     ref = addModel("ref").stackRight()
       .addEventFrame(new Runnable() { public void run() { 
         boolean t = false;
         for (nWidget w : menu_widgets) t = t || w.isHovered();
-        if (openner != null) t = t || openner.isHovered();
-        if (!t) ref.hide();
+        if (opener != null) t = t || opener.isHovered();
+        if ((gui.in.getClick("MouseLeft") || ephemere) && !t) ref.hide();
       } });
     if (!down) ref.stackUp(); 
   }
-  nDropMenu setDropLeft() { ref.stackLeft(); return this; }
+  //nDropMenu setDropLeft() { ref.stackLeft(); return this; }
   void click() {
     int i = 0;
     for (nWidget w : menu_widgets) {
@@ -303,16 +317,33 @@ class nDropMenu extends nBuilder {
     events.get(i).run();
     ref.hide();
   }
-  nDropMenu addEntry(String l, Runnable r) {
-    nWidget ne = new nWidget(gui, l, int(haut/1.5), 0, 0, larg - haut, haut)
-      .setSwitch()
-      .addEventSwitchOn(new Runnable() { public void run() { click(); }}) ;
-      if (!down) ne.stackUp(); else ne.stackDown();
+  nWidget addEntry(String l, Runnable r) {
+    nWidget ne = new nWidget(gui, l, int(haut/1.5), 0, 0, larg, haut)
+      .setSwitch() 
+      .setHoverablePhantomSpace(ref_size / 4)
+      .addEventSwitchOn(new Runnable() { public void run() { click(); }}) 
+      ;
+     if (!down) ne.stackUp(); else ne.stackDown();
     if (menu_widgets.size() > 0) ne.setParent(menu_widgets.get(menu_widgets.size()-1)); 
     else ne.setParent(ref);
     menu_widgets.add(ne);
     events.add(r);
-    return this;
+    return ne;
+  }
+  nCtrlWidget addEntry(String l) {
+    nCtrlWidget ne = new nCtrlWidget(gui);
+    ne.setText(l)
+      .setFont(int(haut/1.5))
+      .setSize(larg, haut)
+      .setHoverablePhantomSpace(ref_size / 4)
+      //.addEventSwitchOn(new Runnable() { public void run() { click(); }}) 
+      ;
+    if (!down) ne.stackUp(); else ne.stackDown();
+    if (menu_widgets.size() > 0) ne.setParent(menu_widgets.get(menu_widgets.size()-1)); 
+    else ne.setParent(ref);
+    menu_widgets.add(ne);
+    events.add(new Runnable() { public void run() { }});
+    return ne;
   }
 }
 
@@ -370,41 +401,6 @@ class nInfo {
   int count = 0;
 }
 
-class nPanelDrawer {
-  nPanel panel;
-  
-  float pos = 0;
-  
-  nPanelDrawer(nPanel _pan, float p) {
-    panel = _pan;
-    pos = p;
-  }
-  
-  nPanel getPanel() { return panel; }
-  
-  nWidget addWidget(String n, int f, float x, float y, float l, float h) {
-    nWidget w = new nWidget(panel.gui, n, f, x, y + pos, l, h);
-    w.setParent(panel.back).setPanelDrawer(this).setLayer(panel.layer);
-    panel.widgets.add(w);
-    return w;
-  }
-  
-  nList addList(float x, float y, float w, float s) {
-    nList l = new nList(panel.gui);
-    l.getRefWidget()
-      .setParent(panel.getRefWidget())
-      .setPosition(x, y+pos);
-    l.setPanelDrawer(this)
-      .setItemSize(s)
-      .setWidth(w)
-      .setLayer(panel.layer)
-      ;
-    panel.lists.add(l);
-    return l;
-  }
-
-}
-
 
 class nDrawer extends nBuilder {
   nShelf getShelf() { return shelf; }
@@ -456,8 +452,8 @@ class nShelf extends nBuilder {
     return null;
   }
   nDrawer addDrawer() { return addDrawer(0, 0); }
-  nShelf addDrawer(float h) { addDrawer(0, h); return this; }
-  nShelf addSeparator() { addDrawer(0, 1); return this; }
+  nDrawer addDrawer(float h) { return addDrawer(0, h); }
+  nShelf addSeparator(float h) { addDrawer(0, h-space_factor); return this; }
   nShelf setMax(int m) { max_drawer = m; return this; }
   
   nShelfPanel shelfPanel;
@@ -488,6 +484,7 @@ class nShelfPanel extends nBuilder {
   
   nDrawer getDrawer(int c, int r) { return shelfs.get(c).drawers.get(r); }
   nShelf getShelf(int s) { return shelfs.get(s); }
+  nShelf getShelf() { return shelfs.get(0); }
   
   nShelf addShelf() {
     nShelf s = new nShelf(this, space_factor);
@@ -560,31 +557,108 @@ class nToolPanel extends nShelfPanel {
 }
 
 
-
+class nColorPanel extends nWindowPanel {
+  nColorPanel setOkEvent_Builder(Runnable r) { ok_run = r; ok_run.builder = this; return this; }
+  
+  nWidget color_widget, red_widget, gre_widget, blu_widget;
+  float red, gre, blu;
+  Runnable ok_run;
+  nColorPanel(nGUI _g, nTaskPanel _task) { 
+    super(_g, _task, "color"); 
+    getShelf(0)
+      .addDrawer(1)
+        .addWidget(new nSlide(gui, ref_size, ref_size*7.375)
+          .addEventSlide(new Runnable() { public void run(float v) { 
+            red = v*255; update(); red_widget.setText(trimStringFloat(red)); } } )
+          .setPosition(0, 0) ).getShelf()
+      .addDrawer(1)
+        .addWidget(new nSlide(gui, ref_size, ref_size*7.375)
+          .addEventSlide(new Runnable() { public void run(float v) { 
+            gre = v*255; update(); gre_widget.setText(trimStringFloat(gre)); } } )
+          .setPosition(0, 0) ).getShelf()
+      .addDrawer(1)
+        .addWidget(new nSlide(gui, ref_size, ref_size*7.375)
+          .addEventSlide(new Runnable() { public void run(float v) { 
+            blu = v*255; update(); blu_widget.setText(trimStringFloat(blu)); } } )
+          .setPosition(0, 0) ).getShelf()
+      .addDrawer(1)
+        .addCtrlModel("Button-S2-P3", "OK")
+          .setRunnable(new Runnable() { public void run() { clear();  } }).getDrawer()
+          ;
+        
+    color_widget = getDrawer(0,4).addModel("Label-S3-P1")
+          .setStandbyColor(color(red, gre, blu));
+    red_widget = getDrawer(0,1)
+        .addModel("Label_Small_Outline-S2", "0.0").setPX(7.5*ref_size);
+    gre_widget = getDrawer(0,2)
+        .addModel("Label_Small_Outline-S2", "0.0").setPX(7.5*ref_size);
+    blu_widget = getDrawer(0,3)
+        .addModel("Label_Small_Outline-S2", "0.0").setPX(7.5*ref_size);
+  } 
+  void update() { color_widget.setStandbyColor(color(red, gre, blu)); }
+  nWindowPanel clear() { 
+    taskpanel_button.removeEventTrigger(run_show).setText("").setPassif().setStandbyColor(color(60));
+    super.clear(); return this; }
+  nWindowPanel updateHeight() { 
+    super.updateHeight(); return this; }
+  nWindowPanel updateWidth() { 
+    super.updateWidth(); return this; }
+}
 
 
 
 class nWindowPanel extends nShelfPanel {
+  nWindowPanel setPosition(float x, float y) {
+    grabber.setPosition(x-task.panel.getX(), y-task.panel.getY()); return this;}
   nTaskPanel task;
-  nWidget grabber, closer;
-  nWindowPanel(nGUI _g, nTaskPanel _task) { 
+  nWidget grabber, closer, reduc, collapse, taskpanel_button;
+  Runnable run_show;
+  nWindowPanel(nGUI _g, nTaskPanel _task, String ti) { 
     super(_g, _task.ref_size, _task.space_factor); 
     task = _task;
-    grabber = addModel("Head_Button-SS4").setParent(null)
+    
+    grabber = addModel("Head_Button_Small_Outline-SS4").setParent(task.panel).setText(ti)
       .setGrabbable()
-      .setPosition(10*ref_size, 5*ref_size)
+      .setSX(ref_size*10.25)
+      .setPosition(10*ref_size-task.panel.getX(), 5*ref_size-task.panel.getY())
       .show()
       //.addEventDrag(new Runnable() { public void run() { runEvents(eventDragRun); } } )
       ;
       
-    closer = addModel("Head_Button-SS1").setText("X")
+    closer = addModel("Head_Button_Small_Outline-SS1").setText("X")
       .setTrigger()
-      //.addEventTrigger(new Runnable() { public void run() { runEvents(eventCloseRun); clear(); } } )
+      .addEventTrigger(new Runnable() { public void run() { 
+        //runEvents(eventCloseRun); 
+        clear(); } } )
       .setParent(grabber)
-      .stackRight()
+      .alignRight()
       ;
-    panel.setParent(closer);
+    collapse = addModel("Head_Button_Small_Outline-SS1").setText("v")
+      .setTrigger()
+      .addEventTrigger(new Runnable() { public void run() { 
+        grabber.hide(); if (taskpanel_button != null) taskpanel_button.setStandbyColor(color(90)); } } )
+      .setParent(closer)
+      .stackLeft()
+      ;
+    reduc = addModel("Head_Button_Small_Outline-SS1").setText("-")
+      .setTrigger()
+      .addEventTrigger(new Runnable() { public void run() {
+        if (panel.isHided()) panel.show(); else panel.hide(); } } )
+      .setParent(collapse)
+      .stackLeft()
+      ;
+    panel.setParent(grabber).stackDown();
+    addShelf().addDrawer(10, 0);
+    taskpanel_button = task.getWindowPanelButton(this);
+    run_show = new Runnable() { public void run() { 
+      grabber.show(); taskpanel_button.setStandbyColor(color(70)); } };
+    if (taskpanel_button != null) taskpanel_button.addEventTrigger(run_show);
   } 
+  nWindowPanel clear() { 
+    task.used_spot--;
+    if (taskpanel_button != null) 
+      taskpanel_button.removeEventTrigger(run_show).setText("").setPassif().setStandbyColor(color(60));
+    super.clear(); return this; }
   nWindowPanel updateHeight() { 
     super.updateHeight(); return this; }
   nWindowPanel updateWidth() { 
@@ -593,20 +667,109 @@ class nWindowPanel extends nShelfPanel {
 
 
 class nTaskPanel extends nToolPanel {
+  ArrayList<nWindowPanel> windowPanels = new ArrayList<nWindowPanel>();
+  ArrayList<nWidget> window_buttons = new ArrayList<nWidget>();
+  int used_spot = 0, max_spot = 6;
+  int row = 3, col = 2;
+  nWidget getWindowPanelButton(nWindowPanel w) {
+    if (used_spot < max_spot) {
+      int i = 0;
+      while(!window_buttons.get(i).getText().equals("")) i++;
+      w.taskpanel_button = window_buttons.get(i);
+      w.taskpanel_button.setTrigger().setText(w.grabber.getText()).setStandbyColor(color(70))
+        .addEventTrigger(new Runnable() { public void run() {} } );
+      windowPanels.add(w);
+      used_spot++;
+      return w.taskpanel_button;
+    }
+    return null;
+  }
+  
   nTaskPanel(nGUI _g, float ref_size, float space_factor) { 
     super(_g, ref_size, space_factor, true, false); 
-    addGrid(2, 3, 4, 1);
-    getDrawer(0, 0).addModel("Button-S3");
-    getDrawer(0, 1).addModel("Button-S3");
-    getDrawer(0, 2).addModel("Button-S3");
-    getDrawer(1, 0).addModel("Button-S3");
-    getDrawer(1, 1).addModel("Button-S3");
-    getDrawer(1, 2).addModel("Button-S3");
+    
+    addGrid(col, row, 4, 1);
+    for (int i = 0 ; i < col ; i++) for (int j = 0 ; j < row ; j++) {
+      nWidget nw = getDrawer(i, j).addModel("Button-S3").setStandbyColor(color(60));
+      window_buttons.add(nw);
+    }
   } 
   nTaskPanel updateHeight() { 
     super.updateHeight(); return this; }
   nTaskPanel updateWidth() { 
     super.updateWidth(); return this; }
+}
+
+
+
+
+
+class nSelectZone {
+  Hoverable_pile pile;
+  Drawable drawer;
+  Rect select_zone = new Rect();
+  boolean emptyClick = false;
+  int clickDelay = 0;
+  boolean ON = true;
+  
+  nSelectZone addEventEndSelect(Runnable r)  { eventEndSelect.add(r); return this; }
+  nSelectZone removeEventEndSelect(Runnable r)       { eventEndSelect.remove(r); return this; }
+  ArrayList<Runnable> eventEndSelect = new ArrayList<Runnable>();
+  nSelectZone addEventStartSelect(Runnable r)  { eventStartSelect.add(r); return this; }
+  nSelectZone removeEventStartSelect(Runnable r)       { eventStartSelect.remove(r); return this; }
+  ArrayList<Runnable> eventStartSelect = new ArrayList<Runnable>();
+  
+  boolean isSelecting() { return emptyClick; }
+  
+  nGUI gui;
+  nSelectZone(nGUI _g) {
+    gui = _g;
+    gui.addEventFrame(new Runnable() { public void run() { frame(); } } );
+    pile = _g.hoverable_pile;
+    pile.addEventNotFound(new Runnable() { public void run() { 
+      if (ON && gui.in.getClick("MouseRight")) clickDelay = 1; 
+    } } );
+    drawer = new Drawable(_g.drawing_pile, 25) { public void drawing() {
+      noFill();
+      stroke(255);
+      strokeWeight(2/gui.scale);
+      Rect z = new Rect(select_zone);
+      if (z.size.x < 0) { z.pos.x += z.size.x; z.size.x *= -1; }
+      if (z.size.y < 0) { z.pos.y += z.size.y; z.size.y *= -1; }
+      if (ON && emptyClick) z.draw();
+    } };
+  }
+  boolean isUnder(nWidget w) {
+    Rect z = new Rect(select_zone);
+    if (z.size.x < 0) { z.pos.x += z.size.x; z.size.x *= -1; }
+    if (z.size.y < 0) { z.pos.y += z.size.y; z.size.y *= -1; }
+    if (emptyClick && !w.isHided() && rectCollide(w.getRect(), z)) return true;
+    return false;
+  }
+  void frame() {
+    if (ON) {
+      if (clickDelay > 0) {
+        clickDelay--;
+        if (clickDelay == 0) { 
+          emptyClick = true;
+          select_zone.pos.x = gui.mouseVector.x;
+          select_zone.pos.y = gui.mouseVector.y;
+          select_zone.size.x = 1;
+          select_zone.size.y = 1;
+          runEvents(eventStartSelect);
+        }
+      }
+      if (emptyClick) {
+        select_zone.size.x = gui.mouseVector.x - select_zone.pos.x;
+        select_zone.size.y = gui.mouseVector.y - select_zone.pos.y;
+        if (gui.in.getUnClick("MouseRight")) { 
+          runEvents(eventEndSelect);
+          emptyClick = false; 
+        }
+      }
+    }
+    if (!gui.in.getState("MouseRight")) emptyClick = false;
+  }
 }
 
 
@@ -763,6 +926,43 @@ class nPanel {
 
 
 
+
+class nPanelDrawer {
+  nPanel panel;
+  
+  float pos = 0;
+  
+  nPanelDrawer(nPanel _pan, float p) {
+    panel = _pan;
+    pos = p;
+  }
+  
+  nPanel getPanel() { return panel; }
+  
+  nWidget addWidget(String n, int f, float x, float y, float l, float h) {
+    nWidget w = new nWidget(panel.gui, n, f, x, y + pos, l, h);
+    w.setParent(panel.back).setPanelDrawer(this).setLayer(panel.layer);
+    panel.widgets.add(w);
+    return w;
+  }
+  
+  nList addList(float x, float y, float w, float s) {
+    nList l = new nList(panel.gui);
+    l.getRefWidget()
+      .setParent(panel.getRefWidget())
+      .setPosition(x, y+pos);
+    l.setPanelDrawer(this)
+      .setItemSize(s)
+      .setWidth(w)
+      .setLayer(panel.layer)
+      ;
+    panel.lists.add(l);
+    return l;
+  }
+
+}
+
+
 class nList {
   
   nPanelDrawer panel_drawer = null;
@@ -778,8 +978,8 @@ class nList {
   float larg = item_s*10;
   int list_widget_nb = 5;
   int entry_pos = 0;
-  
-  int last_choice_index = 0;
+  boolean event_active = true;
+  int last_choice_index = -1;
   String last_choice_text = null;
   
   ArrayList<Runnable> eventChangeRun = new ArrayList<Runnable>();
@@ -819,7 +1019,14 @@ class nList {
     scroll.getRefWidget().setParent(back);
     scroll.setView(list_widget_nb)
       .addEventChange(new Runnable() { public void run() {
+        //int mov = scroll.entry_pos - entry_pos;
+        //if (mov != 0 && last_choice_index >= 0 && last_choice_index < listwidgets.size()) 
+        //  listwidgets.get(last_choice_index).setOff();
         entry_pos = scroll.entry_pos;
+        //last_choice_index -= mov;
+        //if (mov != 0 && last_choice_index >= 0 && last_choice_index < listwidgets.size()) { event_active = false;
+        //  listwidgets.get(last_choice_index).setOn(); event_active = true; }
+        
         update_list();
       }});
     for (int i = 0 ; i < list_widget_nb ; i++) {
@@ -840,17 +1047,19 @@ class nList {
   }
   
   void click() {
-    int i = 0;
-    for (nWidget w : listwidgets) {
-      if (w.isOn()) {
-        w.setOff();
-        break;
+    if (event_active) {
+      int i = 0;
+      for (nWidget w : listwidgets) {
+        if (w.isOn()) {
+          w.setOff();
+          break;
+        }
+        i++;
       }
-      i++;
+      last_choice_index = i+entry_pos;
+      last_choice_text = copy(listwidgets.get(i).getText());
+      runEvents(eventChangeRun);
     }
-    last_choice_index = i+entry_pos;
-    last_choice_text = copy(listwidgets.get(i).getText());
-    runEvents(eventChangeRun);
   }
   void update_list() {
     for (int i = 0 ; i < list_widget_nb ; i++) {
@@ -1017,71 +1226,6 @@ class nScroll {
   }
 }
 
-class nSelectZone {
-  Hoverable_pile pile;
-  Drawable drawer;
-  Rect select_zone = new Rect();
-  boolean emptyClick = false;
-  int clickDelay = 0;
-  boolean ON = true;
-  
-  nSelectZone addEventEndSelect(Runnable r)  { eventEndSelect.add(r); return this; }
-  nSelectZone removeEventEndSelect(Runnable r)       { eventEndSelect.remove(r); return this; }
-  ArrayList<Runnable> eventEndSelect = new ArrayList<Runnable>();
-  nSelectZone addEventStartSelect(Runnable r)  { eventStartSelect.add(r); return this; }
-  nSelectZone removeEventStartSelect(Runnable r)       { eventStartSelect.remove(r); return this; }
-  ArrayList<Runnable> eventStartSelect = new ArrayList<Runnable>();
-  
-  boolean isSelecting() { return emptyClick; }
-  
-  nGUI gui;
-  nSelectZone(nGUI _g) {
-    gui = _g;
-    gui.addEventFrame(new Runnable() { public void run() { frame(); } } );
-    pile = _g.hoverable_pile;
-    pile.addEventNotFound(new Runnable() { public void run() { 
-      if (ON && gui.in.getClick("MouseRight")) clickDelay = 1; 
-    } } );
-    drawer = new Drawable(_g.drawing_pile, 25) { public void drawing() {
-      noFill();
-      stroke(255);
-      strokeWeight(2/gui.scale);
-      Rect z = new Rect(select_zone);
-      if (z.size.x < 0) { z.pos.x += z.size.x; z.size.x *= -1; }
-      if (z.size.y < 0) { z.pos.y += z.size.y; z.size.y *= -1; }
-      if (ON && emptyClick) z.draw();
-    } };
-  }
-  boolean isUnder(nWidget w) {
-    Rect z = new Rect(select_zone);
-    if (z.size.x < 0) { z.pos.x += z.size.x; z.size.x *= -1; }
-    if (z.size.y < 0) { z.pos.y += z.size.y; z.size.y *= -1; }
-    if (emptyClick && !w.isHided() && rectCollide(w.getRect(), z)) return true;
-    return false;
-  }
-  void frame() {
-    if (ON) {
-      if (clickDelay > 0) {
-        clickDelay--;
-        if (clickDelay == 0) { 
-          emptyClick = true;
-          runEvents(eventStartSelect);
-          select_zone.pos.x = gui.mouseVector.x;
-          select_zone.pos.y = gui.mouseVector.y;
-        }
-      }
-      if (emptyClick) {
-        select_zone.size.x = gui.mouseVector.x - select_zone.pos.x;
-        select_zone.size.y = gui.mouseVector.y - select_zone.pos.y;
-        if (gui.in.getUnClick("MouseRight")) { 
-          runEvents(eventEndSelect);
-          emptyClick = false; 
-        }
-      }
-    }
-    if (!gui.in.getState("MouseRight")) emptyClick = false;
-  }
-}
 
 
  

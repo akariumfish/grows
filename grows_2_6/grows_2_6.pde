@@ -15,6 +15,8 @@ PApplet
 */
 
 
+boolean DEBUG_HOVERPILE = true;
+
 boolean DEBUG = true;
 void log(String s) {
   if (DEBUG) print(s);
@@ -46,7 +48,10 @@ void setup() {//executé au demarage
   fcom = new FlocComu(simul);
   
   //interf.toolpanel.reduc();
-  //simsimul.pause.set(true);
+  interf.taskpanel.reduc();
+  //simul.pause.set(true);
+  //interf.filesManagement();
+  //interf.macro_main.show_macro.set(false);
   
   logln("end models: "+interf.gui_theme.models.size());
   background(0);//fond noir

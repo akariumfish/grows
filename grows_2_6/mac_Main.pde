@@ -50,11 +50,12 @@ class Macro_Main extends Macro_Sheet {
   Ticking_pile tickpile;
   nInfo info;
   Macro_Sheet selecting_sheet = null;
-  ArrayList<nWidget> selected_macro_grabber = new ArrayList<nWidget>();
+  ArrayList<Macro_Abstract> selected_macro = new ArrayList<Macro_Abstract>();
   nGUI cam_gui, screen_gui;
   DataHolder data;
   sValueBloc sbloc;
   sBoo show_macro;
+  Camera cam;
   
   void reduc() { super.reduc(); 
     grabber.setPosition(cam_gui.view.pos.x+cam_gui.view.size.x/2, cam_gui.view.pos.y);
@@ -62,9 +63,11 @@ class Macro_Main extends Macro_Sheet {
     for (nWidget w : subHeadWidgets) w.hide();
     setWidth(ref_size*8); }
   void askTick() { runEvents(tickAskMethods); }
-  
-  Macro_Main(nGUI _cam, nGUI _screen, DataHolder _data) {
+  void show() { super.show(); szone.ON = true; closer.hide(); }
+  void hide() { super.hide(); szone.ON = false; }
+  Macro_Main(nGUI _cam, nGUI _screen, DataHolder _data, Camera _c) {
     super(_cam, null, 0, -_cam.view.size.y/2);
+    cam = _c;
     cam_gui = _cam; screen_gui = _screen; data = _data;
     sbloc = new sValueBloc(data, "Macro");
     show_macro = new sBoo(sbloc, true, "show_macro");
@@ -72,13 +75,13 @@ class Macro_Main extends Macro_Sheet {
       if (show_macro.get()) show(); else hide();
     }});
     cam_gui.addEventFrame(new Runnable() { public void run() {
-      if (isReduc) grabber.setPosition(cam_gui.view.pos.x+cam_gui.view.size.x/2, 
-                                       cam_gui.view.pos.y); 
+      //if (isReduc) grabber.setPosition(cam_gui.view.pos.x+cam_gui.view.size.x/2, 
+      //                                 cam_gui.view.pos.y); 
     } } );
     info = new nInfo(gui, int(ref_size/1.5)).setLayer(menu_layer+1);
     tickpile = new Ticking_pile();
     
-    front.hide();
+    //front.hide();
     //reduc.hide(); 
     closer.hide(); 
     grabber.setSX(ref_size*9.25)
@@ -91,8 +94,9 @@ class Macro_Main extends Macro_Sheet {
     szone = new nSelectZone(gui).addEventEndSelect(new Runnable() { public void run() {
       ;
     }}).addEventStartSelect(new Runnable() { public void run() {
+      if (selecting_sheet != null) selecting_sheet.front.setOutline(false);
       selecting_sheet = null;
-      selected_macro_grabber.clear();
+      selected_macro.clear();
     }});
     menugroup = new nExcludeGroup();
     for (nWidget w : menubuttons) menugroup.add(w);
@@ -177,6 +181,7 @@ abstract class Macro_Abstract {
   ArrayList<Macro_Output> extoutputs = new ArrayList<Macro_Output>(0);
   
   Macro_Sheet parent;
+  int sheet_depth = 0;
   
   nGUI gui;
   
@@ -196,11 +201,15 @@ abstract class Macro_Abstract {
     show();
   }
   
+  boolean selectable = true;
   boolean selected = false;
   
+  Macro_Abstract self;
+  
   Macro_Abstract(nGUI _gui, Macro_Sheet p, String n, float x, float y) {
+    self = this;
     gui = _gui; parent = p; name = n;
-    if (parent != null) parent.child_macro.add(this);
+    if (parent != null) { parent.child_macro.add(this); sheet_depth = parent.sheet_depth + 1; }
     
     sheet_width = ref_size;
     
@@ -208,9 +217,27 @@ abstract class Macro_Abstract {
                           x, y, sheet_width - ref_size * 0.75, ref_size * 0.75)
       .setLayer(layer)
       .addEventDrag(new Runnable() { public void run() { 
-        if (selected) for (nWidget w : mmain().selected_macro_grabber) if (w != grabber) {
-          w.setPX(w.getLocalX() + gui.mouseVector.x - gui.pmouseVector.x);
-          w.setPY(w.getLocalY() + gui.mouseVector.y - gui.pmouseVector.y);
+        if (back.getX() + back.getSX() > gui.view.pos.x + gui.view.size.x) {
+          mmain().cam.pushCam(-gui.view.size.x/300, 0);
+          grabber.setPX(grabber.getLocalX() + gui.view.size.x/(300*gui.scale));
+        }
+        if (back.getX() < gui.view.pos.x) {
+          mmain().cam.pushCam(gui.view.size.x/300, 0);
+          grabber.setPX(grabber.getLocalX() - gui.view.size.x/(300*gui.scale));
+        }
+        if (back.getY() + back.getSY() > gui.view.pos.y + gui.view.size.y) {
+          mmain().cam.pushCam(0, -gui.view.size.y/300);
+          grabber.setPY(grabber.getLocalY() + gui.view.size.y/(300*gui.scale));
+        }
+        if (back.getY() < gui.view.pos.y) {
+          mmain().cam.pushCam(0, gui.view.size.y/300);
+          grabber.setPY(grabber.getLocalY() - gui.view.size.y/(300*gui.scale));
+        }
+        if (selected) for (Macro_Abstract m : mmain().selected_macro) if (m.grabber != grabber) {
+          float mx = gui.mouseVector.x - gui.pmouseVector.x;
+          float my = gui.mouseVector.y - gui.pmouseVector.y;
+          m.grabber.setPX(m.grabber.getLocalX() + mx);
+          m.grabber.setPY(m.grabber.getLocalY() + my);
         }
         if (parent != null) parent.childDragged(); 
       } } )
@@ -226,7 +253,7 @@ abstract class Macro_Abstract {
       .setTrigger()
       .addEventTrigger(new Runnable() { public void run() { 
         // selected group clear
-        //if (selected) for (Macro_Abstract w : getBase().selected_macro) if (w.grabber != grabber) w.clear();
+        if (selected) for (Macro_Abstract w : mmain().selected_macro) if (w.grabber != grabber) w.clear();
         clear(); 
       } } )
       .setParent(grabber)
@@ -256,7 +283,6 @@ abstract class Macro_Abstract {
       .setOutlineWeight(ref_size/15)
       .addEventFrame(new Runnable() { public void run() { 
         if (mmain().szone.isSelecting()) {
-          if (mmain().selecting_sheet == null && mmain().szone.isUnder(front)) mmain().selecting_sheet = parent;
           if (mmain().selecting_sheet == parent) {
             if (mmain().szone.isUnder(front)) front.setOutline(true);
             else front.setOutline(false);
@@ -267,12 +293,11 @@ abstract class Macro_Abstract {
     if (mmain() != this) {
       mmain().szone.addEventStartSelect(new Runnable() { public void run() { 
         selected = false;
-        mmain().selected_macro_grabber.remove(grabber);
         front.setOutline(false);
       } } );
       mmain().szone.addEventEndSelect(new Runnable() { public void run() { 
-        if (mmain().selecting_sheet == parent && mmain().szone.isUnder(front))  {
-          mmain().selected_macro_grabber.add(grabber);
+        if (selectable && mmain().selecting_sheet == parent && mmain().szone.isUnder(front))  {
+          mmain().selected_macro.add(self);
           selected = true;
         }
       } } );

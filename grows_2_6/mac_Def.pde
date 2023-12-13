@@ -76,6 +76,7 @@ class MC_Run extends MC_Connexion {
   
   MC_Run setRunnable(String k) { run_key = k; 
     run = parent.mmain().data.refered_runnable_map.get(k); 
+    label.setText(run_key);
     return this; }
 
   MC_Run(Macro_Custom _p) {
@@ -91,11 +92,11 @@ class MC_Run extends MC_Connexion {
       .setStandbyColor(color(255, 50))
       .setParent(in.connect)
       .stackRight()
-      .addEventFrame_Builder(new Runnable() { public void run() {
-        if (run_key != null)  {
-          ((nWidget)builder).setText(run_key);
-        }
-      }})
+      //.addEventFrame_Builder(new Runnable() { public void run() {
+      //  if (run_key != null)  {
+      //    ((nWidget)builder).setText(run_key);
+      //  }
+      //}})
       ;
     parent.widgets.add(label);
   }
@@ -157,19 +158,13 @@ class MC_Value_Watcher extends MC_Connexion {
   void from_save(Save_Bloc bloc) {
     super.from_save(bloc);
     if (bloc.getData("f") != null) {
-      for (Map.Entry me : parent.mmain().data.blocs.entrySet()) {
-        sValueBloc vb = ((sValueBloc)me.getValue());
-        for (Map.Entry me2 : vb.values.entrySet()) {
-          sValue v = ((sValue)me2.getValue());
-          if (v.ref.equals(bloc.getData("f"))) { f_val = ((sFlt)v); break; }
-        }
-      }
+      f_val = (sFlt)(parent.mmain().data.searchValue(bloc.getData("f")));
     }
     if (bloc.getData("b") != null) {
-      //for (sBoo v : simval.sboolist) if (v.name.equals(bloc.getData("b"))) { b_val = v; break; }
+      b_val = (sBoo)(parent.mmain().data.searchValue(bloc.getData("b")));
     }
     if (bloc.getData("i") != null) {
-      //for (sInt v : simval.sintlist) if (v.name.equals(bloc.getData("i"))) { i_val = v; break; }
+      i_val = (sInt)(parent.mmain().data.searchValue(bloc.getData("i")));
     }
   }
 }
@@ -183,7 +178,7 @@ class MC_Value_Controller extends MC_Connexion {
   MC_Value_Controller setValue(sFlt v) { in.setFilterNumber(); f_val = v; i_val = null; b_val = null; return this; }
   MC_Value_Controller setValue(sInt v) { in.setFilterNumber(); i_val = v; f_val = null; b_val = null; return this; }
   MC_Value_Controller setValue(sBoo v) { 
-    in.setFilterBool(); 
+    in.setFilterBin(); 
     b_val = v; i_val = null; f_val = null; return this; 
   }
   MC_Value_Controller(Macro_Custom _p) {
@@ -191,9 +186,9 @@ class MC_Value_Controller extends MC_Connexion {
     in = parent.addExtInput()
       .addEventReceive(new Runnable() { public void run() {
         if (in.getLastPacket().isFloat() && f_val != null) f_val.set(in.getLastPacket().asFloat());
-        if (in.getLastPacket().isInt() && i_val != null) i_val.set(in.getLastPacket().asInt());
-        if (in.getLastPacket().isBool() && b_val != null) b_val.set(in.getLastPacket().asBool());
-        if (in.getLastPacket().isBang() && b_val != null) b_val.set(true);
+        else if (in.getLastPacket().isInt() && i_val != null) i_val.set(in.getLastPacket().asInt());
+        else if (in.getLastPacket().isBool() && b_val != null) b_val.set(in.getLastPacket().asBool());
+        else if (in.getLastPacket().isBang() && b_val != null) b_val.set(!b_val.get());
       }})
       ;
     label = new nWidget(parent.gui, "--", int(parent.ref_size/1.5), parent.ref_size*0.125, 0, 
@@ -203,8 +198,8 @@ class MC_Value_Controller extends MC_Connexion {
       .stackRight()
       .addEventFrame_Builder(new Runnable() { public void run() {
         if (f_val != null)  { ((nWidget)builder).setText(f_val.ref); }
-        if (i_val != null)  { ((nWidget)builder).setText(i_val.ref); }
-        if (b_val != null)  { ((nWidget)builder).setText(b_val.ref); }
+        else if (i_val != null)  { ((nWidget)builder).setText(i_val.ref); }
+        else if (b_val != null)  { ((nWidget)builder).setText(b_val.ref); }
       }})
       ;
     parent.widgets.add(label);
@@ -212,28 +207,20 @@ class MC_Value_Controller extends MC_Connexion {
   void to_save(Save_Bloc bloc) {
     super.to_save(bloc);
     if (f_val != null) bloc.newData("f", f_val.ref);
-    if (b_val != null) bloc.newData("b", b_val.ref);
-    if (i_val != null) bloc.newData("i", i_val.ref);
+    else if (b_val != null) bloc.newData("b", b_val.ref);
+    else if (i_val != null) bloc.newData("i", i_val.ref);
   }
   void from_save(Save_Bloc bloc) {
     super.from_save(bloc);
     if (bloc.getData("f") != null) {
-      if (bloc.getData("f") != null) {
-      for (Map.Entry me : parent.mmain().data.blocs.entrySet()) {
-        sValueBloc vb = ((sValueBloc)me.getValue());
-        for (Map.Entry me2 : vb.values.entrySet()) {
-          sValue v = ((sValue)me2.getValue());
-          if (v.ref.equals(bloc.getData("f"))) { f_val = ((sFlt)v); break; }
-        }
-      }
-    }
-    }
-    if (bloc.getData("b") != null) {
-      //for (sBoo v : simval.sboolist) if (v.name.equals(bloc.getData("b"))) { setValue(v); break; }
-    }
-    if (bloc.getData("i") != null) {
-      //for (sInt v : simval.sintlist) if (v.name.equals(bloc.getData("i"))) { setValue(v); break; }
-    }
+      f_val = (sFlt)(parent.mmain().data.searchValue(bloc.getData("f")));
+      in.setFilterNumber();  }
+    else if (bloc.getData("b") != null) {
+      b_val = (sBoo)(parent.mmain().data.searchValue(bloc.getData("b")));
+      in.setFilterBin();  }
+    else if (bloc.getData("i") != null) {
+      i_val = (sInt)(parent.mmain().data.searchValue(bloc.getData("i")));
+      in.setFilterNumber();  }
   }
 }
 

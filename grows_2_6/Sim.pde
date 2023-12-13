@@ -48,7 +48,7 @@
         shapes contain energy???                            <<<<<< THE GAME MECHANIC MAKE HER ENTRY
         to excenge energy throug macro link output need a received method called by receiving input to
         confirm transfer 
-      width 1200
+      screen width 1200
       draw : invisible, particle 1px, pebble 5px, small 25px, med 100px, 
              big 400px, fullscreen 1100px, zoom in 3000px, micro 10 000px, too big 100 000px
     frame()
@@ -73,7 +73,7 @@ class Simulation {
     inter.toolpanel.getShelf(0)
       .addDrawer(10,0.75)
         .addModel("Label-S4", "-  Simulation Control  -").setFont(int(ref_size)).getShelf()
-      .addDrawer(0.25)
+      .addSeparator(0.25)
       .addDrawer(10, 1)
         .addCtrlModel("Button-S3-P1", "RESET")
           .setRunnable(new Runnable() { public void run() { reset(); } }).getDrawer()
@@ -81,9 +81,9 @@ class Simulation {
           .setRunnable(new Runnable() { public void run() { resetRng(); } }).getShelf()
       .addDrawer(10, 1)
         .addCtrlModel("Button-S3-P1", "Quick Save")
-          .setRunnable(new Runnable() { public void run() {  } }).getDrawer()
+          .setRunnable(new Runnable() { public void run() { inter.save(); } }).getDrawer()
         .addCtrlModel("Button-S3-P2", "Quick Load")
-          .setRunnable(new Runnable() { public void run() {  } }).getDrawer()
+          .setRunnable(new Runnable() { public void run() { inter.load(); } }).getDrawer()
         .getShelfPanel()
     .addShelf()
       .addDrawer(10, 1)
@@ -100,7 +100,7 @@ class Simulation {
         .addCtrlModel("Button-S1-P8", ">>").setLinkedValue(tick_by_frame).setFactor(2).getShelf()
       .addDrawer(10, 1)
         .addWatcherModel("Label_Back-S3-P1")
-          //.setLinkedValue(inter.framerate.sec_since_reset)
+          //.setLinkedValue(inter.test)
           .getDrawer()
         .addWatcherModel("Label_Back-S3-P2").setLinkedValue(tick_counter).getShelf()
       .addDrawer(10, 1)
@@ -151,7 +151,7 @@ class Simulation {
     inter.addToCamDrawerPile(new Drawable() { public void drawing() { draw_to_cam(); } } );
     inter.addToScreenDrawerPile(new Drawable() { public void drawing() { draw_to_screen(); } } );
     
-    macromain_tickable = new Tickable(ticking_pile) { public void tick(float f) { inter.macro_main.tick(); } };
+    //macromain_tickable = new Tickable(ticking_pile) { public void tick(float f) { inter.macro_main.tick(); } };
     
     inter.data.addReferedRunnable("sim reset", new Runnable() { public void run() { 
       reset(); } } );
@@ -259,7 +259,7 @@ abstract class Community {
     sim = _c; name = n;
     sim.list.add(this);
     
-    sbloc = new sValueBloc(sim.inter.sbloc, "Community " + n);
+    sbloc = new sValueBloc(sim.sbloc, "Community " + n);
     max_entity = new sInt(sbloc, 500, "max_entity " + n);
     active_entity = new sInt(sbloc, 0, "active_entity " + n);
     adding_entity_nb = new sInt(sbloc, 10, "adding_entity_nb " + n);

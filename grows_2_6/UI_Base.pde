@@ -93,7 +93,7 @@ class nGUI {
 
 //liens avec les svalues
 class nLinkedWidget extends nWidget {
-  sBoo bval; sInt ival; sFlt fval;
+  sBoo bval; sInt ival; sFlt fval; sStr sval;
   nLinkedWidget(nGUI g) { super(g); }
   
   nLinkedWidget setLinkedValue(sBoo b) { 
@@ -123,6 +123,16 @@ class nLinkedWidget extends nWidget {
     addEventFieldChange(new Runnable(this) { public void run() { 
       String s = ((nLinkedWidget)builder).getText();
       if (!(s.length() > 0 && float(s) == 0) && !str(float(s)).equals("NaN")) fval.set(float(s)); } } );
+    return this; }
+  nLinkedWidget setLinkedValue(sStr b) { 
+    sval = b;
+    setText(sval.get());
+    b.addEventChange(new Runnable(this) { public void run() { 
+      ((nLinkedWidget)builder).changeText(sval.get()); } } );
+    setField(true);
+    addEventFieldChange(new Runnable(this) { public void run() { 
+      String s = ((nLinkedWidget)builder).getText();
+      sval.set(s); } } );
     return this; }
 }
 
@@ -178,6 +188,8 @@ class nCtrlWidget extends nWidget {
 
 //manage look
 class sLook extends sValue {
+  String getString() { return ""; }
+  void clear() { }
   nLook val = new nLook();
   sLook(sValueBloc b, nLook v, String n) { super(b, "look", n); val.copy(v); }
   nLook get() { return val; }
@@ -202,6 +214,44 @@ class nLook {
         outlineColor = color(255), outlineSelectedColor = color(255, 255, 0), textColor = color(255);
   int textFont = 24; float outlineWeight = 1;
 }
+
+
+
+
+class nSlide extends nWidget {
+  nWidget addEventSlide(Runnable r)   { eventSlide.add(r); return this; }
+  nWidget addEventSlide_Builder(Runnable r)   { r.builder = this; eventSlide.add(r); return this; }
+  
+  nWidget bar, curs;
+  ArrayList<nWidget> widgets = new ArrayList<nWidget>();
+  float scale_height, scale_width;
+  float cursor_value = 0;
+  ArrayList<Runnable> eventSlide = new ArrayList<Runnable>();
+  nSlide(nGUI g, float _scale_height, float _scale_width) { super(g); 
+    scale_height = _scale_height; scale_width = _scale_width;
+    bar = new nWidget(gui, 0, scale_height * 3 / 8, _scale_width, scale_height * 1 / 4).setParent(this);
+    curs = new nWidget(gui, 0, -scale_height * 3 / 8, scale_height * 1 / 4, scale_height)
+      .setParent(bar)
+      .setStandbyColor(color(100))
+      .setGrabbable().setConstrainY(true)
+      .addEventDrag(new Runnable() { public void run() {
+        if (curs.getLocalX() < 0) curs.setPX(0);
+        if (curs.getLocalX() > bar.getLocalSX() - curs.getLocalSX()) 
+          curs.setPX(bar.getLocalSX() - curs.getLocalSX());
+        cursor_value = curs.getLocalX() / (bar.getLocalSX() - curs.getLocalSX());
+        runEvents(eventSlide, cursor_value);
+      }});
+    widgets.add(bar);
+    widgets.add(curs);
+  }
+  nSlide setLayer(int l) { super.setLayer(l); for (nWidget w : widgets) w.setLayer(l); return this; }
+  nSlide toLayerTop() { super.toLayerTop(); for (nWidget w : widgets) w.toLayerTop(); return this; }
+  void clear() { for (nWidget w : widgets) w.clear(); super.clear(); }
+}
+
+
+
+
 
 
 class nWidget {
@@ -233,8 +283,10 @@ class nWidget {
   nWidget addEventPress(Runnable r)      { eventPressRun.add(r); return this; }
   nWidget addEventRelease(Runnable r)    { eventReleaseRun.add(r); return this; }
   
-  nWidget addEventTrigger(Runnable r)    { eventTriggerRun.add(r); return this; }
+  nWidget addEventTrigger(Runnable r)         { eventTriggerRun.add(r); return this; }
+  nWidget removeEventTrigger(Runnable r)      { eventTriggerRun.remove(r); return this; }
   nWidget addEventTrigger_Builder(Runnable r) { eventTriggerRun.add(r); r.builder = this; return this; }
+  
   nWidget addEventSwitchOn(Runnable r)   { eventSwitchOnRun.add(r); return this; }
   nWidget addEventSwitchOff(Runnable r)  { eventSwitchOffRun.add(r); return this; }
   
@@ -301,11 +353,29 @@ class nWidget {
   }
   
   nWidget copy(nWidget w) {
+    eventFrameRun.clear(); for (Runnable r : w.eventFrameRun) eventFrameRun.add(r);
+  //  ArrayList<Runnable> eventPositionChange = new ArrayList<Runnable>();
+  //ArrayList<Runnable> eventShapeChange = new ArrayList<Runnable>();
+  //ArrayList<Runnable> eventLayerChange = new ArrayList<Runnable>();
+  //ArrayList<Runnable> eventVisibilityChange = new ArrayList<Runnable>();
+  //ArrayList<Runnable> eventClear = new ArrayList<Runnable>();
+  //ArrayList<Runnable> eventFrameRun = new ArrayList<Runnable>();
+  //ArrayList<Runnable> eventGrabRun = new ArrayList<Runnable>();
+  //ArrayList<Runnable> eventDragRun = new ArrayList<Runnable>();
+  //ArrayList<Runnable> eventLiberateRun = new ArrayList<Runnable>();
+  //ArrayList<Runnable> eventMouseEnterRun = new ArrayList<Runnable>();
+  //ArrayList<Runnable> eventMouseLeaveRun = new ArrayList<Runnable>();
+  //ArrayList<Runnable> eventPressRun = new ArrayList<Runnable>();
+  //ArrayList<Runnable> eventReleaseRun = new ArrayList<Runnable>();
+  //ArrayList<Runnable> eventTriggerRun = new ArrayList<Runnable>();
+  //ArrayList<Runnable> eventSwitchOnRun = new ArrayList<Runnable>();
+  //ArrayList<Runnable> eventSwitchOffRun = new ArrayList<Runnable>();
+  //ArrayList<Runnable> eventFieldChangeRun = new ArrayList<Runnable>();
     triggerMode = w.triggerMode; switchMode = w.switchMode;
     grabbable = w.grabbable; constrainX = w.constrainX; constrainY = w.constrainY;
     isSelectable = w.isSelectable; isField = w.isField; 
     showCursor = w.showCursor; hoverOutline = w.hoverOutline; showOutline = w.showOutline;
-    alignX = w.alignX; stackX = w.stackX; alignY = w.alignY; stackY = w.stackY;
+    alignX = w.alignX; stackX = w.stackX; alignY = w.alignY; stackY = w.stackY; centerX = w.centerX; centerY = w.centerY;
     placeLeft = w.placeLeft; placeRight = w.placeRight; placeUp = w.placeUp; placeDown = w.placeDown;
     hide = w.hide; drawerHideState = w.drawerHideState; hoverHideState = w.hoverHideState;
     constantOutlineWeight = w.constantOutlineWeight;
@@ -315,6 +385,7 @@ class nWidget {
     setSize(w.localrect.size.x, w.localrect.size.y);
     changePosition();
     if (hover != null && w.hover != null) hover.active = w.hover.active;
+    if (w.parent != null) setParent(w.parent);
     //if (hover != null && (isSelectable || grabbable || triggerMode || switchMode) && !hide) hover.active = true;
     return this;
   }
@@ -328,7 +399,7 @@ class nWidget {
     eventVisibilityChange.clear(); eventClear.clear(); eventFrameRun.clear(); 
     eventGrabRun.clear(); eventDragRun.clear(); eventLiberateRun.clear(); eventFieldChangeRun.clear();
     eventMouseEnterRun.clear(); eventMouseLeaveRun.clear(); eventPressRun.clear(); eventReleaseRun.clear();
-    eventTriggerRun.clear(); eventSwitchOnRun.clear(); eventSwitchOffRun.clear();
+    eventTriggerRun.clear(); eventSwitchOnRun.clear(); eventSwitchOffRun.clear(); eventFieldChangeRun.clear();
   }
   
   nGUI getGUI() { return gui; }
@@ -343,6 +414,8 @@ class nWidget {
   boolean isOn() { return switchState; }
   
   
+  
+  nWidget setHoverablePhantomSpace(float f) { if (hover != null) hover.phantom_space = f; return this; }
   
   nWidget setPassif() { triggerMode = false; switchMode = false; switchState = false; if (hover != null) hover.active = false; return this; }
   nWidget setTrigger() { 
@@ -408,14 +481,16 @@ class nWidget {
   nWidget setOutlineColor(color c) { look.outlineColor = c; return this; }
   nWidget setOutlineSelectedColor(color c) { look.outlineSelectedColor = c; return this; }
   
-  nWidget alignUp()    { alignY = true; stackY = false; placeUp = true; placeDown = false; changePosition(); return this; }
-  nWidget alignDown()  { alignY = true; stackY = false; placeUp = false; placeDown = true; changePosition(); return this; }
-  nWidget alignLeft()  { alignX = true; stackX = false; placeLeft = true; placeRight = false; changePosition(); return this; }
-  nWidget alignRight() { alignX = true; stackX = false; placeLeft = false; placeRight = true; changePosition(); return this; }
-  nWidget stackUp()    { alignY = false; stackY = true; placeUp = true; placeDown = false; changePosition(); return this; }
-  nWidget stackDown()  { alignY = false; stackY = true; placeUp = false; placeDown = true; changePosition(); return this; }
-  nWidget stackLeft()  { alignX = false; stackX = true; placeLeft = true; placeRight = false; changePosition(); return this; }
-  nWidget stackRight() { alignX = false; stackX = true; placeLeft = false; placeRight = true; changePosition(); return this; }
+  nWidget alignUp()    { alignY = true;  stackY = false; placeUp   = true;  placeDown = false;  centerY = false; changePosition(); return this; }
+  nWidget alignDown()  { alignY = true;  stackY = false; placeUp   = false; placeDown = true;   centerY = false; changePosition(); return this; }
+  nWidget alignLeft()  { alignX = true;  stackX = false; placeLeft = true;  placeRight = false; centerY = false; changePosition(); return this; }
+  nWidget alignRight() { alignX = true;  stackX = false; placeLeft = false; placeRight = true;  centerY = false; changePosition(); return this; }
+  nWidget stackUp()    { alignY = false; stackY = true;  placeUp   = true;  placeDown = false;  centerX = false; changePosition(); return this; }
+  nWidget stackDown()  { alignY = false; stackY = true;  placeUp   = false; placeDown = true;   centerX = false; changePosition(); return this; }
+  nWidget stackLeft()  { alignX = false; stackX = true;  placeLeft = true;  placeRight = false; centerX = false; changePosition(); return this; }
+  nWidget stackRight() { alignX = false; stackX = true;  placeLeft = false; placeRight = true;  centerX = false; changePosition(); return this; }
+  nWidget centerX()    { alignX = false; stackX = false; placeLeft = false; placeRight = false; centerX = true;  changePosition(); return this; }
+  nWidget centerY()    { alignX = false; stackX = false; placeLeft = false; placeRight = false; centerY = true;  changePosition(); return this; }
   
   void setSwitchState(boolean s) { if (s) setOn(); else setOff(); }
   void setOn() {
@@ -444,6 +519,7 @@ class nWidget {
         if (placeRight) return parent.getX() + parent.getSX() + localrect.pos.x;
         else if (placeLeft) return parent.getX() + localrect.pos.x - getSX();
       } else return localrect.pos.x + parent.getX();
+      if (centerX) return parent.getX() + localrect.pos.x - getSX()/2;
     } 
     if (alignX) {
       if (placeRight) return localrect.pos.x - getSX();
@@ -452,6 +528,7 @@ class nWidget {
       if (placeRight) return localrect.pos.x;
       else if (placeLeft) return localrect.pos.x - getSX();
     } 
+    if (centerX) return localrect.pos.x - getSX()/2;
     return localrect.pos.x;
   }
   float getY() { 
@@ -463,6 +540,7 @@ class nWidget {
         if (placeDown) return parent.getY() + parent.getSY() + localrect.pos.y;
         else if (placeUp) return parent.getY() + localrect.pos.y - getSY();
       } else return localrect.pos.y + parent.getY();
+      if (centerY) return parent.getY() + localrect.pos.y - getSY()/2;
     } 
     if (alignY) {
       if (placeDown) return localrect.pos.y - getSY();
@@ -471,6 +549,7 @@ class nWidget {
       if (placeDown) return localrect.pos.y;
       else if (placeUp) return localrect.pos.y - getSY();
     }
+    if (centerY) return localrect.pos.y - getSY()/2;
     return localrect.pos.y;
   }
   float getLocalX() { return localrect.pos.x; }
@@ -510,7 +589,7 @@ class nWidget {
     setSize(w, h);
   }
   
-  private nGUI gui;
+  protected nGUI gui;
   private Drawable drawer;
   private Hoverable hover;
   private Rect globalrect, localrect;
@@ -537,6 +616,7 @@ class nWidget {
   private boolean isSelectable = false, isField = false, showCursor = false;
   private boolean showOutline = false, hoverOutline = false, constantOutlineWeight = false;
   private boolean alignX = false, stackX = false, alignY = false, stackY = false;
+  private boolean centerX = false, centerY = false;
   private boolean placeLeft = false, placeRight = false, placeUp = false, placeDown = false;
   private boolean hide = false, drawerHideState = true, hoverHideState = true;
   private int layer = 0;
@@ -788,6 +868,11 @@ boolean rectCollide(PVector p, Rect rect) {
           p.y >= rect.pos.y && p.y <= rect.pos.y + rect.size.y );
 }
 
+boolean rectCollide(PVector p, Rect rect, float s) {
+  Rect rects = new Rect(rect); rects.pos.x -= s; rects.pos.y -= s; rects.size.x += 2*s; rects.size.y += 2*s;
+  return (p.x >= rects.pos.x && p.x <= rects.pos.x + rects.size.x &&
+          p.y >= rects.pos.y && p.y <= rects.pos.y + rects.size.y );
+}
 
 
 // systemes pour organiser l'ordre d'execution de different trucs en layer:
@@ -856,6 +941,8 @@ class Drawing_pile {
 
 
 //parmi une list de rect en layer lequel est en collision avec un point en premier
+
+
 class Hoverable_pile {
   ArrayList<Hoverable> hoverables = new ArrayList<Hoverable>();
   ArrayList<Runnable> eventsFound = new ArrayList<Runnable>();
@@ -880,8 +967,14 @@ class Hoverable_pile {
           Hoverable h = hoverables.get(i);
           if (h.layer == layer) {
             count++;
-            if (!found && h.active && h.rect != null && rectCollide(pointer, h.rect)) {
+            if (!found && h.active && h.rect != null && rectCollide(pointer, h.rect, h.phantom_space)) {
               h.mouseOver = true;
+              if (DEBUG_HOVERPILE) {
+                fill(255, 0);
+                strokeWeight(5);
+                stroke(0, 0, 255);
+                rect(h.rect.pos.x, h.rect.pos.y, h.rect.size.x, h.rect.size.y);
+              }
               found = true;
             }
           }
@@ -900,6 +993,7 @@ class Hoverable {
   Rect rect = null;
   boolean mouseOver = false;
   boolean active = true;
+  float phantom_space = 0;
   Hoverable(Hoverable_pile p, Rect r) {
     layer = 0;
     pile = p;

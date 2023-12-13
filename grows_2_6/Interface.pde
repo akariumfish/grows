@@ -1,39 +1,39 @@
 /*
  Interface(Inputs, DataHolding)
-    class CameraView 
-      name
-      pos and scale as svalue
-    map<name, CameraView> : views
-    name of current view as svalue
-    
-    drawing_pile screen_draw, cam_draw
-    hover_pile screen and cam
-    
-    event hoverpilesearch both no find
-    
-    list<runnable> frameEvents
-    
-    add widget methods
-    frame()
-      hover_pile.search() if screen found dont do cam
-      run frameEvents
-      update cam view from inputs
-      clear screen
-      draw grid if needed
-      draw cam then screen from their pov
-    to control when to screenshot maybe do it in a Drawer
-    
-    Global GUI Theme 
-      can be picked from by widgets 
-      ? list of widgets to update when is changed ?
-      map of color and name
-      map of size and name
-    map<name, widget> models
-      methods to directly build a widget from models
-      
-    
-  
-*/
+ class CameraView 
+ name
+ pos and scale as svalue
+ map<name, CameraView> : views
+ name of current view as svalue
+ 
+ drawing_pile screen_draw, cam_draw
+ hover_pile screen and cam
+ 
+ event hoverpilesearch both no find
+ 
+ list<runnable> frameEvents
+ 
+ add widget methods
+ frame()
+ hover_pile.search() if screen found dont do cam
+ run frameEvents
+ update cam view from inputs
+ clear screen
+ draw grid if needed
+ draw cam then screen from their pov
+ to control when to screenshot maybe do it in a Drawer
+ 
+ Global GUI Theme 
+ can be picked from by widgets 
+ ? list of widgets to update when is changed ?
+ map of color and name
+ map of size and name
+ map<name, widget> models
+ methods to directly build a widget from models
+ 
+ 
+ 
+ */
 
 
 
@@ -41,49 +41,139 @@ class sInterface {
   nToolPanel toolpanel;
   nDropMenu main_menu;
   nTaskPanel taskpanel;
-  nWindowPanel window;
+  //nWindowPanel window;
+  nWindowPanel files_panel;
+  float size = 40;
   
-  void build_default_ui(float ref_size) {
-    
-    taskpanel = new nTaskPanel(screen_gui, ref_size, 0.125);
-    window = new nWindowPanel(screen_gui, taskpanel);
-    window.addShelf()
-      .addDrawer(4,1)
+  String savepath = "save.sdata";
+  sStr savepath_value;
+  Save_Bloc main_savebloc;
+  void filesManagement() {
+    files_panel = new nWindowPanel(screen_gui, taskpanel, "Files");
+    files_panel.getShelf()
+      .addSeparator(0.0625)
+      .addDrawer(1)
+        .addModel("Label-S4", "Select File :                                   ").getDrawer()
+        .addCtrlModel("Button_Outline-S2", "SAVE")
+          .setRunnable(new Runnable() { public void run() { save(); } } ).setPX(size*4).getDrawer()
+        .addCtrlModel("Button_Outline-S2", "LOAD")
+          .setRunnable(new Runnable() { public void run() { load(); } } ).setPX(size*7).getShelf()
+      .addSeparator(0.0625)
+      .addDrawer(0.75)
+        .addLinkedModel("Field-SS4", savepath).setLinkedValue(savepath_value).getShelf()
+      .addSeparator(0.0625)
       ;
-    
-    main_menu = new nDropMenu(screen_gui, ref_size, 10, false)
-      .addEntry("Files", new Runnable() { public void run() { ; } });
-    toolpanel = new nToolPanel(screen_gui, ref_size, 0.125, false, false);
-    toolpanel.addShelf()
-      .addDrawer(10,0.625)
-        .addCtrlModel("Menu_Button_Small_Outline-SS4", "MENU", -0.125, -0.125).setTrigger()
-          .addEventTrigger_Builder(new Runnable() { public void run() { 
-            main_menu.drop(((nWidget)builder), toolpanel.panel.getX(), toolpanel.panel.getY()); } })
-          .setFont(int(ref_size/1.9)).getDrawer()
-        .addLinkedModel("Menu_Button_Small_Outline-SS1", "M")
-          .setLinkedValue(macro_main.show_macro)
-          .setPosition(ref_size*9.125, -ref_size*0.125)
-          .setFont(int(ref_size/1.9)).getDrawer();
   }
   
-  sInput input;
-  DataHolder data; sValueBloc sbloc;
+  void save() {
+    data.save_to_bloc(main_savebloc);
+    main_savebloc.save_to(savepath);
+  }
+  void load() {
+    main_savebloc.load_from(savepath);
+    data.load_from_bloc(main_savebloc);
+  }
   
+  sValueBloc recurs_sbloc, prev_sbloc;
+  void dataBlocPreview() {
+    nDropMenu data_menu = new nDropMenu(screen_gui, size*0.8, 12.5, false, false);
+    for (Map.Entry b : data.blocs.entrySet()) { 
+      sValueBloc s = (sValueBloc)b.getValue();
+      data_menu.addEntry(((String)b.getKey()), new Runnable(s) { public void run() { 
+        recurs_sbloc = ((sValueBloc)builder);
+        recursivesBlocPreview();
+      } } );
+    }
+    data_menu.drop(screen_gui);
+  }
+  void recursivesBlocPreview() {
+    nDropMenu sbloc_menu = new nDropMenu(screen_gui, size*0.8, 12.5, false, false);
+    sbloc_menu.addEntry("prev", new Runnable() { public void run() { 
+      recurs_sbloc = prev_sbloc;
+      prev_sbloc = null;
+      if (recurs_sbloc != null) recursivesBlocPreview(); else dataBlocPreview();
+    } } );
+    for (Map.Entry b : recurs_sbloc.blocs.entrySet()) { 
+      sValueBloc s = (sValueBloc)b.getValue();
+      sbloc_menu.addEntry(((String)b.getKey()), new Runnable(s) { public void run() { 
+        prev_sbloc = recurs_sbloc;
+        recurs_sbloc = ((sValueBloc)builder);
+        recursivesBlocPreview();
+      } } );
+    }
+    for (Map.Entry b : recurs_sbloc.values.entrySet()) { 
+      sValue s = (sValue)b.getValue();
+      nCtrlWidget w = sbloc_menu.addEntry(s.type+":"+((String)b.getKey())+"="+s.getString());
+      if (s.type.equals("boo")) {
+        w.setLinkedValue(((sBoo)s));
+        s.addEventChange(new Runnable(w) { public void run() { 
+          sBoo val = ((nCtrlWidget)builder).bval;
+          ((nCtrlWidget)builder).setText(val.type+":"+val.ref+"="+val.getString());
+        } } );
+      }
+      if (s.type.equals("flt")) {
+        //nSlide slide = new nSlide(screen_gui, size*0.8, size*0.8*12.5);
+        //slide.addEventSlide_Builder(new Runnable(s) { public void run() { 
+          
+        //} } )
+        //  .setParent(w)
+        //  .toLayerTop()
+        //  ;
+      }
+    }
+    sbloc_menu.drop(screen_gui);
+  }
+
+  void build_default_ui(float ref_size) {
+    
+    savepath_value = new sStr(sbloc, savepath, "savepath");
+    main_savebloc = new Save_Bloc(savepath);
+    
+    taskpanel = new nTaskPanel(screen_gui, ref_size, 0.125);
+    
+    main_menu = new nDropMenu(screen_gui, ref_size*0.8, 12.5, false, true);
+    main_menu.addEntry("Files", new Runnable() { public void run() { filesManagement(); } } );
+    main_menu.addEntry("GUI", new Runnable() { 
+      public void run() { 
+        new nColorPanel(screen_gui, taskpanel).setPosition(size*5, size*5);
+      } } );
+    main_menu.addEntry("Datas", new Runnable() { public void run() { dataBlocPreview(); } } );
+    toolpanel = new nToolPanel(screen_gui, ref_size, 0.125, false, false);
+    toolpanel.addShelf()
+      .addDrawer(10, 0.625)
+      .addCtrlModel("Menu_Button_Small_Outline-SS4", "MENU", -0.125, -0.125).setTrigger()
+      .addEventTrigger_Builder(new Runnable() { 
+      public void run() { 
+        main_menu.drop(((nWidget)builder), toolpanel.panel.getX(), toolpanel.panel.getY());
+      }
+    }
+    )
+    .setFont(int(ref_size/1.9)).getDrawer()
+      .addLinkedModel("Menu_Button_Small_Outline-SS1", "M")
+      .setLinkedValue(macro_main.show_macro)
+      .setPosition(ref_size*9.125, -ref_size*0.125)
+      .setFont(int(ref_size/1.9)).getDrawer();
+    
+    
+  }
+
+  sInput input;
+  DataHolder data; 
+  sValueBloc sbloc;
+
   nTheme gui_theme;
   nGUI screen_gui, cam_gui;
   nExcludeGroup exclude_group;
-  
+
   Camera cam;
   sFramerate framerate;
-  
+
   Macro_Main macro_main;
-  
-  float size = 30;
-  
+
   sInterface() {
     input = new sInput();
     data = new DataHolder();
-    sbloc = data.newBloc("interface");
+    sbloc = new sValueBloc(data, "interface");
     cam = new Camera(input, sbloc)
       .addEventZoom(new Runnable() { public void run() { cam_gui.updateScale(); } } );
     framerate = new sFramerate(sbloc, 60);
@@ -91,53 +181,69 @@ class sInterface {
     exclude_group = new nExcludeGroup();
     screen_gui = new nGUI(input, gui_theme)
       .addEventFound(new Runnable() { public void run() { cam.GRAB = false; cam_gui.override = true; } } )
-      .addEventNotFound(new Runnable() { public void run() { cam.GRAB = true; cam_gui.override = false; } } );
+    .addEventNotFound(new Runnable() { public void run() { cam.GRAB = true; cam_gui.override = false; } } );
     cam_gui = new nGUI(input, gui_theme)
       .setMouse(cam.mouse).setpMouse(cam.pmouse)
       .setView(cam.view)
-      .addEventFound(new Runnable() { public void run() { cam.GRAB = false; } } )
-      .addEventNotFound(new Runnable() { public void run() { 
-        if (!screen_gui.hoverable_pile.found) { cam.GRAB = true; runEvents(eventsHoverNotFound); } } } );
+      .addEventFound(new Runnable() { 
+      public void run() { cam.GRAB = false; } } )
+    .addEventNotFound(new Runnable() { public void run() { 
+      if (!screen_gui.hoverable_pile.found) { 
+        cam.GRAB = true; 
+        runEvents(eventsHoverNotFound); } } } );
+
+    macro_main = new Macro_Main(cam_gui, screen_gui, data, cam);
     
-    macro_main = new Macro_Main(cam_gui, screen_gui, data);
-    macro_main.show_macro.set(false);
-    
+
     build_default_ui(size);
   }
-  
-  sInterface addToCamDrawerPile(Drawable d) { d.setPile(cam_gui.drawing_pile); return this; }
-  sInterface addToScreenDrawerPile(Drawable d) { d.setPile(screen_gui.drawing_pile); return this; }
-  
+
+  sInterface addToCamDrawerPile(Drawable d) { 
+    d.setPile(cam_gui.drawing_pile); 
+    return this;
+  }
+  sInterface addToScreenDrawerPile(Drawable d) { 
+    d.setPile(screen_gui.drawing_pile); 
+    return this;
+  }
+
   ArrayList<Runnable> eventsFrame = new ArrayList<Runnable>();
   ArrayList<Runnable> eventsHoverNotFound = new ArrayList<Runnable>();
-  sInterface addEventHoverNotFound(Runnable r) { eventsHoverNotFound.add(r); return this; }
-  sInterface addEventFrame(Runnable r) { eventsFrame.add(r); return this; }
-  
+  sInterface addEventHoverNotFound(Runnable r) { 
+    eventsHoverNotFound.add(r); 
+    return this;
+  }
+  sInterface addEventFrame(Runnable r) { 
+    eventsFrame.add(r); 
+    return this;
+  }
+
   void frame() {
     input.frame_str(); // track mouse
     framerate.frame(); // calc last frame
     background(0);
-    
+
     runEvents(eventsFrame); // << sim runs here
-    
+
     screen_gui.frame();
     cam.pushCam(); // matrice d'affichage
     cam_gui.frame();
     cam_gui.draw();
     cam.popCam();
     screen_gui.draw();
-    
+
     //info:
-    fill(255); textSize(18); textAlign(LEFT);
+    fill(255); 
+    textSize(18); 
+    textAlign(LEFT);
     text(framerate.get() + " C " + trimStringFloat(cam.mouse.x) + 
-         "," + trimStringFloat(cam.mouse.y), 10, 24 );
+      "," + trimStringFloat(cam.mouse.y), 10, 24 );
     text("S " + trimStringFloat(input.mouse.x) + 
-         "," + trimStringFloat(input.mouse.y), 250, 24 );
-    
+      "," + trimStringFloat(input.mouse.y), 250, 24 );
+
     data.frame(); // reset flags
     input.frame_end(); // reset flags
   }
-  
 }
 
 
@@ -158,11 +264,11 @@ class Camera {
   sVec cam_pos; //position de la camera
   sFlt cam_scale; //facteur de grossicement
   float ZOOM_FACTOR = 1.1; //facteur de modification de cam_scale quand on utilise la roulette de la sourie
-  boolean GRAB = false, grabbed = false;
+  boolean GRAB = true, grabbed = false;
   sBoo grid; //show grid
   boolean screenshot = false; //enregistre une image de la frame sans les menu si true puis se desactive
   boolean matrixPushed = false; //track if in or out of the cam matrix
-  
+
   Camera(sInput i, sValueBloc d) { 
     sbloc = new sValueBloc(d, "camera");
     grid = new sBoo(sbloc, true, "show grid");
@@ -171,18 +277,28 @@ class Camera {
     view = new Rect(0, 0, width, height);
     view.pos.set(screen_to_cam(new PVector(0, 0)));
     view.size.set(screen_to_cam(new PVector(width, height)).sub(view.pos));
-    input = i; 
+    input = i;
   }
-  
+
   ArrayList<Runnable> eventsZoom = new ArrayList<Runnable>();
-  Camera addEventZoom(Runnable r) { eventsZoom.add(r); return this; }
+  Camera addEventZoom(Runnable r) { 
+    eventsZoom.add(r); 
+    return this;
+  }
   ArrayList<Runnable> eventsDrag = new ArrayList<Runnable>();
-  Camera addEventDrag(Runnable r) { eventsDrag.add(r); return this; }
-  
+  Camera addEventDrag(Runnable r) { 
+    eventsDrag.add(r); 
+    return this;
+  }
+
   PVector mouse = new PVector();
   PVector pmouse = new PVector(); //prev pos
   PVector mmouse = new PVector(); //mouvement
   
+  void pushCam(float x, float y) {
+    cam_pos.add(x*cam_scale.get(), y*cam_scale.get());
+  }
+
   void pushCam() {
     pushMatrix();
     translate(width / 2, height / 2);
@@ -224,19 +340,22 @@ class Camera {
       saveFrame("image/shot-########.png");
     }
     screenshot = false;
-    
+
     PVector tm = screen_to_cam(input.mouse);
     PVector tpm = screen_to_cam(input.pmouse);
     PVector tmm = screen_to_cam(input.mmouse);
-    mouse.x = tm.x; mouse.y = tm.y;
-    pmouse.x = tpm.x; pmouse.y = tpm.y;
-    mmouse.x = tmm.x; mmouse.y = tmm.y;
-    
+    mouse.x = tm.x; 
+    mouse.y = tm.y;
+    pmouse.x = tpm.x; 
+    pmouse.y = tpm.y;
+    mmouse.x = tmm.x; 
+    mmouse.y = tmm.y;
+
     //permet le cliquer glisser le l'ecran
     if (input.getClick("MouseLeft") && GRAB) grabbed = true; 
     if (!input.getState("MouseLeft") && grabbed) grabbed = false; 
     if (input.getState("MouseLeft") && grabbed) { 
-      cam_pos.add(mouseX - pmouseX, mouseY - pmouseY);
+      cam_pos.add(mouse.x - pmouse.x, mouse.y - pmouse.y);
       runEvents(eventsDrag);
     }
 
@@ -251,12 +370,11 @@ class Camera {
       cam_pos.mult(ZOOM_FACTOR); 
       runEvents(eventsZoom);
     }
-    
+
     view.pos.set(screen_to_cam(new PVector(0, 0)));
     view.size.set(screen_to_cam(new PVector(width, height)).sub(view.pos));
-    
   }
-  
+
   PVector cam_to_screen(PVector p) {
     PVector r = new PVector();
     if (matrixPushed) {
@@ -311,11 +429,11 @@ class Camera {
 
 /*
 framerate
-  median and current framerate
-  frame duration
-  frame and time counter total and resetable
-  get frame number for delay of(ms)
-*/
+ median and current framerate
+ frame duration
+ frame and time counter total and resetable
+ get frame number for delay of(ms)
+ */
 
 class sFramerate {
   sValueBloc bloc;
@@ -324,29 +442,33 @@ class sFramerate {
   int hist_it = 0;
   int frameR_update_rate = 10; // frames between update 
   int frameR_update_counter = frameR_update_rate;
-  
+
   float current_time = 0;
   float prev_time = 0;
   float frame_length = 0;
-  
+
   float frame_median = 0;
-  
+
   float reset_time = 0;
   int frame_counter = 0;
-  
-  sFlt median_framerate, current_framerate, frame_duration;
-  sInt sec_since_reset,frame_since_reset;
-  
-  int frameNbForMsDelay(int d) { return int(d * median_framerate.get() / 1000); }
 
-  int get() { return int(median_framerate.get()); }
-  
+  sFlt median_framerate, current_framerate, frame_duration;
+  sInt sec_since_reset, frame_since_reset;
+
+  int frameNbForMsDelay(int d) { 
+    return int(d * median_framerate.get() / 1000);
+  }
+
+  int get() { 
+    return int(median_framerate.get());
+  }
+
   sFramerate(sValueBloc d, int c) {
     frameRate_cible = c;
     frameRate(frameRate_cible);
     frameR_history = new float[frameRate_cible];
-    for (int i = 0 ; i < frameR_history.length ; i++) frameR_history[i] = 1000/frameRate_cible;
-    
+    for (int i = 0; i < frameR_history.length; i++) frameR_history[i] = 1000/frameRate_cible;
+
     bloc = new sValueBloc(d, "framerate");
     sec_since_reset = new sInt(bloc, 0, "sec_since_reset");
     frame_since_reset = new sInt(bloc, 0, "frame_since_reset");
@@ -354,30 +476,36 @@ class sFramerate {
     current_framerate = new sFlt(bloc, 0, "current_framerate");
     frame_duration = new sFlt(bloc, 0, "frame_duration");
   }
-  void reset() { sec_since_reset.set(0); reset_time = millis(); frame_counter = 0; }
-  
+  void reset() { 
+    sec_since_reset.set(0); 
+    reset_time = millis(); 
+    frame_counter = 0;
+  }
+
   void frame() {
     frame_counter++;
     frame_since_reset.set(frame_counter);
-    
+
     current_time = millis();
     frame_length = current_time - prev_time;
     frame_duration.set(frame_length);
     current_framerate.set(frame_length / 1000);
     prev_time = current_time;
-    
+
     sec_since_reset.set(int((current_time - reset_time) / 1000));
-    
+
     frameR_history[hist_it] = frame_length;
     hist_it++;
-    if (hist_it >= frameR_history.length) { hist_it = 0; }
-    
+    if (hist_it >= frameR_history.length) { 
+      hist_it = 0;
+    }
+
     if (frameR_update_counter == frameR_update_rate) {
       frame_median = 0;
-      for (int i = 0 ; i < frameR_history.length ; i++)  frame_median += frameR_history[i];
+      for (int i = 0; i < frameR_history.length; i++)  frame_median += frameR_history[i];
       frame_median /= frameR_history.length;
       median_framerate.set(1000/frame_median);
-      
+
       frameR_update_counter = 0;
     }
     frameR_update_counter++;
@@ -391,25 +519,30 @@ class sFramerate {
 
 /*
 Inputs
-  information disponible as variable / get methods / svalue
-    keyboard
-      getbool for each key state and triggers
-    mouse
-      getbool for each key state and triggers
-      double click (delay set in real time)
-      getWheel  getPointerPos  getPointerLastMove
-      getbool for pointer movement state and trigger
-    joystick / manette 
-  frame()
-*/
+ information disponible as variable / get methods / svalue
+ keyboard
+ getbool for each key state and triggers
+ mouse
+ getbool for each key state and triggers
+ double click (delay set in real time)
+ getWheel  getPointerPos  getPointerLastMove
+ getbool for pointer movement state and trigger
+ joystick / manette 
+ frame()
+ */
 
 class sInput_Button {
   boolean state = false, trigClick = false, trigUClick = false;
   //boolean trigJClick = false, trigJUClick = false;
   char key_char;
   String ref;
-  sInput_Button(String r, char c) { ref = copy(r); key_char = c; }
-  sInput_Button(String r) { ref = copy(r); }
+  sInput_Button(String r, char c) { 
+    ref = copy(r); 
+    key_char = c;
+  }
+  sInput_Button(String r) { 
+    ref = copy(r);
+  }
   void eventPress() {
     state=true;
     trigClick=true;
@@ -419,69 +552,100 @@ class sInput_Button {
     trigUClick=true;
   }
   void frame() {
-    trigClick = false; trigUClick = false;
+    trigClick = false; 
+    trigUClick = false;
   }
-  
 }
 
 public class sInput {
-  
+
   //keyboard letters
-  boolean getState(char k) { return getKeyboardButton(k).state; }
-  boolean getClick(char k) { return getKeyboardButton(k).trigClick; }
-  boolean getUnClick(char k) { return getKeyboardButton(k).trigUClick; }
-  
+  boolean getState(char k) { 
+    return getKeyboardButton(k).state;
+  }
+  boolean getClick(char k) { 
+    return getKeyboardButton(k).trigClick;
+  }
+  boolean getUnClick(char k) { 
+    return getKeyboardButton(k).trigUClick;
+  }
+
   //mouse n specials
-  boolean getState(String k) { return getButton(k).state; }
-  boolean getClick(String k) { return getButton(k).trigClick; }
-  boolean getUnClick(String k) { return getButton(k).trigUClick; }
-  
-  char getLastKey() { return last_key; }
-  
+  boolean getState(String k) { 
+    return getButton(k).state;
+  }
+  boolean getClick(String k) { 
+    return getButton(k).trigClick;
+  }
+  boolean getUnClick(String k) { 
+    return getButton(k).trigUClick;
+  }
+
+  char getLastKey() { 
+    return last_key;
+  }
+
   public sInput() {//PApplet app) {
     //app.registerMethod("pre", this);
     mouseLeft = getButton("MouseLeft");
     mouseRight = getButton("MouseRight");
     mouseCenter = getButton("MouseCenter");
-    keyBackspace = getButton("Backspace"); keyEnter = getButton("Enter");
-    keyLeft = getButton("Left"); keyRight = getButton("Right");
-    keyUp = getButton("Up"); keyDown = getButton("Down");
+    keyBackspace = getButton("Backspace"); 
+    keyEnter = getButton("Enter");
+    keyLeft = getButton("Left"); 
+    keyRight = getButton("Right");
+    keyUp = getButton("Up"); 
+    keyDown = getButton("Down");
     keyAll = getButton("All"); //any key
-    
   }
-  
+
   PVector mouse = new PVector();
   PVector pmouse = new PVector(); //prev pos
   PVector mmouse = new PVector(); //mouvement
   boolean mouseWheelUp, mouseWheelDown;
   char last_key = ' ';
-  
+
   ArrayList<sInput_Button> buttons = new ArrayList<sInput_Button>();
-  sInput_Button mouseLeft,mouseRight,mouseCenter,
-                keyBackspace,keyEnter,keyLeft,keyRight,keyUp,keyDown,keyAll;
-  
+  sInput_Button mouseLeft, mouseRight, mouseCenter, 
+    keyBackspace, keyEnter, keyLeft, keyRight, keyUp, keyDown, keyAll;
+
   sInput_Button getButton(String r) {
     for (sInput_Button b : buttons) if (b.ref.equals(r)) return b;
-    sInput_Button n = new sInput_Button(r); buttons.add(n);
-    return n; }
+    sInput_Button n = new sInput_Button(r); 
+    buttons.add(n);
+    return n;
+  }
   sInput_Button getKeyboardButton(char k) {
     for (sInput_Button b : buttons) if (b.ref.equals("k") && k == b.key_char) return b;
-    sInput_Button n = new sInput_Button("k", k); buttons.add(n);
-    return n; }
-  
+    sInput_Button n = new sInput_Button("k", k); 
+    buttons.add(n);
+    return n;
+  }
+
   void frame_str() {
-    mouse.x = mouseX; mouse.y = mouseY; pmouse.x = pmouseX; pmouse.y = pmouseY;
-    mmouse.x = mouseX - pmouseX; mmouse.y = mouseY - pmouseY;
+    mouse.x = mouseX; 
+    mouse.y = mouseY; 
+    pmouse.x = pmouseX; 
+    pmouse.y = pmouseY;
+    mmouse.x = mouseX - pmouseX; 
+    mmouse.y = mouseY - pmouseY;
   }
   void frame_end() {
-    mouseWheelUp = false; mouseWheelDown = false;
+    mouseWheelUp = false; 
+    mouseWheelDown = false;
     for (sInput_Button b : buttons) b.frame();
   }
 
   void mouseWheelEvent(MouseEvent event) {
     float e = event.getAmount();
-    if (e>0) { mouseWheelUp =true; mouseWheelDown =false; }
-    if (e<0) { mouseWheelDown = true; mouseWheelUp=false; }
+    if (e>0) { 
+      mouseWheelUp =true; 
+      mouseWheelDown =false;
+    }
+    if (e<0) { 
+      mouseWheelDown = true; 
+      mouseWheelUp=false;
+    }
   }  
 
   void keyPressedEvent() { 
@@ -527,10 +691,3 @@ public class sInput {
     if (mouseButton==CENTER) mouseCenter.eventRelease();
   }
 }
-
-
-
-
-
-
- 
