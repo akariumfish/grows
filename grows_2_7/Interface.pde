@@ -44,7 +44,7 @@ class sInterface {
   //nWindowPanel window;
   nWindowPanel files_panel;
   float size = 40;
-  
+
   String savepath = "save.sdata";
   sStr savepath_value;
   Save_Bloc main_savebloc;
@@ -53,91 +53,123 @@ class sInterface {
     files_panel.getShelf()
       .addSeparator(0.0625)
       .addDrawer(1)
-        .addModel("Label-S4", "Select File :                                   ").getDrawer()
-        .addCtrlModel("Button_Outline-S2", "SAVE")
-          .setRunnable(new Runnable() { public void run() { save(); } } ).setPX(size*4).getDrawer()
-        .addCtrlModel("Button_Outline-S2", "LOAD")
-          .setRunnable(new Runnable() { public void run() { load(); } } ).setPX(size*7).getShelf()
+      .addModel("Label-S4", "Select File :                                   ").getDrawer()
+      .addCtrlModel("Button_Outline-S2", "SAVE")
+      .setRunnable(new Runnable() { 
+      public void run() { 
+        file_save();
+      }
+    } 
+    ).setPX(size*4).getDrawer()
+      .addCtrlModel("Button_Outline-S2", "LOAD")
+      .setRunnable(new Runnable() { 
+      public void run() { 
+        file_load();
+      }
+    } 
+    ).setPX(size*7).getShelf()
       .addSeparator(0.0625)
       .addDrawer(0.75)
-        .addLinkedModel("Field-SS4", savepath).setLinkedValue(savepath_value).getShelf()
+      .addLinkedModel("Field-SS4", savepath).setLinkedValue(savepath_value).getShelf()
       .addSeparator(0.0625)
       ;
   }
-  
-  void save() {
+
+  void file_save() {
+    //logln("file sav");
+    main_savebloc.clear();
     data.save_to_bloc(main_savebloc);
     main_savebloc.save_to(savepath);
   }
-  void load() {
+  void file_load() {
+    main_savebloc.clear();
     main_savebloc.load_from(savepath);
     data.load_from_bloc(main_savebloc);
   }
-  
+
   sValueBloc recurs_sbloc, prev_sbloc;
   void dataBlocPreview() {
     nDropMenu data_menu = new nDropMenu(screen_gui, size*0.8, 12.5, false, false);
     for (Map.Entry b : data.blocs.entrySet()) { 
       sValueBloc s = (sValueBloc)b.getValue();
-      data_menu.addEntry(((String)b.getKey()), new Runnable(s) { public void run() { 
-        recurs_sbloc = ((sValueBloc)builder);
-        recursivesBlocPreview();
-      } } );
+      data_menu.addEntry(((String)b.getKey()), new Runnable(s) { 
+        public void run() { 
+          recurs_sbloc = ((sValueBloc)builder);
+          recursivesBlocPreview();
+        }
+      } 
+      );
     }
     data_menu.drop(screen_gui);
   }
   void recursivesBlocPreview() {
     nDropMenu sbloc_menu = new nDropMenu(screen_gui, size*0.8, 12.5, false, false);
-    sbloc_menu.addEntry("prev", new Runnable() { public void run() { 
-      recurs_sbloc = prev_sbloc;
-      prev_sbloc = null;
-      if (recurs_sbloc != null) recursivesBlocPreview(); else dataBlocPreview();
-    } } );
+    sbloc_menu.addEntry("prev", new Runnable() { 
+      public void run() { 
+        recurs_sbloc = prev_sbloc;
+        prev_sbloc = null;
+        if (recurs_sbloc != null) recursivesBlocPreview(); 
+        else dataBlocPreview();
+      }
+    } 
+    );
     for (Map.Entry b : recurs_sbloc.blocs.entrySet()) { 
       sValueBloc s = (sValueBloc)b.getValue();
-      sbloc_menu.addEntry(((String)b.getKey()), new Runnable(s) { public void run() { 
-        prev_sbloc = recurs_sbloc;
-        recurs_sbloc = ((sValueBloc)builder);
-        recursivesBlocPreview();
-      } } );
+      sbloc_menu.addEntry(((String)b.getKey()), new Runnable(s) { 
+        public void run() { 
+          prev_sbloc = recurs_sbloc;
+          recurs_sbloc = ((sValueBloc)builder);
+          recursivesBlocPreview();
+        }
+      } 
+      );
     }
     for (Map.Entry b : recurs_sbloc.values.entrySet()) { 
       sValue s = (sValue)b.getValue();
       nCtrlWidget w = sbloc_menu.addEntry(s.type+":"+((String)b.getKey())+"="+s.getString());
       if (s.type.equals("boo")) {
         w.setLinkedValue(((sBoo)s));
-        s.addEventChange(new Runnable(w) { public void run() { 
-          sBoo val = ((nCtrlWidget)builder).bval;
-          ((nCtrlWidget)builder).setText(val.type+":"+val.ref+"="+val.getString());
-        } } );
+        s.addEventChange(new Runnable(w) { 
+          public void run() { 
+            sBoo val = ((nCtrlWidget)builder).bval;
+            ((nCtrlWidget)builder).setText(val.type+":"+val.ref+"="+val.getString());
+          }
+        } 
+        );
       }
-      if (s.type.equals("flt")) {
-        //nSlide slide = new nSlide(screen_gui, size*0.8, size*0.8*12.5);
-        //slide.addEventSlide_Builder(new Runnable(s) { public void run() { 
-          
-        //} } )
-        //  .setParent(w)
-        //  .toLayerTop()
-        //  ;
+      if (s.type.equals("str")) {
+        
       }
     }
     sbloc_menu.drop(screen_gui);
   }
 
   void build_default_ui(float ref_size) {
-    
-    savepath_value = new sStr(sbloc, savepath, "savepath");
+
+    savepath_value = new sStr(sbloc, savepath, "savepath", "save");
     main_savebloc = new Save_Bloc(savepath);
-    
+
     taskpanel = new nTaskPanel(screen_gui, ref_size, 0.125);
-    
+
     main_menu = new nDropMenu(screen_gui, ref_size*0.8, 12.5, false, true);
-    main_menu.addEntry("Files", new Runnable() { public void run() { filesManagement(); } } );
+    main_menu.addEntry("Files", new Runnable() { 
+      public void run() { 
+        filesManagement();
+      }
+    } 
+    );
     main_menu.addEntry("GUI", new Runnable() { 
       public void run() { 
         new nColorPanel(screen_gui, taskpanel).setPosition(size*5, size*5);
-      } } );
-    main_menu.addEntry("Datas", new Runnable() { public void run() { dataBlocPreview(); } } );
+      }
+    } 
+    );
+    main_menu.addEntry("Datas", new Runnable() { 
+      public void run() { 
+        dataBlocPreview();
+      }
+    } 
+    );
     toolpanel = new nToolPanel(screen_gui, ref_size, 0.125, false, false);
     toolpanel.addShelf()
       .addDrawer(10, 0.625)
@@ -148,13 +180,7 @@ class sInterface {
       }
     }
     )
-    .setFont(int(ref_size/1.9)).getDrawer()
-      .addLinkedModel("Menu_Button_Small_Outline-SS1", "M")
-      .setLinkedValue(macro_main.show_macro)
-      .setPosition(ref_size*9.125, -ref_size*0.125)
-      .setFont(int(ref_size/1.9)).getDrawer();
-    
-    
+    .setFont(int(ref_size/1.9)).getDrawer();
   }
 
   sInput input;
@@ -175,27 +201,53 @@ class sInterface {
     data = new DataHolder();
     sbloc = new sValueBloc(data, "interface");
     cam = new Camera(input, sbloc)
-      .addEventZoom(new Runnable() { public void run() { cam_gui.updateScale(); } } );
+      .addEventZoom(new Runnable() { 
+      public void run() { 
+        cam_gui.updateScale();
+      }
+    } 
+    );
     framerate = new sFramerate(sbloc, 60);
     gui_theme = new nTheme();
     exclude_group = new nExcludeGroup();
     screen_gui = new nGUI(input, gui_theme)
-      .addEventFound(new Runnable() { public void run() { cam.GRAB = false; cam_gui.override = true; } } )
-    .addEventNotFound(new Runnable() { public void run() { cam.GRAB = true; cam_gui.override = false; } } );
+      .addEventFound(new Runnable() { 
+      public void run() { 
+        cam.GRAB = false; 
+        cam_gui.override = true;
+      }
+    } 
+    )
+    .addEventNotFound(new Runnable() { 
+      public void run() { 
+        cam.GRAB = true; 
+        cam_gui.override = false;
+      }
+    } 
+    );
     cam_gui = new nGUI(input, gui_theme)
       .setMouse(cam.mouse).setpMouse(cam.pmouse)
       .setView(cam.view)
       .addEventFound(new Runnable() { 
-      public void run() { cam.GRAB = false; } } )
-    .addEventNotFound(new Runnable() { public void run() { 
-      if (!screen_gui.hoverable_pile.found) { 
-        cam.GRAB = true; 
-        runEvents(eventsHoverNotFound); } } } );
+      public void run() { 
+        cam.GRAB = false;
+      }
+    } 
+    )
+    .addEventNotFound(new Runnable() { 
+      public void run() { 
+        if (!screen_gui.hoverable_pile.found) { 
+          cam.GRAB = true; 
+          runEvents(eventsHoverNotFound);
+        }
+      }
+    } 
+    );
 
-    macro_main = new Macro_Main(cam_gui, screen_gui, data, cam);
-    
-
+    macro_main = new Macro_Main(this);
     build_default_ui(size);
+
+    macro_main.build_macro_menus();
   }
 
   sInterface addToCamDrawerPile(Drawable d) { 
@@ -209,6 +261,8 @@ class sInterface {
 
   ArrayList<Runnable> eventsFrame = new ArrayList<Runnable>();
   ArrayList<Runnable> eventsHoverNotFound = new ArrayList<Runnable>();
+  ArrayList<Runnable> eventsSetup = new ArrayList<Runnable>();
+  boolean is_starting = true;
   sInterface addEventHoverNotFound(Runnable r) { 
     eventsHoverNotFound.add(r); 
     return this;
@@ -217,12 +271,20 @@ class sInterface {
     eventsFrame.add(r); 
     return this;
   }
+  sInterface addEventSetup(Runnable r) { 
+    eventsSetup.add(r); 
+    return this;
+  }
 
   void frame() {
     input.frame_str(); // track mouse
     framerate.frame(); // calc last frame
     background(0);
 
+    if (is_starting) { 
+      is_starting = false; 
+      runEvents(eventsSetup);
+    }
     runEvents(eventsFrame); // << sim runs here
 
     screen_gui.frame();
@@ -271,9 +333,9 @@ class Camera {
 
   Camera(sInput i, sValueBloc d) { 
     sbloc = new sValueBloc(d, "camera");
-    grid = new sBoo(sbloc, true, "show grid");
-    cam_scale = new sFlt(sbloc, 1.0, "cam scale");
-    cam_pos = new sVec(sbloc, "cam pos");
+    grid = new sBoo(sbloc, true, "show grid", "grid");
+    cam_scale = new sFlt(sbloc, 1.0, "cam scale", "scale");
+    cam_pos = new sVec(sbloc, "cam pos", "pos");
     view = new Rect(0, 0, width, height);
     view.pos.set(screen_to_cam(new PVector(0, 0)));
     view.size.set(screen_to_cam(new PVector(width, height)).sub(view.pos));
@@ -294,7 +356,7 @@ class Camera {
   PVector mouse = new PVector();
   PVector pmouse = new PVector(); //prev pos
   PVector mmouse = new PVector(); //mouvement
-  
+
   void pushCam(float x, float y) {
     cam_pos.add(x*cam_scale.get(), y*cam_scale.get());
   }
@@ -355,7 +417,7 @@ class Camera {
     if (input.getClick("MouseLeft") && GRAB) grabbed = true; 
     if (!input.getState("MouseLeft") && grabbed) grabbed = false; 
     if (input.getState("MouseLeft") && grabbed) { 
-      cam_pos.add(mouse.x - pmouse.x, mouse.y - pmouse.y);
+      cam_pos.add((mouse.x - pmouse.x)*cam_scale.get(), (mouse.y - pmouse.y)*cam_scale.get());
       runEvents(eventsDrag);
     }
 
@@ -470,11 +532,11 @@ class sFramerate {
     for (int i = 0; i < frameR_history.length; i++) frameR_history[i] = 1000/frameRate_cible;
 
     bloc = new sValueBloc(d, "framerate");
-    sec_since_reset = new sInt(bloc, 0, "sec_since_reset");
-    frame_since_reset = new sInt(bloc, 0, "frame_since_reset");
-    median_framerate = new sFlt(bloc, 0, "median_framerate");
-    current_framerate = new sFlt(bloc, 0, "current_framerate");
-    frame_duration = new sFlt(bloc, 0, "frame_duration");
+    sec_since_reset = new sInt(bloc, 0, "sec_since_reset", "sec");
+    frame_since_reset = new sInt(bloc, 0, "frame_since_reset", "frsr");
+    median_framerate = new sFlt(bloc, 0, "median_framerate", "mfr");
+    current_framerate = new sFlt(bloc, 0, "current_framerate", "cfr");
+    frame_duration = new sFlt(bloc, 0, "frame_duration", "fdur");
   }
   void reset() { 
     sec_since_reset.set(0); 

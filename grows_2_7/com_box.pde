@@ -1,34 +1,4 @@
 
-//class Rect {
-//  PVector pos = new PVector(0, 0);
-//  PVector size = new PVector(0, 0);
-//  Rect() {}
-//  Rect(float x, float y, float w, float h) {pos.x = x; pos.y = y; size.x = w; size.y = h;}
-//  Rect(Rect r) {pos.x = r.pos.x; pos.y = r.pos.y; size.x = r.size.x; size.y = r.size.y;}
-//  void draw() { rect(pos.x, pos.y, size.x, size.y); }
-//}
-
-//boolean rectCollide(Rect rect1, Rect rect2) {
-//  return (rect1.pos.x < rect2.pos.x + rect2.size.x &&
-//          rect1.pos.x + rect1.size.x > rect2.pos.x &&
-//          rect1.pos.y < rect2.pos.y + rect2.size.y &&
-//          rect1.pos.y + rect1.size.y > rect2.pos.y   );
-//}
-
-//boolean rectCollide(Rect rect1, Rect rect2, float s) {
-//  Rect r1 = new Rect(rect1); r1.pos.x -= s; r1.pos.y -= s; r1.size.x += 2*s; r1.size.y += 2*s;
-//  Rect r2 = new Rect(rect2); r2.pos.x -= s; r2.pos.y -= s; r2.size.x += 2*s; r2.size.y += 2*s;
-//  return (r1.pos.x < r2.pos.x + r2.size.x &&
-//          r1.pos.x + r1.size.x > r2.pos.x &&
-//          r1.pos.y < r2.pos.y + r2.size.y &&
-//          r1.pos.y + r1.size.y > r2.pos.y   );
-//}
-
-//boolean rectCollide(PVector p, Rect rect) {
-//  return (p.x >= rect.pos.x && p.x <= rect.pos.x + rect.size.x &&
-//          p.y >= rect.pos.y && p.y <= rect.pos.y + rect.size.y );
-//}
-
 class Box extends Entity {
   Rect rect = new Rect();
   Box origin;
@@ -259,6 +229,31 @@ class Box extends Entity {
 
 
 class BoxComu extends Community {
+  
+  void comPanelBuild(nFrontPanel sim_front) {
+    nFrontTab tab = com_front.addTab(name);
+    tab.getShelf(0)
+      .addDrawerFactValue(spacing_min, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(spacing_max, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(spacing_diff, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(spacing_max_dist, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(box_size_min, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(box_size_max, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(duplicate_prob, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(corner_space, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(max_age, 2, 10, 1)
+      .addSeparator(0.125)
+      ;
+  }
+  
   sFlt spacing_min , spacing_max, spacing_diff, spacing_max_dist, box_size_min, 
     box_size_max, duplicate_prob, corner_space;
   
@@ -269,49 +264,21 @@ class BoxComu extends Community {
   int cnt = 0;
   
   BoxComu(Simulation _c) { super(_c, "Box ", 0);
-    spacing_min = new sFlt(sbloc, 50, "box_spacing_min");
-    spacing_max = new sFlt(sbloc, 200, "box_spacing_max");
-    spacing_diff = new sFlt(sbloc, 1, "box_spacing_diff");
-    spacing_max_dist = new sFlt(sbloc, 10000, "box_spacing_max_dist");
-    box_size_min = new sFlt(sbloc, 100, "box_size_min");
-    box_size_max = new sFlt(sbloc, 400, "box_size_max");
-    duplicate_prob = new sFlt(sbloc, 5.0, "box_duplicate_prob");
-    corner_space = new sFlt(sbloc, 40, "box_corner_space");
-    max_age = new sInt(sbloc, 2000, "box max_age");
+    spacing_min = new sFlt(sbloc, 50, "box_spacing_min", "");
+    spacing_max = new sFlt(sbloc, 200, "box_spacing_max", "");
+    spacing_diff = new sFlt(sbloc, 1, "box_spacing_diff", "");
+    spacing_max_dist = new sFlt(sbloc, 10000, "box_spacing_max_dist", "");
+    box_size_min = new sFlt(sbloc, 100, "box_size_min", "");
+    box_size_max = new sFlt(sbloc, 400, "box_size_max", "");
+    duplicate_prob = new sFlt(sbloc, 5.0, "box_duplicate_prob", "");
+    corner_space = new sFlt(sbloc, 40, "box_corner_space", "");
+    max_age = new sInt(sbloc, 2000, "box max_age", "");
+    
+    
   }
   void custom_pre_tick() {}
-  void custom_build() {
-    //panel.addSeparator(1)
-    //  .addValueController("size min ", sMode.FACTOR, 2, 1.2, box_size_min)
-    //  .addSeparator(5)
-    //  .addValueController("size max ", sMode.FACTOR, 2, 1.2, box_size_max)
-    //  .addSeparator(5)
-    //  .addValueController("space min", sMode.FACTOR, 2, 1.2, spacing_min)
-    //  .addSeparator(5)
-    //  .addValueController("space max", sMode.FACTOR, 2, 1.2, spacing_max)
-    //  .addSeparator(5)
-    //  .addValueController("comu rad", sMode.FACTOR, 2, 1.2, spacing_max_dist)
-    //  .addSeparator(5)
-    //  .addValueController("space diff", sMode.FACTOR, 2, 1.2, spacing_diff)
-    //  .addSeparator(5)
-    //  .addValueController("duplic% ", sMode.FACTOR, 2, 1.2, duplicate_prob)
-    //  .addSeparator(5)
-    //  .addValueController("corner ", sMode.FACTOR, 2, 1.2, corner_space)
-    //  .addSeparator(5)
-    //  .addValueController("age ", sMode.FACTOR, 2, 1.2, max_age)
-    //  .addSeparator(5)
-    //  ;
-      
-    //plane.build_panel.addDrawer(30).addButton("PARAM", 0, 0).setSize(120, 30)
-    //  .addListener(new ControlListener() {
-    //    public void controlEvent(final ControlEvent ev) { newMacroFlocIN1(); } } )
-    //  .getDrawer().getPanel().addSeparator(10);
-  }
+  void custom_build() {}
   
-  void newMacroFlocIN1() {
-    //new MacroCUSTOM(plane).setLabel("CUSTOM").setWidth(140)
-    //  .addMCsFltControl().setValue(spacing).setText("param").getMacro();
-  }
   
   void custom_post_tick() { 
     cnt+=2;

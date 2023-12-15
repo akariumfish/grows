@@ -1,3 +1,10 @@
+
+
+
+
+
+
+
 class RandomTryParam {// extends Callable
   sValueBloc sbloc;
   sFlt DIFFICULTY;
@@ -6,28 +13,30 @@ class RandomTryParam {// extends Callable
   int count = 0;
   RandomTryParam(sValueBloc bloc, float d, boolean b, String n) { 
     sbloc = new sValueBloc(bloc, n+" rng param");
-    DIFFICULTY = new sFlt(sbloc, 4, n+" dif");
-    ON = new sBoo(sbloc, true, n+" on");
+    DIFFICULTY = new sFlt(sbloc, 4, n+" dif", "dif");
+    ON = new sBoo(sbloc, true, n+" on", "on");
     //test_by_tick = new sFlt(sbloc, 0);
-    DIFFICULTY.set(d); ON.set(b); 
-    //addChannel(frameend_chan); 
+    DIFFICULTY.set(d); 
+    ON.set(b); 
+    //addChannel(frameend_chan);
   }
   boolean test() { 
-    if(ON.get()) count++; 
+    if (ON.get()) count++; 
     //test_by_tick.set(count / sim.tick_by_frame.get()); 
-    return ON.get() && crandom(DIFFICULTY.get()) > 0.5; }
+    return ON.get() && crandom(DIFFICULTY.get()) > 0.5;
+  }
   //void answer(Channel chan, float v) { count = 0; test_by_tick.set(0); }
 }
 
 class GrowerComu extends Community {
-  
+
   sFlt DEVIATION; //drifting (rotation posible en portion de pi (PI/drift))
   sFlt L_MIN; //longeur minimum de chaque section
   sFlt L_MAX; //longeur max de chaque section MODIFIABLE PAR MENU MOVE minimum 1 , limité dans l'update de sont bp
   sFlt L_DIFFICULTY;
   sFlt OLD_AGE;
   //int TEEN_AGE = OLD_AGE / 20;
-  
+
   RandomTryParam growP;
   RandomTryParam sproutP;
   RandomTryParam stopP;
@@ -35,56 +44,100 @@ class GrowerComu extends Community {
   RandomTryParam dieP;
   float MAX_LINE_WIDTH = 1.5; //epaisseur max des ligne, diminuer par l'age, un peut, se vois pas
   float MIN_LINE_WIDTH = 0.2; //epaisseur min des ligne
-  
+
   sBoo create_floc;
   sInt activeGrower;
-  
+  sRun srun_killg;
+
   //sLabel grower_nb_label;
   //sGraph graph = new sGraph();
-  
-  GrowerComu(Simulation _c) { super(_c, "Grower", 500);
-    DEVIATION = new sFlt(sbloc, 8, "grow dev");
-    L_MIN = new sFlt(sbloc, 20, "grow lmin");
-    L_MAX = new sFlt(sbloc, 350, "grow lmax");
-    L_DIFFICULTY = new sFlt(sbloc, 180, "grow ldif");
-    OLD_AGE = new sFlt(sbloc, 666, "grow age");
-    
+
+  void comPanelBuild(nFrontPanel sim_front) {
+    nFrontTab tab = com_front.addTab(name);
+    tab.getShelf(0)
+      .addDrawerWatch(activeGrower, 10, 0.7)
+      .addSeparator(0.125)
+      .addDrawerDoubleButton(create_floc, srun_killg, 10, 0.9)
+      .addSeparator(0.125)
+      .addDrawerFactValue(DEVIATION, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(L_MIN, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(L_MAX, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(L_DIFFICULTY, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(OLD_AGE, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerActFactValue("grow", growP.ON, growP.DIFFICULTY, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerActFactValue("Sprout", sproutP.ON, sproutP.DIFFICULTY, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerActFactValue("leaf", leafP.ON, leafP.DIFFICULTY, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerActFactValue("stop", stopP.ON, stopP.DIFFICULTY, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerActFactValue("die", dieP.ON, dieP.DIFFICULTY, 2, 10, 1)
+      .addSeparator(0.125)
+      ;
+  }
+
+  GrowerComu(Simulation _c) { 
+    super(_c, "Grower ", 500);
+    DEVIATION = new sFlt(sbloc, 8, "grow dev", "");
+    L_MIN = new sFlt(sbloc, 20, "grow lmin", "");
+    L_MAX = new sFlt(sbloc, 350, "grow lmax", "");
+    L_DIFFICULTY = new sFlt(sbloc, 180, "grow ldif", "");
+    OLD_AGE = new sFlt(sbloc, 666, "grow age", "");
+
     growP = new RandomTryParam(sbloc, 0.5, true, "grow grow");
     sproutP = new RandomTryParam(sbloc, 2080, true, "grow sprout");
     stopP = new RandomTryParam(sbloc, 1.25, true, "grow stop");
     leafP = new RandomTryParam(sbloc, 2080, true, "grow leaf");
     dieP = new RandomTryParam(sbloc, 3.6, true, "grow die");
-    
-    create_floc = new sBoo(sbloc, true, "grow create floc");
-    activeGrower = new sInt(sbloc, 0, "activeGrower");
-    
-    sim.inter.data.addReferedRunnable("grow kill grower", new Runnable() { public void run() { 
-      //for (Entity e : gcom.list) {
-      //  Grower g = (Grower)e;
-      //  if (!g.end && g.sprouts == 0) { g.end = true; }
-      //}
-    }});
-    
+
+    create_floc = new sBoo(sbloc, true, "grow create floc", "create floc");
+    activeGrower = new sInt(sbloc, 0, "activeGrower", "growers nb");
+
+    srun_killg = new sRun(sbloc, "grow kill grower", "kill", new Runnable(list) { 
+      public void run() { 
+        for (Entity e : ((ArrayList<Entity>)builder)) {
+          Grower g = (Grower)e;
+          if (!g.end && g.sprouts == 0) { 
+            g.end = true;
+          }
+        }
+      }
+    }
+    );
+
     //graph.init();
-    
   }
-  void custom_cam_draw_pre_entity() {}
-  void custom_cam_draw_post_entity() {}
+  void custom_cam_draw_pre_entity() {
+  }
+  void custom_cam_draw_post_entity() {
+  }
   void custom_pre_tick() {
     activeGrower.set(grower_Nb());
   }
-  void custom_post_tick() {}
-  
-  Grower build() { return new Grower(this); }
+  void custom_post_tick() {
+  }
+
+  Grower build() { 
+    return new Grower(this);
+  }
   Grower addEntity() {
     Grower ng = newEntity();
-    if (ng != null) ng.define(new PVector(0, 0), new PVector(1, 0).rotate(random(2*PI)));
+    if (ng != null) ng.define(new PVector(adding_cursor.x(), adding_cursor.y()), new PVector(1, 0).rotate(random(2*PI)));
     return ng;
   }
   Grower newEntity() {
     Grower ng = null;
     for (Entity e : list) 
-      if (!e.active && ng == null) { ng = (Grower)e; e.activate(); }
+      if (!e.active && ng == null) { 
+        ng = (Grower)e; 
+        e.activate();
+      }
     return ng;
   }
   void custom_frame() {
@@ -101,22 +154,24 @@ class GrowerComu extends Community {
 }
 
 class Grower extends Entity {
-  
+
   PVector pos = new PVector();
   PVector grows = new PVector();
   PVector dir = new PVector();
-  
+
   float halo_size = 10;
   float halo_density = 0.2;
-  
+
   // condition de croissance
   boolean end = false;
   int sprouts = 0;
   float age = 0.0;
   float start = 0.0;
 
-  Grower(GrowerComu c) { super(c); }
-  
+  Grower(GrowerComu c) { 
+    super(c);
+  }
+
   Grower init() {
     end = false;
     sprouts = 0;
@@ -134,13 +189,15 @@ class Grower extends Entity {
     grows = PVector.add(pos, grows);
     return this;
   }
-  Grower frame() { return this; }
+  Grower frame() { 
+    return this;
+  }
   Grower tick() {
     age++;
     if (age < com().OLD_AGE.get()/20) {
       start = (float)age / (float)com().OLD_AGE.get()/20;
     } else start = 1;
-    
+
     //grow
     if (start == 1 && !end && sprouts == 0 && com().growP.test()) {
       Grower n = com().newEntity();
@@ -149,7 +206,7 @@ class Grower extends Entity {
         sprouts++;
       }
     }
-    
+
     // sprout
     if (start == 1 && !end && com().sproutP.test()) {
       Grower n = com().newEntity();
@@ -167,7 +224,7 @@ class Grower extends Entity {
       //temp_b.this_sprout_index = sprouts.length - 1;
       //sprouts_nb++;
     }
-    
+
     // leaf
     if (start == 1 && !end && com().leafP.test()) {
       PVector _p = new PVector(0, 0);
@@ -182,7 +239,7 @@ class Grower extends Entity {
         sprouts++;
       }
     }
-    
+
     // stop growing
     if (start == 1 && !end && sprouts == 0 && com().stopP.test()) {
       if (com().create_floc.get()) {
@@ -194,13 +251,13 @@ class Grower extends Entity {
       }
       end = true;
     }
-    
+
     // die
     float rng = crandom(com().dieP.DIFFICULTY.get());
     if (com().dieP.ON.get() && start == 1 && !(!end && sprouts == 0) &&
-         (rng > ( (float)com().OLD_AGE.get() / (float)age ) //||
-          //rng / DIE_DIFFICULTY_DIVIDER > ((float)MAX_LIST_SIZE - (float)baseNb()) / (float)MAX_LIST_SIZE
-       )) {
+      (rng > ( (float)com().OLD_AGE.get() / (float)age ) //||
+      //rng / DIE_DIFFICULTY_DIVIDER > ((float)MAX_LIST_SIZE - (float)baseNb()) / (float)MAX_LIST_SIZE
+      )) {
       this.destroy();
     }
     return this;
@@ -210,10 +267,17 @@ class Grower extends Entity {
     int ca = 255;
     if (age > com().OLD_AGE.get() / 2) ca = (int)constrain(255 + int(com().OLD_AGE.get()/2) - int(age/1.2), 90, 255);
     //if (!end && sprouts == 0) { stroke(255, 0, 0); strokeWeight(param.MAX_LINE_WIDTH+1 / cam_scale); } //BIG red head
-    if (!end && sprouts == 0) { stroke(255); strokeWeight((com().MAX_LINE_WIDTH+1) / com.sim.inter.cam.cam_scale.get()); }
-    else if (end) { stroke(0, ca, 0); strokeWeight((com().MAX_LINE_WIDTH+1) / com.sim.inter.cam.cam_scale.get()); }
-    else { stroke(ca, ca, ca); strokeWeight(((float)com().MIN_LINE_WIDTH + ((float)com().MAX_LINE_WIDTH * (float)ca / 255.0)) / com.sim.inter.cam.cam_scale.get()); }              
-    
+    if (!end && sprouts == 0) { 
+      stroke(255); 
+      strokeWeight((com().MAX_LINE_WIDTH+1) / com.sim.inter.cam.cam_scale.get());
+    } else if (end) { 
+      stroke(0, ca, 0); 
+      strokeWeight((com().MAX_LINE_WIDTH+1) / com.sim.inter.cam.cam_scale.get());
+    } else { 
+      stroke(ca, ca, ca); 
+      strokeWeight(((float)com().MIN_LINE_WIDTH + ((float)com().MAX_LINE_WIDTH * (float)ca / 255.0)) / com.sim.inter.cam.cam_scale.get());
+    }              
+
     PVector e = new PVector(dir.x, dir.y);
     if (start < 1) e = e.setMag(e.mag() * start);
     //e = e.add(pos);
@@ -224,16 +288,16 @@ class Grower extends Entity {
       PVector e2 = new PVector(e.x, e.y);
       e.div(2);
       e.rotate(-PI/16);
-      line(0, 0,e.x,e.y);
-      line(e2.x,e2.y,e.x,e.y);
+      line(0, 0, e.x, e.y);
+      line(e2.x, e2.y, e.x, e.y);
       e.rotate(PI/8);
-      line(0, 0,e.x,e.y);
-      line(e2.x,e2.y,e.x,e.y);
-    } else line(0, 0,e.x,e.y);
+      line(0, 0, e.x, e.y);
+      line(e2.x, e2.y, e.x, e.y);
+    } else line(0, 0, e.x, e.y);
     popMatrix();
-    
+
     //line(pos.x,pos.y,grows.x,grows.y);
-    
+
     //DEBUG
     //fill(255); ellipseMode(CENTER);
     //ellipse(pos.x, pos.y, 2, 2);
@@ -241,6 +305,10 @@ class Grower extends Entity {
     //point(grows.x,grows.y);
     return this;
   }
-  Grower clear() { return this; }
-  GrowerComu com() { return ((GrowerComu)com); }
+  Grower clear() { 
+    return this;
+  }
+  GrowerComu com() { 
+    return ((GrowerComu)com);
+  }
 }

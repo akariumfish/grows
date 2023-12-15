@@ -13,6 +13,7 @@ class nTheme {
   HashMap<String, nLook> looks = new HashMap<String, nLook>();
   nTheme addLook(String r, nLook l) { looks.put(r,l); return this; }
   nTheme addModel(String r, nWidget w) { models.put(r,w); return this; }
+  nWidget getModel(String r) {  return models.get(r); }
   nLook getLook(String r) {
     for (Map.Entry me : looks.entrySet()) if (me.getKey().equals(r)) { 
       nLook m = (nLook)me.getValue(); 
@@ -61,6 +62,7 @@ class nGUI {
   nGUI addEventFrame(Runnable r) { eventsFrame.add(r); return this; }
   nGUI addEventFound(Runnable r) { hoverable_pile.addEventFound(r); return this; }
   nGUI addEventNotFound(Runnable r) { hoverable_pile.addEventNotFound(r); return this; }
+  nGUI addEventSetup(Runnable r) {  eventsSetup.add(r);  return this; }
   
   nGUI(sInput _i, nTheme _t) {
     in = _i; theme = _t;
@@ -77,11 +79,14 @@ class nGUI {
   Hoverable_pile hoverable_pile = new Hoverable_pile();
   
   ArrayList<Runnable> eventsFrame = new ArrayList<Runnable>();
+  ArrayList<Runnable> eventsSetup = new ArrayList<Runnable>();
+  boolean is_starting = true;
   PVector mouseVector = null, pmouseVector = null;
   boolean override = false;
   
   void frame() {
     hoverable_pile.search(mouseVector, override);
+    if (is_starting) { is_starting = false; runEvents(eventsSetup); }
     runEvents(eventsFrame); }
   void draw() {
     drawing_pile.drawing(); }
@@ -92,15 +97,29 @@ class nGUI {
 
 
 //liens avec les svalues
-class nLinkedWidget extends nWidget {
-  sBoo bval; sInt ival; sFlt fval; sStr sval;
+class nLinkedWidget extends nWidget { 
+  nLinkedWidget setLinkedValue(sValue b) { 
+    if (b.type.equals("flt")) setLinkedValue((sFlt)b);
+    if (b.type.equals("int")) setLinkedValue((sInt)b);
+    if (b.type.equals("boo")) setLinkedValue((sBoo)b);
+    if (b.type.equals("str")) setLinkedValue((sStr)b);
+    if (b.type.equals("run")) setLinkedValue((sRun)b);
+    return this; }
+  sBoo bval; sInt ival; sFlt fval; sStr sval; sRun rval;
   nLinkedWidget(nGUI g) { super(g); }
   
+  nLinkedWidget setLinkedValue(sRun b) { 
+    rval = b;
+    addEventTrigger(new Runnable(this) { public void run() { 
+      rval.run(); } } );
+    setTrigger();
+    return this; }
   nLinkedWidget setLinkedValue(sBoo b) { 
     bval = b;
     b.addEventChange(new Runnable(this) { public void run() { 
       ((nLinkedWidget)builder).setSwitchState(bval.get()); } } );
     setSwitch();
+    if (b.get()) setOn();
     addEventSwitchOn(new Runnable() { public void run() { bval.set(true); } } );
     addEventSwitchOff(new Runnable() { public void run() { bval.set(false); } } );
     return this; }
@@ -138,6 +157,10 @@ class nLinkedWidget extends nWidget {
 
 //liens avec les svalues
 class nWatcherWidget extends nWidget {
+  nWatcherWidget setLinkedValue(sValue b) { 
+    if (b.type.equals("flt")) setLinkedValue((sFlt)b);
+    if (b.type.equals("int")) setLinkedValue((sInt)b);
+    return this; }
   sInt ival; sFlt fval;
   nWatcherWidget(nGUI g) { super(g); }
   nWatcherWidget setLinkedValue(sInt b) { 
@@ -154,9 +177,18 @@ class nWatcherWidget extends nWidget {
 
 //liens avec les svalues
 class nCtrlWidget extends nWidget {
+  nCtrlWidget setLinkedValue(sValue b) { 
+    if (b.type.equals("flt")) setLinkedValue((sFlt)b);
+    if (b.type.equals("int")) setLinkedValue((sInt)b);
+    if (b.type.equals("boo")) setLinkedValue((sBoo)b);
+    if (b.type.equals("run")) setLinkedValue((sRun)b);
+    return this; }
   nCtrlWidget setRunnable(Runnable b) { 
     rval = b; setTrigger();
     addEventTrigger(new Runnable(this) { public void run() { rval.run(); } } ); return this; }
+  nCtrlWidget setLinkedValue(sRun b) { 
+    srval = b; setTrigger();
+    addEventTrigger(new Runnable(this) { public void run() { srval.run(); } } ); return this; }
   nCtrlWidget setLinkedValue(sBoo b) { 
     bval = b; setTrigger(); 
     addEventTrigger(new Runnable(this) { public void run() { modify(); } } ); return this; }
@@ -171,7 +203,7 @@ class nCtrlWidget extends nWidget {
   
   nCtrlWidget(nGUI g) { super(g); }
   Runnable rval;
-  sBoo bval; sInt ival; sFlt fval;
+  sBoo bval; sInt ival; sFlt fval; sRun srval;
   float factor = 2.0; boolean mode = false;
   void modify() {
     if (bval != null) bval.set(!bval.get());
@@ -191,7 +223,7 @@ class sLook extends sValue {
   String getString() { return ""; }
   void clear() { }
   nLook val = new nLook();
-  sLook(sValueBloc b, nLook v, String n) { super(b, "look", n); val.copy(v); }
+  sLook(sValueBloc b, nLook v, String n, String s) { super(b, "look", n, s); val.copy(v); }
   nLook get() { return val; }
   void set(nLook v) { if (!v.ref.equals(val.ref)) has_changed = true; val.copy(v); }
 }
@@ -219,15 +251,20 @@ class nLook {
 
 
 class nSlide extends nWidget {
+  nSlide setLinkedValue(sValue val) {
+    
+    return this;
+  }
   nWidget addEventSlide(Runnable r)   { eventSlide.add(r); return this; }
   nWidget addEventSlide_Builder(Runnable r)   { r.builder = this; eventSlide.add(r); return this; }
   
   nWidget bar, curs;
+  sValue val;
   ArrayList<nWidget> widgets = new ArrayList<nWidget>();
   float scale_height, scale_width;
   float cursor_value = 0;
   ArrayList<Runnable> eventSlide = new ArrayList<Runnable>();
-  nSlide(nGUI g, float _scale_height, float _scale_width) { super(g); 
+  nSlide(nGUI g, float _scale_width, float _scale_height) { super(g); 
     scale_height = _scale_height; scale_width = _scale_width;
     bar = new nWidget(gui, 0, scale_height * 3 / 8, _scale_width, scale_height * 1 / 4).setParent(this);
     curs = new nWidget(gui, 0, -scale_height * 3 / 8, scale_height * 1 / 4, scale_height)
@@ -322,9 +359,10 @@ class nWidget {
   nWidget clearParent() { 
     if (parent != null) { parent.childs.remove(this); parent = null; changePosition(); } return this; }
   
-  nWidget setText(String s) { label = s; cursorPos = label.length(); return this; }
+  nWidget setText(String s) { if (s != null) { label = s; cursorPos = label.length(); } return this; }
   nWidget changeText(String s) { label = s; return this; }
   nWidget setFont(int s) { look.textFont = s; return this; }
+  nWidget setTextAlignment(int s) { textAlignment = s; return this; }
   
   nWidget setLook(nLook l) { look.copy(l); return this; }
   nWidget setLook(nTheme t, String r) { look.copy(t.getLook(r)); return this; }
@@ -379,6 +417,7 @@ class nWidget {
     placeLeft = w.placeLeft; placeRight = w.placeRight; placeUp = w.placeUp; placeDown = w.placeDown;
     hide = w.hide; drawerHideState = w.drawerHideState; hoverHideState = w.hoverHideState;
     constantOutlineWeight = w.constantOutlineWeight;
+    textAlignment = w.textAlignment;
     look.copy(w.look);
     setLayer(w.layer);
     setPosition(w.localrect.pos.x, w.localrect.pos.y);
@@ -417,7 +456,22 @@ class nWidget {
   
   nWidget setHoverablePhantomSpace(float f) { if (hover != null) hover.phantom_space = f; return this; }
   
-  nWidget setPassif() { triggerMode = false; switchMode = false; switchState = false; if (hover != null) hover.active = false; return this; }
+  nWidget setPassif() { 
+    triggerMode = false; 
+    switchMode = false; 
+    switchState = false; 
+    grabbable = false; 
+    isField = false;
+    if (hover != null) hover.active = false; 
+    return this; }
+  nWidget setBackground() { 
+    triggerMode = false; 
+    switchMode = false; 
+    switchState = false; 
+    grabbable = false; 
+    isField = false; 
+    if (hover != null) hover.active = true; 
+    return this; }
   nWidget setTrigger() { 
     triggerMode = true; switchMode = false; switchState = false; 
     if (hover != null) hover.active = true; return this; }
@@ -497,7 +551,7 @@ class nWidget {
     if (!switchState) {
       switchState = true;
       runEvents(eventSwitchOnRun);
-      //for (nWidget b : excludes) b.setOff();
+      for (nWidget b : excludes) b.setOff();
     }
   }
   
@@ -619,7 +673,7 @@ class nWidget {
   private boolean centerX = false, centerY = false;
   private boolean placeLeft = false, placeRight = false, placeUp = false, placeDown = false;
   private boolean hide = false, drawerHideState = true, hoverHideState = true;
-  private int layer = 0;
+  private int layer = 0, textAlignment = CENTER;
  
   ArrayList<Runnable> eventPositionChange = new ArrayList<Runnable>();
   ArrayList<Runnable> eventShapeChange = new ArrayList<Runnable>();
@@ -654,7 +708,7 @@ class nWidget {
       else if (isHovered && (triggerMode || switchMode))             { fill(look.hoveredColor); } 
       else                                                           { fill(look.standbyColor); }
       noStroke();
-      rect(getX(), getY(), getSX(), getSY());
+      if (!DEBUG_NOFILL) rect(getX(), getY(), getSX(), getSY());
       
       noFill();
       if (showOutline || (hoverOutline && isHovered)) stroke(look.outlineColor);
@@ -666,7 +720,7 @@ class nWidget {
       rect(getX() + wf*look.outlineWeight/2, getY() + wf*look.outlineWeight/2, 
            getSX() - wf*look.outlineWeight, getSY() - wf*look.outlineWeight);
            
-      textAlign(CENTER);
+      textAlign(textAlignment);
       textFont(getFont(look.textFont));
       String l = label;
       if (showCursor) {

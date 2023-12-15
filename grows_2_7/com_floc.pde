@@ -1,6 +1,34 @@
 
 class FlocComu extends Community {
   
+  void comPanelBuild(nFrontPanel sim_front) {
+    nFrontTab tab = com_front.addTab(name);
+    tab.getShelf(0)
+      .addDrawerDoubleButton(DRAWMODE_DEF, DRAWMODE_DEBUG, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerDoubleButton(point_to_mouse, point_to_center, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerDoubleButton(create_grower, null, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(POURSUITE, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(FOLLOW, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(SPACING, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(SPEED, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(LIMIT, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(AGE, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(HALO_SIZE, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(HALO_DENS, 2, 10, 1)
+      .addSeparator(0.125)
+      ;
+  }
+  
   sFlt POURSUITE, FOLLOW, SPACING, SPEED, HALO_SIZE, HALO_DENS ;
   sInt LIMIT, AGE ;
   sBoo DRAWMODE_DEF, DRAWMODE_DEBUG, create_grower, point_to_mouse, point_to_center;
@@ -8,163 +36,23 @@ class FlocComu extends Community {
   int startbox = 400;
   
   FlocComu(Simulation _c) { super(_c, " Floc ", 100); 
-    POURSUITE = new sFlt(sbloc, 0.3, "floc POURSUITE");
-    FOLLOW = new sFlt(sbloc, 0.0036, "floc FOLLOW");
-    SPACING = new sFlt(sbloc, 95, "floc SPACING");
-    SPEED = new sFlt(sbloc, 2, "floc SPEED");
-    LIMIT = new sInt(sbloc, 1600, "floc limit");
-    AGE = new sInt(sbloc, 2000, "floc age");
-    HALO_SIZE = new sFlt(sbloc, 80, "floc HALO_SIZE");
-    HALO_DENS = new sFlt(sbloc, 0.15, "floc HALO_DENS");
+    POURSUITE = new sFlt(sbloc, 0.3, "floc POURSUITE", "poursuite");
+    FOLLOW = new sFlt(sbloc, 0.0036, "floc FOLLOW", "follox");
+    SPACING = new sFlt(sbloc, 95, "floc SPACING", "space");
+    SPEED = new sFlt(sbloc, 2, "floc SPEED", "speed");
+    LIMIT = new sInt(sbloc, 1600, "floc limit", "limit");
+    AGE = new sInt(sbloc, 2000, "floc age", "age");
+    HALO_SIZE = new sFlt(sbloc, 80, "floc HALO_SIZE", "Size");
+    HALO_DENS = new sFlt(sbloc, 0.15, "floc HALO_DENS", "Dens");
     
-    DRAWMODE_DEF = new sBoo(sbloc, true, "floc DRAWMODE_DEF");
-    DRAWMODE_DEBUG = new sBoo(sbloc, false, "floc DRAWMODE_DEBUG");
+    DRAWMODE_DEF = new sBoo(sbloc, true, "floc DRAWMODE_DEF", "draw1");
+    DRAWMODE_DEBUG = new sBoo(sbloc, false, "floc DRAWMODE_DEBUG", "draw2");
     
-    create_grower = new sBoo(sbloc, true, "floc create_grower");
-    point_to_mouse = new sBoo(sbloc, false, "floc point_to_mouse");
-    point_to_center = new sBoo(sbloc, true, "floc point_to_center");
+    create_grower = new sBoo(sbloc, true, "floc create_grower", "create grow");
+    point_to_mouse = new sBoo(sbloc, false, "floc point_to_mouse", "to center");
+    point_to_center = new sBoo(sbloc, true, "floc point_to_center", "to mouse");
     //init_canvas();
-  }
-  //void custom_build() {
-  //  panel.addSeparator(1)
-  //    .addDrawer(20)
-  //      .addText("Affichage:", 0, 0)
-  //        .setFont(16)
-  //        .getDrawer()
-  //      .addExclusiveSwitchs("def", "debug", 80, 0, DRAWMODE_DEF, DRAWMODE_DEBUG)
-  //      .getPanel()
-  //    .addSeparator(5)
-  //    .addValueController("halosize ", sMode.FACTOR, 2, 1.2, HALO_SIZE)
-  //    .addSeparator(5)
-  //    .addValueController("halodens ", sMode.FACTOR, 2, 1.2, HALO_DENS)
-  //    .addSeparator(5)
-  //    .addValueController("TRACK ", sMode.FACTOR, 2, 1.2, POURSUITE)
-  //    .addSeparator(5)
-  //    .addValueController("FOLLOW ", sMode.FACTOR, 2, 1.2, FOLLOW)
-  //    .addSeparator(5)
-  //    .addValueController("SPACING ", sMode.FACTOR, 2, 1.2, SPACING)
-  //    .addSeparator(5)
-  //    .addValueController("LIMIT ", sMode.FACTOR, 2, 1.2, LIMIT)
-  //    .addSeparator(5)
-  //    .addValueController("SPEED ", sMode.FACTOR, 2, 1.2, SPEED)
-  //    .addSeparator(5)
-  //    .addValueController("AGE ", sMode.INCREMENT, 100, 10, AGE)
-  //    .addSeparator(10)
-  //    .addDrawer(20)
-  //      .addSwitch("CREATE GROWER", 90, 0)
-  //        .setValue(create_grower)
-  //        .setSize(200, 20)
-  //        .getDrawer()
-  //      .getPanel()
-  //    .addSeparator(10)
-  //    .addDrawer(20)
-  //      .addSwitch("TO MOUSE", 30, 0)
-  //        .setValue(point_to_mouse)
-  //        .setSize(160, 20)
-  //        .getDrawer()
-  //      .addSwitch("TO CENTER", 210, 0)
-  //        .setValue(point_to_center)
-  //        .setSize(160, 20)
-  //        .getDrawer()
-  //      .getPanel()
-  //    .addSeparator(10)
-  //    ;
-      
-  //  ////creation de macro custom
-  //  //plane.build_panel
-  //  //  .addDrawer(30)
-  //  //    .addButton("LIFE", 0, 0)
-  //  //      .setSize(120, 30)
-  //  //      .addListener(new ControlListener() {
-  //  //        public void controlEvent(final ControlEvent ev) { newMacroFlocIN1(); } } )
-  //  //      .getDrawer()
-  //  //    .addButton("MOVE", 130, 0)
-  //  //      .setSize(120, 30)
-  //  //      .addListener(new ControlListener() {
-  //  //        public void controlEvent(final ControlEvent ev) { newMacroFlocIN2(); } } )
-  //  //      .getDrawer()
-  //  //    .addButton("HALO", 260, 0)
-  //  //      .setSize(120, 30)
-  //  //      .addListener(new ControlListener() {
-  //  //        public void controlEvent(final ControlEvent ev) { newMacroFlocIN3(); } } )
-  //  //      .getDrawer()
-  //  //    .getPanel()
-  //  //  .addSeparator(10)
-  //  //  ;
-  //}
-  
-  //sFlt POURSUITE = new sFlt(simval, 0.6);
-  //sFlt FOLLOW = new sFlt(simval, 0.0036);
-  //sFlt SPACING = new sFlt(simval, 150);
-  //sFlt SPEED = new sFlt(simval, 2);
-  //sInt LIMIT = new sInt(simval, 400);
-  //sFlt HALO_SIZE = new sFlt(simval, 20);
-  //sFlt HALO_DENS = new sFlt(simval, 0.2);
-  
-  void newMacroFlocIN1() {
-    //new MacroCUSTOM(plane)
-    //  .setLabel("FLOC LIFE")
-    //  .setWidth(140)
-    //  .addMCsBooControl()
-    //    .setValue(create_grower)
-    //    .setText("create")
-    //    .getMacro()
-    //  .addMCsBooControl()
-    //    .setValue(point_to_mouse)
-    //    .setText(">mouse")
-    //    .getMacro()
-    //  .addMCsBooControl()
-    //    .setValue(point_to_center)
-    //    .setText(">center")
-    //    .getMacro()
-    //  .addMCsIntControl()
-    //    .setValue(AGE)
-    //    .setText("age")
-    //    .getMacro()
-    //  ;
     
-  }
-  
-  void newMacroFlocIN2() {
-    //new MacroCUSTOM(plane)
-    //  .setLabel("FLOC MOVE")
-    //  .setWidth(160)
-    //  .addMCsFltControl()
-    //    .setValue(POURSUITE)
-    //    .setText("pursue")
-    //    .getMacro()
-    //  .addMCsFltControl()
-    //    .setValue(FOLLOW)
-    //    .setText("follow")
-    //    .getMacro()
-    //  .addMCsFltControl()
-    //    .setValue(SPACING)
-    //    .setText("space")
-    //    .getMacro()
-    //  .addMCsFltControl()
-    //    .setValue(SPEED)
-    //    .setText("speed")
-    //    .getMacro()
-    //  .addMCsIntControl()
-    //    .setValue(LIMIT)
-    //    .setText("limit")
-    //    .getMacro()
-    //  ;
-  }
-  
-  void newMacroFlocIN3() {
-    //new MacroCUSTOM(plane)
-    //  .setLabel("FLOC HALO")
-    //  .setWidth(160)
-    //  .addMCsFltControl()
-    //    .setValue(HALO_SIZE)
-    //    .setText("size")
-    //    .getMacro()
-    //  .addMCsFltControl()
-    //    .setValue(HALO_DENS)
-    //    .setText("density")
-    //    .getMacro()
-    //  ;
   }
   
   void custom_pre_tick() {
@@ -265,7 +153,7 @@ class Floc extends Entity {
       destroy();
     }
     //point toward mouse
-    //if (com().point_to_mouse.get()) headTo(cam.screen_to_cam(new PVector(mouseX, mouseY)), 0.01);
+    if (com().point_to_mouse.get()) headTo(com().sim.inter.cam.screen_to_cam(new PVector(mouseX, mouseY)), 0.01);
     //point toward center
     if (com().point_to_center.get()) headTo(new PVector(0, 0), 0.01);
     pos.add(mov);

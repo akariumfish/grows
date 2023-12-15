@@ -68,47 +68,47 @@ class MC_Connexion {
 
 
 
-class MC_Run extends MC_Connexion {
-  Macro_Input in;
-  Runnable run = null;
-  String run_key = null;
-  nWidget label;
+//class MC_Run extends MC_Connexion {
+//  Macro_Input in;
+//  Runnable run = null;
+//  String run_key = null;
+//  nWidget label;
   
-  MC_Run setRunnable(String k) { run_key = k; 
-    run = parent.mmain().data.refered_runnable_map.get(k); 
-    label.setText(run_key);
-    return this; }
+//  MC_Run setRunnable(String k) { run_key = k; 
+//    //run = parent.mmain().data.refered_runnable_map.get(k); 
+//    label.setText(run_key);
+//    return this; }
 
-  MC_Run(Macro_Custom _p) {
-    super(_p, "run");
-    in = parent.addExtInput()
-      .addEventReceive(new Runnable() { public void run() {
-        if (run != null) run.run();
-      }})
-      .setFilterBang()
-      ;
-    label = new nWidget(parent.gui, "--", int(parent.ref_size/1.5), parent.ref_size*0.125, 0, 
-                                                                    parent.ref_size*5.5, parent.ref_size)
-      .setStandbyColor(color(255, 50))
-      .setParent(in.connect)
-      .stackRight()
-      //.addEventFrame_Builder(new Runnable() { public void run() {
-      //  if (run_key != null)  {
-      //    ((nWidget)builder).setText(run_key);
-      //  }
-      //}})
-      ;
-    parent.widgets.add(label);
-  }
-  void to_save(Save_Bloc bloc) {
-    super.to_save(bloc);
-    if (run_key != null) bloc.newData("key", run_key);
-  }
-  void from_save(Save_Bloc bloc) {
-    super.from_save(bloc);
-    if (bloc.getData("key") != null) setRunnable(bloc.getData("key"));
-  }
-}
+//  MC_Run(Macro_Custom _p) {
+//    super(_p, "run");
+//    in = parent.addExtInput()
+//      .addEventReceive(new Runnable() { public void run() {
+//        if (run != null) run.run();
+//      }})
+//      .setFilterBang()
+//      ;
+//    label = new nWidget(parent.gui, "--", int(parent.ref_size/1.5), parent.ref_size*0.125, 0, 
+//                                                                    parent.ref_size*5.5, parent.ref_size)
+//      .setStandbyColor(color(255, 50))
+//      .setParent(in.connect)
+//      .stackRight()
+//      //.addEventFrame_Builder(new Runnable() { public void run() {
+//      //  if (run_key != null)  {
+//      //    ((nWidget)builder).setText(run_key);
+//      //  }
+//      //}})
+//      ;
+//    parent.widgets.add(label);
+//  }
+//  void to_save(Save_Bloc bloc) {
+//    super.to_save(bloc);
+//    if (run_key != null) bloc.newData("key", run_key);
+//  }
+//  void from_save(Save_Bloc bloc) {
+//    super.from_save(bloc);
+//    if (bloc.getData("key") != null) setRunnable(bloc.getData("key"));
+//  }
+//}
 
 
 
@@ -118,6 +118,11 @@ class MC_Value_Watcher extends MC_Connexion {
   private sInt i_val;
   private sBoo b_val;
   nWidget label;
+  MC_Value_Watcher setValue(sValue b) { 
+    if (b.type.equals("flt")) setValue((sFlt)b);
+    if (b.type.equals("int")) setValue((sInt)b);
+    if (b.type.equals("boo")) setValue((sBoo)b);
+    return this; }
   MC_Value_Watcher setValue(sFlt v) { out.setDefFloat(); f_val = v; i_val = null; b_val = null; return this; }
   MC_Value_Watcher setValue(sInt v) { out.setDefInt(); i_val = v; f_val = null; b_val = null; return this; }
   MC_Value_Watcher setValue(sBoo v) { out.setDefBool(); b_val = v; i_val = null; f_val = null; return this; }
@@ -174,12 +179,23 @@ class MC_Value_Controller extends MC_Connexion {
   sFlt f_val;
   sInt i_val;
   sBoo b_val;
+  sRun r_val;
   nWidget label;
-  MC_Value_Controller setValue(sFlt v) { in.setFilterNumber(); f_val = v; i_val = null; b_val = null; return this; }
-  MC_Value_Controller setValue(sInt v) { in.setFilterNumber(); i_val = v; f_val = null; b_val = null; return this; }
+  MC_Value_Controller setValue(sValue b) { 
+    if (b.type.equals("flt")) setValue((sFlt)b);
+    if (b.type.equals("int")) setValue((sInt)b);
+    if (b.type.equals("boo")) setValue((sBoo)b);
+    if (b.type.equals("run")) setValue((sRun)b);
+    return this; }
+  MC_Value_Controller setValue(sFlt v) { in.setFilterNumber(); f_val = v; i_val = null; b_val = null; r_val = null; return this; }
+  MC_Value_Controller setValue(sInt v) { in.setFilterNumber(); i_val = v; f_val = null; b_val = null; r_val = null; return this; }
   MC_Value_Controller setValue(sBoo v) { 
     in.setFilterBin(); 
-    b_val = v; i_val = null; f_val = null; return this; 
+    b_val = v; i_val = null; f_val = null; r_val = null; return this; 
+  }
+  MC_Value_Controller setValue(sRun v) { 
+    in.setFilterBang(); 
+    r_val = v; i_val = null; f_val = null; b_val = null; return this; 
   }
   MC_Value_Controller(Macro_Custom _p) {
     super(_p, "ctrl");
@@ -189,6 +205,7 @@ class MC_Value_Controller extends MC_Connexion {
         else if (in.getLastPacket().isInt() && i_val != null) i_val.set(in.getLastPacket().asInt());
         else if (in.getLastPacket().isBool() && b_val != null) b_val.set(in.getLastPacket().asBool());
         else if (in.getLastPacket().isBang() && b_val != null) b_val.set(!b_val.get());
+        else if (in.getLastPacket().isBang() && r_val != null) r_val.run();
       }})
       ;
     label = new nWidget(parent.gui, "--", int(parent.ref_size/1.5), parent.ref_size*0.125, 0, 
@@ -200,6 +217,7 @@ class MC_Value_Controller extends MC_Connexion {
         if (f_val != null)  { ((nWidget)builder).setText(f_val.ref); }
         else if (i_val != null)  { ((nWidget)builder).setText(i_val.ref); }
         else if (b_val != null)  { ((nWidget)builder).setText(b_val.ref); }
+        else if (r_val != null)  { ((nWidget)builder).setText(r_val.ref); }
       }})
       ;
     parent.widgets.add(label);
@@ -209,6 +227,7 @@ class MC_Value_Controller extends MC_Connexion {
     if (f_val != null) bloc.newData("f", f_val.ref);
     else if (b_val != null) bloc.newData("b", b_val.ref);
     else if (i_val != null) bloc.newData("i", i_val.ref);
+    else if (r_val != null) bloc.newData("r", r_val.ref);
   }
   void from_save(Save_Bloc bloc) {
     super.from_save(bloc);
@@ -221,6 +240,9 @@ class MC_Value_Controller extends MC_Connexion {
     else if (bloc.getData("i") != null) {
       i_val = (sInt)(parent.mmain().data.searchValue(bloc.getData("i")));
       in.setFilterNumber();  }
+    else if (bloc.getData("r") != null) {
+      r_val = (sRun)(parent.mmain().data.searchValue(bloc.getData("r")));
+      in.setFilterBang();  }
   }
 }
 
@@ -251,13 +273,13 @@ class Macro_Custom extends Macro_Abstract {
     toLayerTop();
   }
   
-  MC_Run addRun() {
-    MC_Run m = new MC_Run(this);
-    connections.add(m);
-    toLayerTop();
-    setLayer(layer);
-    return m;
-  }
+  //MC_Run addRun() {
+  //  MC_Run m = new MC_Run(this);
+  //  connections.add(m);
+  //  toLayerTop();
+  //  setLayer(layer);
+  //  return m;
+  //}
   
   MC_Value_Watcher addValueWatcher() {
     MC_Value_Watcher m = new MC_Value_Watcher(this);
@@ -291,7 +313,7 @@ class Macro_Custom extends Macro_Abstract {
       public void run(Save_Bloc bloc) { 
         if      (bloc.getData("def").equals("ctrl"))  addValueController().from_save(bloc);
         else if (bloc.getData("def").equals("watch")) addValueWatcher().from_save(bloc);
-        else if (bloc.getData("def").equals("run")) addRun().from_save(bloc);
+        //else if (bloc.getData("def").equals("run")) addRun().from_save(bloc);
       } } );
     super.from_save(bloc); 
   }

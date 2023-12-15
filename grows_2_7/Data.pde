@@ -32,23 +32,26 @@ abstract class sValue {
   sValue addEventChange(Runnable r) { eventsChange.add(r); return this; }
   sValueBloc bloc;
   boolean has_changed = false;
-  String ref, type;
+  String ref, type, shrt;
   //abstract Object def;
-  sValue(sValueBloc b, String t, String r) { 
+  sValue(sValueBloc b, String t, String r, String s) { 
     bloc = b; 
     while (bloc.values.get(r) != null) r = r + "'";
-    type = t; ref = r; 
+    type = t; ref = r; shrt = s;
     bloc.values.put(ref, this); }
   void frame() { if (has_changed) runEvents(eventsChange); has_changed = false; }
   ArrayList<Runnable> eventsChange = new ArrayList<Runnable>();
   void save_to_bloc(Save_Bloc svb) {
+    logln("sv save " + ref);
     svb.newData("ref", ref);
     svb.newData("typ", type);
+    svb.newData("shr", shrt);
   }
   void load_from_bloc(Save_Bloc svb) {
     logln("sv load " + ref);
     ref = svb.getData("ref");
     type = svb.getData("typ");
+    shrt = svb.getData("shr");
     has_changed = true;
   }
 }
@@ -60,7 +63,7 @@ class sInt extends sValue {
   String getString() { return str(val); }
   void clear() { val = def; }
   int val = 0, def;
-  sInt(sValueBloc b, int v, String n) { super(b, "int", n); val = v; def = val; }
+  sInt(sValueBloc b, int v, String n, String s) { super(b, "int", n, s); val = v; def = val; }
   int get() { return val; }
   void set(int v) { 
     if (limited) { if (v > max) v = max; if (v < min) v = min; }
@@ -73,6 +76,21 @@ class sInt extends sValue {
     set(svb.getInt("val"));
   }
 }
+class sDat extends sValue {
+  String getString() { return val.name + val.data; }
+  void clear() { if (val != null) val.clear(); }
+  Save_Data val;
+  sDat(sValueBloc b, String n, String d) { super(b, "dat", n, ""); set(new Save_Data(n, d)); }
+  Save_Data get() { return val; }
+  void set(Save_Data v) { val = v; }
+  void save_to_bloc(Save_Bloc svb) { super.save_to_bloc(svb);
+    if (val != null) svb.newData("name", val.name);
+    if (val != null) svb.newData("data", val.data);
+  }
+  void load_from_bloc(Save_Bloc svb) { super.load_from_bloc(svb);
+    set(new Save_Data(svb.getData("name"), svb.getData("data")));
+  }
+}
 
 class sFlt extends sValue {
   boolean limited = false; float min, max;
@@ -80,7 +98,7 @@ class sFlt extends sValue {
   String getString() { return trimStringFloat(val); }
   void clear() { val = def; }
   float val = 0, def;
-  sFlt(sValueBloc b, float v, String n) { super(b, "flt", n); val = v; def = val; }
+  sFlt(sValueBloc b, float v, String n, String s) { super(b, "flt", n, s); val = v; def = val; }
   float get() { return val; }
   void set(float v) { 
     if (limited) { if (v > max) v = max; if (v < min) v = min; }
@@ -98,7 +116,7 @@ class sBoo extends sValue {
   String getString() { return str(val); }
   void clear() { val = def; }
   boolean val = false, def;
-  sBoo(sValueBloc b, boolean v, String n) { super(b, "boo", n); val = v; def = val; }
+  sBoo(sValueBloc b, boolean v, String n, String s) { super(b, "boo", n, s); val = v; def = val; }
   boolean get() { return val; }
   void set(boolean v) { if (v != val) { has_changed = true; val = v; } }
   void save_to_bloc(Save_Bloc svb) { super.save_to_bloc(svb);
@@ -113,7 +131,7 @@ class sStr extends sValue {
   String getString() { return copy(val); }
   void clear() { val = copy(def); }
   String val = null, def;
-  sStr(sValueBloc b, String v, String n) { super(b, "str", n); val = copy(v); def = copy(val); }
+  sStr(sValueBloc b, String v, String n, String s) { super(b, "str", n, s); val = copy(v); def = copy(val); }
   String get() { return copy(val); }
   void set(String v) { if (!v.equals(val)) { has_changed = true; val = copy(v); } }
   void save_to_bloc(Save_Bloc svb) { super.save_to_bloc(svb);
@@ -128,7 +146,7 @@ class sVec extends sValue {
   String getString() { return trimStringFloat(val.x) + "," + trimStringFloat(val.y); }
   void clear() { val.x = def.x; val.y = def.y; }
   private PVector val = new PVector(), def = new PVector();
-  sVec(sValueBloc b, String n) { super(b, "vec", n); }
+  sVec(sValueBloc b, String n, String s) { super(b, "vec", n, s); }
   float x() { return val.x; }
   float y() { return val.y; }
   sVec x(float v) { if (v != val.x) { has_changed = true; val.x = v; } return this; }
@@ -144,6 +162,16 @@ class sVec extends sValue {
   void load_from_bloc(Save_Bloc svb) { super.load_from_bloc(svb);
     set(svb.getFloat("x"), svb.getFloat("y"));
   }
+}
+
+class sRun extends sValue {
+  String getString() { return ref; }
+  void clear() { }
+  private Runnable val;
+  sRun(sValueBloc b, String n, String s, Runnable r) { super(b, "run", n, s);  val = r; }
+  sRun run() { val.run(); return this; }
+  void save_to_bloc(Save_Bloc svb) { super.save_to_bloc(svb); }
+  void load_from_bloc(Save_Bloc svb) { super.load_from_bloc(svb); }
 }
 
 /*
@@ -175,6 +203,10 @@ class sValueBloc {
       vb.runIterator(i);
     }
   }
+  void runBlocIterator(Iterator<sValueBloc> i) { 
+    for (Map.Entry me : blocs.entrySet()) {
+      sValueBloc vb = ((sValueBloc)me.getValue());
+      i.run(vb); } }
   int runIterator_Counted(Iterator<sValue> i) { return runIterator_Counted(i, 0); }
   int runIterator_Counted(Iterator<sValue> i, int c) { 
     for (Map.Entry mev : values.entrySet()) {
@@ -237,7 +269,7 @@ class sValueBloc {
   HashMap<String, sValueBloc> blocs = new HashMap<String, sValueBloc>();
   sValueBloc() {}    //only for superclass dataholder
   sValueBloc(DataHolder d, String r) { 
-    while (d.blocs.get(r) != null) r = r + "'";
+    while (d.blocs.get(r) != null) r = r + "_";
     d.blocs.put(r, this); data = d; ref = r; }
   sValueBloc(sValueBloc b, String r) { 
     while (b.blocs.get(r) != null) r = r + "'";
@@ -249,21 +281,26 @@ class sValueBloc {
     for (Map.Entry b : blocs.entrySet()) { sValueBloc s = (sValueBloc)b.getValue(); s.clear(); } 
     for (Map.Entry b : values.entrySet()) { sValue s = (sValue)b.getValue(); s.clear(); } 
   }
-  void save_to_bloc(Save_Bloc sb) {
+  int save_to_bloc(Save_Bloc sb) { return save_to_bloc(sb, 0); }
+  int save_to_bloc(Save_Bloc sb, int cnt) {
+    logln("svb save " + ref + " " + cnt);
     Save_Bloc sb2 = sb.newBloc(ref);
-    for (Map.Entry me : blocs.entrySet()) { sValueBloc svb = (sValueBloc)me.getValue(); svb.save_to_bloc(sb2); } 
+    for (Map.Entry me : blocs.entrySet()) { 
+      sValueBloc svb = (sValueBloc)me.getValue(); cnt = svb.save_to_bloc(sb2, cnt); } 
     for (Map.Entry me : values.entrySet()) { 
       sValue s = (sValue)me.getValue(); 
-      Save_Bloc sbv = sb2.newBloc(s.ref);
+      Save_Bloc sbv = sb2.newBloc((String)me.getKey());
+      cnt++;
       s.save_to_bloc(sbv); } 
+    return cnt;
   }
-  void load_from_bloc(Save_Bloc svb) {
-    logln("svb load " + ref);
+  void load_from_bloc(Save_Bloc sb) {
+    logln("svb load " + ref + "  /svb " + sb.blocs.size() + " /sv " + sb.datas.size());
     
     for (Map.Entry b : blocs.entrySet()) { 
       sValueBloc s = (sValueBloc)b.getValue(); 
       logln("test vb "+ s.ref);
-      Save_Bloc child_blocs = svb.getBloc(s.ref);
+      Save_Bloc child_blocs = sb.getBloc(s.ref);
       if (child_blocs != null) {
         logln("got save bloc ");
         s.load_from_bloc(child_blocs);
@@ -273,15 +310,43 @@ class sValueBloc {
     for (Map.Entry b : values.entrySet()) { 
       sValue s = (sValue)b.getValue(); 
       logln("test vb "+ s.ref);
-      Save_Bloc child_blocs = svb.getBloc(s.ref);
+      Save_Bloc child_blocs = sb.getBloc(s.ref);
       if (child_blocs != null) {
         logln("got save bloc ");
         s.load_from_bloc(child_blocs);
       }
     }
+  }
+  void save_copy_to(Save_Bloc sb) { save_copy_to(this, sb); }
+  void load_copy_from(Save_Bloc sb) { load_copy_from(this, sb); }
+  
+  void save_copy_to(sValueBloc vb, Save_Bloc sb) {
+    logln("svb " + vb.ref + " save copy of Save_Bloc");
+    clear();
+    for (Save_Bloc csb : sb.blocs) {
+      sValueBloc cvb = new sValueBloc(vb, csb.name);
+      save_copy_to(cvb, csb);
+    }
+    for (Save_Data csd : sb.datas) {
+      sDat sdata = new sDat(vb, csd.name, csd.data);
+    }
+  }
+  void load_copy_from(sValueBloc vb, Save_Bloc sb) {
+    logln("svb " + vb.ref + " load copy to Save_Bloc");
+    sb.clear();
+    for (Map.Entry b : vb.blocs.entrySet()) { 
+      sValueBloc cvb = (sValueBloc)b.getValue(); 
+      Save_Bloc csb = sb.newBloc(cvb.ref);
+      load_copy_from(cvb, csb);
+    }
     
-    //for (Map.Entry b : blocs.entrySet()) { sValueBloc s = (sValueBloc)b.getValue(); s.load_from_bloc(svb); } 
-    //for (Map.Entry b : values.entrySet()) { sValueBloc s = (sValueBloc)b.getValue(); s.load_from_bloc(svb); } 
+    for (Map.Entry b : vb.values.entrySet()) { 
+      sValue csv = (sValue)b.getValue(); 
+      if (csv.type.equals("dat")) {
+        sDat sd = (sDat)csv;
+        sb.newData(sd.get().name, sd.get().data);
+      }
+    }
   }
 }
 /*
@@ -295,13 +360,35 @@ DataHolding
 */
 
 class DataHolder extends sValueBloc {
-  void addReferedRunnable(String k, Runnable r) { refered_runnable_map.put(k, r); }
-  Runnable getReferedRunnable(String t) { return refered_runnable_map.get(t); }
+  //void addReferedRunnable(String k, Runnable r) { refered_runnable_map.put(k, r);  }
+  //Runnable getReferedRunnable(String t) { return refered_runnable_map.get(t); }
   
-  HashMap<String, Runnable> refered_runnable_map = new HashMap<String, Runnable>();
+  //HashMap<String, Runnable> refered_runnable_map = new HashMap<String, Runnable>();
   
-  void frame() { super.frame(); }
-  void clear() { super.clear(); }
+  DataHolder() {
+    super(); ref = "data";
+  }
+  String[] types = {"flt", "int", "boo", "str", "vec", "run"};
+  
+  int save_to_bloc(Save_Bloc sb) { 
+    logln("data saving");
+    int cnt = save_to_bloc(sb, 0); 
+    logln("data saved " + cnt + " values");
+    return cnt;
+  }
+  void load_from_bloc(Save_Bloc svb) {
+    logln("data load ");
+    
+    Save_Bloc sbloc = svb.getBloc(ref);
+    if (sbloc != null) {
+    logln("data found ");
+      super.load_from_bloc(sbloc);
+    }
+  }
+  
+  
+  //void frame() { super.frame(); }
+  //void clear() { super.clear(); }
 }
 
 
@@ -332,10 +419,10 @@ class Save_List {
   
   void put(String log, String s) { 
     list[index] = copy(s); 
-    log("put " + log + " " + index + " " + s); 
+    slog("put " + log + " " + index + " " + s); 
     index++; }
   String get(String log) { 
-    log("get " + log + " " + index + " " + list[index]); 
+    slog("get " + log + " " + index + " " + list[index]); 
     index++; 
     return list[index-1]; }
   int getInt(String log) { return int(get(log)); }
@@ -393,14 +480,14 @@ class Save_Bloc {
   
   
   void save_to(String savepath) { 
-    log("bloc - save to");
+    slog("bloc - save to");
     Save_List sl = new Save_List();
     sl.init(size());
     to_list(sl);
     saveStrings(savepath, sl.list);
   }
   void load_from(String savepath) { 
-    log("bloc - load from");
+    slog("bloc - load from");
     clear();
     String[] load = loadStrings(savepath);
     Save_List sl = new Save_List();
@@ -418,7 +505,7 @@ class Save_Bloc {
   
   
   void to_list(Save_List sl) {
-    log("Bloc - to string - start");
+    slog("Bloc - to string - start");
     sl.put("name", name);
     sl.put("total size", str(size()));
     
@@ -426,19 +513,19 @@ class Save_Bloc {
     int leng = 0;
     for (Save_Data sd : datas) leng += sd.size();
     sl.put("datas total size", str(leng));
-    log("datas to string start");
+    slog("datas to string start");
     for (Save_Data sd : datas) { sl.put("name", sd.name); sl.put("data", sd.data); }
-    log("datas to string end");
+    slog("datas to string end");
     
     sl.put("child blocs nb", str(blocs.size()));
     leng = 0;
     for (Save_Bloc sd : blocs) leng += sd.size();
     sl.put("child blocs total size", str(leng));
-    log("child blocs to string start");
+    slog("child blocs to string start");
     for (Save_Bloc sb : blocs) sb.to_list(sl);
-    log("child blocs to string end");
+    slog("child blocs to string end");
     
-    log("Bloc - to string - end");
+    slog("Bloc - to string - end");
   }
   
   int total_size = 0;
@@ -448,27 +535,27 @@ class Save_Bloc {
   int blocs_total_size = 0;
   
   void from_list(Save_List sl) {
-    log("Bloc - from string - start");
+    slog("Bloc - from string - start");
     
     name = sl.get("name");
     total_size = sl.getInt("total size");
     
     datas_nb = sl.getInt("datas nb");
     data_size = sl.getInt("datas total size");
-    log("datas from string start");
+    slog("datas from string start");
     for (int i = 0; i < datas_nb ; i++) newData(sl.get("name"), sl.get("data"));
-    log("datas from string end");
+    slog("datas from string end");
     
     bloc_nb = sl.getInt("blocs nb");
     blocs_total_size = sl.getInt("child blocs total size");
-    log("child blocs from string start");
+    slog("child blocs from string start");
     for (int i = 0; i < bloc_nb ; i++) {
       Save_Bloc sb = newBloc("");
       sb.from_list(sl);
     }
-    log("child blocs from string end");
+    slog("child blocs from string end");
     
-    log("Bloc - from string - end");
+    slog("Bloc - from string - end");
   }
   int size() { 
     int s = 6;

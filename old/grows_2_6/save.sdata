@@ -1,0 +1,1316 @@
+save.sdata
+1316
+0
+0
+1
+1310
+data
+1310
+0
+0
+3
+1304
+Simulation
+1124
+0
+0
+16
+1118
+Community  Floc 
+300
+0
+0
+21
+294
+addCursor  Floc 
+16
+5
+10
+ref
+addCursor  Floc 
+typ
+vec
+shr
+cursor
+x
+0.0
+y
+0.0
+0
+0
+floc FOLLOW
+14
+4
+8
+ref
+floc FOLLOW
+typ
+flt
+shr
+follox
+val
+0.0036
+0
+0
+floc create_grower
+14
+4
+8
+ref
+floc create_grower
+typ
+boo
+shr
+create grow
+val
+1
+0
+0
+floc point_to_mouse
+14
+4
+8
+ref
+floc point_to_mouse
+typ
+boo
+shr
+to center
+val
+1
+0
+0
+floc SPACING
+14
+4
+8
+ref
+floc SPACING
+typ
+flt
+shr
+space
+val
+67.17514
+0
+0
+floc point_to_center
+14
+4
+8
+ref
+floc point_to_center
+typ
+boo
+shr
+to mouse
+val
+0
+0
+0
+floc DRAWMODE_DEBUG
+14
+4
+8
+ref
+floc DRAWMODE_DEBUG
+typ
+boo
+shr
+draw2
+val
+1
+0
+0
+max_entity  Floc 
+14
+4
+8
+ref
+max_entity  Floc 
+typ
+int
+shr
+max
+val
+80
+0
+0
+floc DRAWMODE_DEF
+14
+4
+8
+ref
+floc DRAWMODE_DEF
+typ
+boo
+shr
+draw1
+val
+0
+0
+0
+active_entity  Floc 
+14
+4
+8
+ref
+active_entity  Floc 
+typ
+int
+shr
+active
+val
+80
+0
+0
+floc POURSUITE
+14
+4
+8
+ref
+floc POURSUITE
+typ
+flt
+shr
+poursuite
+val
+0.15
+0
+0
+adding_entity_nb  Floc 
+14
+4
+8
+ref
+adding_entity_nb  Floc 
+typ
+int
+shr
+add nb
+val
+0
+0
+0
+floc HALO_DENS
+14
+4
+8
+ref
+floc HALO_DENS
+typ
+flt
+shr
+Dens
+val
+0.15
+0
+0
+show_entity  Floc 
+14
+4
+8
+ref
+show_entity  Floc 
+typ
+boo
+shr
+show
+val
+1
+0
+0
+addCursor  Floc  show cursor
+14
+4
+8
+ref
+addCursor  Floc  show cursor
+typ
+boo
+shr
+cursor
+val
+0
+0
+0
+floc age
+14
+4
+8
+ref
+floc age
+typ
+int
+shr
+age
+val
+496
+0
+0
+adding_step  Floc 
+14
+4
+8
+ref
+adding_step  Floc 
+typ
+int
+shr
+add stp
+val
+0
+0
+0
+ Floc  add
+12
+3
+6
+ref
+ Floc  add
+typ
+run
+shr
+add
+0
+0
+floc SPEED
+14
+4
+8
+ref
+floc SPEED
+typ
+flt
+shr
+speed
+val
+2.0
+0
+0
+floc limit
+14
+4
+8
+ref
+floc limit
+typ
+int
+shr
+limit
+val
+25600
+0
+0
+floc HALO_SIZE
+14
+4
+8
+ref
+floc HALO_SIZE
+typ
+flt
+shr
+Size
+val
+80.0
+0
+0
+Community Grower 
+398
+0
+0
+21
+392
+grow leaf rng param
+34
+0
+0
+2
+28
+grow leaf dif
+14
+4
+8
+ref
+grow leaf dif
+typ
+flt
+shr
+dif
+val
+11766.257
+0
+0
+grow leaf on
+14
+4
+8
+ref
+grow leaf on
+typ
+boo
+shr
+on
+val
+1
+0
+0
+grow grow rng param
+34
+0
+0
+2
+28
+grow grow on
+14
+4
+8
+ref
+grow grow on
+typ
+boo
+shr
+on
+val
+1
+0
+0
+grow grow dif
+14
+4
+8
+ref
+grow grow dif
+typ
+flt
+shr
+dif
+val
+0.5
+0
+0
+grow die rng param
+34
+0
+0
+2
+28
+grow die dif
+14
+4
+8
+ref
+grow die dif
+typ
+flt
+shr
+dif
+val
+28.8
+0
+0
+grow die on
+14
+4
+8
+ref
+grow die on
+typ
+boo
+shr
+on
+val
+1
+0
+0
+grow sprout rng param
+34
+0
+0
+2
+28
+grow sprout dif
+14
+4
+8
+ref
+grow sprout dif
+typ
+flt
+shr
+dif
+val
+735.39105
+0
+0
+grow sprout on
+14
+4
+8
+ref
+grow sprout on
+typ
+boo
+shr
+on
+val
+1
+0
+0
+grow stop rng param
+34
+0
+0
+2
+28
+grow stop dif
+14
+4
+8
+ref
+grow stop dif
+typ
+flt
+shr
+dif
+val
+1.25
+0
+0
+grow stop on
+14
+4
+8
+ref
+grow stop on
+typ
+boo
+shr
+on
+val
+1
+0
+0
+adding_entity_nb Grower 
+14
+4
+8
+ref
+adding_entity_nb Grower 
+typ
+int
+shr
+add nb
+val
+10
+0
+0
+show_entity Grower 
+14
+4
+8
+ref
+show_entity Grower 
+typ
+boo
+shr
+show
+val
+1
+0
+0
+max_entity Grower 
+14
+4
+8
+ref
+max_entity Grower 
+typ
+int
+shr
+max
+val
+500
+0
+0
+addCursor Grower  show cursor
+14
+4
+8
+ref
+addCursor Grower  show cursor
+typ
+boo
+shr
+cursor
+val
+1
+0
+0
+grow ldif
+14
+4
+8
+ref
+grow ldif
+typ
+flt
+shr
+
+val
+3.9774756
+0
+0
+Grower  add
+12
+3
+6
+ref
+Grower  add
+typ
+run
+shr
+add
+0
+0
+grow lmax
+14
+4
+8
+ref
+grow lmax
+typ
+flt
+shr
+
+val
+43.75
+0
+0
+grow dev
+14
+4
+8
+ref
+grow dev
+typ
+flt
+shr
+
+val
+3.9999995
+0
+0
+grow kill grower
+12
+3
+6
+ref
+grow kill grower
+typ
+run
+shr
+kill
+0
+0
+grow create floc
+14
+4
+8
+ref
+grow create floc
+typ
+boo
+shr
+create floc
+val
+1
+0
+0
+active_entity Grower 
+14
+4
+8
+ref
+active_entity Grower 
+typ
+int
+shr
+active
+val
+473
+0
+0
+grow age
+14
+4
+8
+ref
+grow age
+typ
+flt
+shr
+
+val
+117.73328
+0
+0
+addCursor Grower 
+16
+5
+10
+ref
+addCursor Grower 
+typ
+vec
+shr
+cursor
+x
+0.0
+y
+0.0
+0
+0
+adding_step Grower 
+14
+4
+8
+ref
+adding_step Grower 
+typ
+int
+shr
+add stp
+val
+0
+0
+0
+activeGrower
+14
+4
+8
+ref
+activeGrower
+typ
+int
+shr
+growers nb
+val
+11
+0
+0
+grow lmin
+14
+4
+8
+ref
+grow lmin
+typ
+flt
+shr
+
+val
+10.0
+0
+0
+Community Box 
+244
+0
+0
+17
+238
+active_entity Box 
+14
+4
+8
+ref
+active_entity Box 
+typ
+int
+shr
+active
+val
+0
+0
+0
+box_size_max
+14
+4
+8
+ref
+box_size_max
+typ
+flt
+shr
+
+val
+400.0
+0
+0
+box_spacing_max
+14
+4
+8
+ref
+box_spacing_max
+typ
+flt
+shr
+
+val
+200.0
+0
+0
+box_spacing_max_dist
+14
+4
+8
+ref
+box_spacing_max_dist
+typ
+flt
+shr
+
+val
+10000.0
+0
+0
+show_entity Box 
+14
+4
+8
+ref
+show_entity Box 
+typ
+boo
+shr
+show
+val
+1
+0
+0
+Box  add
+12
+3
+6
+ref
+Box  add
+typ
+run
+shr
+add
+0
+0
+max_entity Box 
+14
+4
+8
+ref
+max_entity Box 
+typ
+int
+shr
+max
+val
+0
+0
+0
+box_size_min
+14
+4
+8
+ref
+box_size_min
+typ
+flt
+shr
+
+val
+100.0
+0
+0
+box_duplicate_prob
+14
+4
+8
+ref
+box_duplicate_prob
+typ
+flt
+shr
+
+val
+5.0
+0
+0
+addCursor Box  show cursor
+14
+4
+8
+ref
+addCursor Box  show cursor
+typ
+boo
+shr
+cursor
+val
+0
+0
+0
+addCursor Box 
+16
+5
+10
+ref
+addCursor Box 
+typ
+vec
+shr
+cursor
+x
+0.0
+y
+0.0
+0
+0
+box_spacing_diff
+14
+4
+8
+ref
+box_spacing_diff
+typ
+flt
+shr
+
+val
+1.0
+0
+0
+adding_step Box 
+14
+4
+8
+ref
+adding_step Box 
+typ
+int
+shr
+add stp
+val
+0
+0
+0
+box_corner_space
+14
+4
+8
+ref
+box_corner_space
+typ
+flt
+shr
+
+val
+40.0
+0
+0
+box max_age
+14
+4
+8
+ref
+box max_age
+typ
+int
+shr
+
+val
+2000
+0
+0
+adding_entity_nb Box 
+14
+4
+8
+ref
+adding_entity_nb Box 
+typ
+int
+shr
+add nb
+val
+10
+0
+0
+box_spacing_min
+14
+4
+8
+ref
+box_spacing_min
+typ
+flt
+shr
+
+val
+50.0
+0
+0
+auto_reset_turn
+14
+4
+8
+ref
+auto_reset_turn
+typ
+int
+shr
+auto turn
+val
+8000
+0
+0
+sim rng reset
+12
+3
+6
+ref
+sim rng reset
+typ
+run
+shr
+rst rng
+0
+0
+show_com
+14
+4
+8
+ref
+show_com
+typ
+boo
+shr
+show
+val
+1
+0
+0
+tick_counter
+14
+4
+8
+ref
+tick_counter
+typ
+int
+shr
+tick
+val
+2428
+0
+0
+pause
+14
+4
+8
+ref
+pause
+typ
+boo
+shr
+pause
+val
+0
+0
+0
+auto_rest_screenshot
+14
+4
+8
+ref
+auto_rest_screenshot
+typ
+boo
+shr
+auto shot
+val
+0
+0
+0
+auto_reset_rng_seed
+14
+4
+8
+ref
+auto_reset_rng_seed
+typ
+boo
+shr
+auto rng
+val
+1
+0
+0
+auto_reset
+14
+4
+8
+ref
+auto_reset
+typ
+boo
+shr
+auto reset
+val
+1
+0
+0
+SEED
+14
+4
+8
+ref
+SEED
+typ
+int
+shr
+SEED
+val
+329850080
+0
+0
+sim reset
+12
+3
+6
+ref
+sim reset
+typ
+run
+shr
+reset
+0
+0
+tick by frame
+14
+4
+8
+ref
+tick by frame
+typ
+flt
+shr
+tck/frm
+val
+2.0
+0
+0
+sim next tick
+12
+3
+6
+ref
+sim next tick
+typ
+run
+shr
+nxt tck
+0
+0
+force_next_tick
+14
+4
+8
+ref
+force_next_tick
+typ
+int
+shr
+nxt tick
+val
+0
+0
+0
+Macro
+34
+0
+0
+2
+28
+savepath
+14
+4
+8
+ref
+savepath
+typ
+str
+shr
+save
+val
+macro.sdata
+0
+0
+show_macro
+14
+4
+8
+ref
+show_macro
+typ
+boo
+shr
+show
+val
+0
+0
+0
+interface
+146
+0
+0
+3
+140
+framerate
+76
+0
+0
+5
+70
+sec_since_reset
+14
+4
+8
+ref
+sec_since_reset
+typ
+int
+shr
+sec
+val
+24
+0
+0
+median_framerate
+14
+4
+8
+ref
+median_framerate
+typ
+flt
+shr
+mfr
+val
+54.595085
+0
+0
+frame_since_reset
+14
+4
+8
+ref
+frame_since_reset
+typ
+int
+shr
+frsr
+val
+1213
+0
+0
+frame_duration
+14
+4
+8
+ref
+frame_duration
+typ
+flt
+shr
+fdur
+val
+21.0
+0
+0
+current_framerate
+14
+4
+8
+ref
+current_framerate
+typ
+flt
+shr
+cfr
+val
+0.021
+0
+0
+camera
+50
+0
+0
+3
+44
+show grid
+14
+4
+8
+ref
+show grid
+typ
+boo
+shr
+grid
+val
+0
+0
+0
+cam scale
+14
+4
+8
+ref
+cam scale
+typ
+flt
+shr
+scale
+val
+0.5131581
+0
+0
+cam pos
+16
+5
+10
+ref
+cam pos
+typ
+vec
+shr
+pos
+x
+-106.10072
+y
+71.24496
+0
+0
+savepath
+14
+4
+8
+ref
+savepath
+typ
+str
+shr
+save
+val
+save.sdata
+0
+0

@@ -1,4 +1,16 @@
 /*
+
+
+
+
+
+
+
+
+
+
+
+
 PApplet
   Log
     DEBUG_SAVE
@@ -15,7 +27,10 @@ PApplet
 */
 
 
-boolean DEBUG_HOVERPILE = true;
+boolean DEBUG_HOVERPILE = false;
+boolean DEBUG_NOFILL = false;
+boolean DEBUG_SAVE_FULL = false;
+boolean DEBUG_MACRO = true;
 
 boolean DEBUG = true;
 void log(String s) {
@@ -23,6 +38,18 @@ void log(String s) {
 }
 void logln(String s) {
   if (DEBUG) println(s);
+}
+void mlog(String s) {
+  if (DEBUG_MACRO) print(s);
+}
+void mlogln(String s) {
+  if (DEBUG_MACRO) println(s);
+}
+void slog(String s) {
+  if (DEBUG_SAVE_FULL) print(s);
+}
+void slogln(String s) {
+  if (DEBUG_SAVE_FULL) println(s);
 }
 
 sInterface interf;
@@ -35,8 +62,8 @@ FlocComu fcom;
 
 
 void setup() {//executé au demarage
-  size(1600, 900);//taille de l'ecran
-  //fullScreen();
+  //size(1600, 900);//taille de l'ecran
+  fullScreen();
   noSmooth();//pas d'antialiasing
   //smooth();//anti aliasing
   
@@ -47,7 +74,14 @@ void setup() {//executé au demarage
   gcom = new GrowerComu(simul);
   fcom = new FlocComu(simul);
   
-  //interf.toolpanel.reduc();
+  simul.addCommunityBuilder("Grow", new Builder<GrowerComu>(simul) { public GrowerComu build() { 
+    return new GrowerComu(((Simulation)builder)); }});
+  simul.addCommunityBuilder("Floc", new Builder<FlocComu>(simul) { public FlocComu build() { 
+    return new FlocComu(((Simulation)builder)); }});
+  simul.addCommunityBuilder("Box", new Builder<BoxComu>(simul) { public BoxComu build() { 
+    return new BoxComu(((Simulation)builder)); }});
+  
+  interf.toolpanel.reduc();
   interf.taskpanel.reduc();
   //simul.pause.set(true);
   //interf.filesManagement();
@@ -55,6 +89,8 @@ void setup() {//executé au demarage
   
   logln("end models: "+interf.gui_theme.models.size());
   background(0);//fond noir
+  
+  interf.file_load();
 }
 
 
@@ -94,9 +130,10 @@ void mouseMoved() {
 
 
 
-String copy(String s) { return s.substring(0, s.length()); }
+String copy(String s) { if (s != null) return s.substring(0, s.length()); else return null; }
 
-String trimStringFloat(float f) {
+String trimStringFloat(float f) { return trimStringFloat(f, 2); }
+String trimStringFloat(float f, int p) {
   String s;
   if (f%1.0 == 0.0) s = nfc(int(f)); else s = str(f);
   String end = "";
@@ -106,11 +143,15 @@ String trimStringFloat(float f) {
     }
   }
   for (int i = 0; i < s.length() ; i++) {
-    if (s.charAt(i) == '.' && s.length() - i > 4) {
-      int m = 4;
-      if (f >= 10) m -= 1;
-      if (f >= 100) m -= 1;
-      if (f >= 1000) m -= 2;
+    if (s.charAt(i) == '.' && s.length() - i > p) {
+      int m = p;
+      for (int c = 0 ; c < p ; c++) {
+        if (f >= pow(10, c+1)) m -= 1;
+        if (f >= pow(10, c+1) && (c+1)%3 == 0) m -= 1;
+      }
+      //if (f >= 10) m -= 1;
+      //if (f >= 100) m -= 1;
+      //if (f >= 1000) m -= 2;
       s = s.substring(0, i+m);
       s = s + end;
       return s;
@@ -147,6 +188,9 @@ int get_free_id() { used_index++; return used_index - 1; }
 ArrayList<myFont> existingFont = new ArrayList<myFont>();
 class myFont { PFont f; int st; }
 PFont getFont(int st) {
+  st = int(st / 2) * 2;
+  if (st > 40) st = 40;
+  if (st < 6) st = 6;
   for (myFont f : existingFont) if (f.st == st) return f.f;
   myFont f = new myFont();
   f.f = createFont("Arial",st); f.st = st;
