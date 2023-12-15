@@ -15,20 +15,6 @@
 
 
 
-psy
-  rdv, nouveau patiens, depression severe chronique
-  
-raisin
-  mail auber > mail intro, difficulter deplacement, demande premier contact mail, situation ...
-  
-  
-  
-compta 18
-
-
-
-
-
 
 
 
