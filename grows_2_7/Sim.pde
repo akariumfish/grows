@@ -60,15 +60,15 @@
  there can be plane who take entity from different commu to make them interact
  */
 
-abstract class Builder<T extends Community> {
-  Object builder;
-  Builder() {
-  } 
-  Builder(Object b) { 
-    builder = b;
-  }
-  abstract T build();
-}
+//abstract class Builder<T extends Community> {
+//  Object builder;
+//  Builder() {
+//  } 
+//  Builder(Object b) { 
+//    builder = b;
+//  }
+//  abstract T build();
+//}
 
 
 class Simulation {
@@ -77,16 +77,16 @@ class Simulation {
 
   //}
 
-  void buil_base_comu() {
-  }
+  //void buil_base_comu() {
+  //}
 
-  ArrayList<Builder<? extends Community>> communityBuilder = new ArrayList<Builder<? extends Community>>();
-  ArrayList<String> communityTypes = new ArrayList<String>();
+  //ArrayList<Builder<? extends Community>> communityBuilder = new ArrayList<Builder<? extends Community>>();
+  //ArrayList<String> communityTypes = new ArrayList<String>();
 
-  void addCommunityBuilder(String n, Builder<? extends Community> r) { 
-    communityTypes.add(n); 
-    communityBuilder.add(r);
-  }
+  //void addCommunityBuilder(String n, Builder<? extends Community> r) { 
+  //  communityTypes.add(n); 
+  //  communityBuilder.add(r);
+  //}
   
   nFrontPanel sim_front;
 
@@ -184,7 +184,7 @@ class Simulation {
       sim_front = new nFrontPanel(screen_gui, inter.taskpanel, "Simulation");
       nFrontTab tab = sim_front.addTab("Base");
 
-      tab.getShelf(0)
+      tab.addShelf()
         .addDrawer(10, 0.6)
         .addModel("Label-S4", "- Simulation Control -").setFont(int(ref_size/1.4)).getShelf()
         .addSeparator(0.125)
@@ -210,19 +210,19 @@ class Simulation {
       nDrawer val_drawer = tab.getShelf(0)
         .addSeparator(0.25).addDrawer(1);
       int count = 0;
-      for (Builder<? extends Community> r : communityBuilder) {
-        //nWidget tsw = 
-        val_drawer.addModel("Button-S2-P"+(count+1), communityTypes.get(count))
-          //.setTrigger() // no creation before community saving
-          .addEventTrigger(new Runnable(r) { 
-          public void run() {
-            ((Builder<? extends Community>)builder).build(); 
-            update_com_selector_list();
-          }
-        }
-        );
-        count++;
-      }
+      //for (Builder<? extends Community> r : communityBuilder) {
+      //  //nWidget tsw = 
+      //  val_drawer.addModel("Button-S2-P"+(count+1), communityTypes.get(count))
+      //    //.setTrigger() // no creation before community saving
+      //    .addEventTrigger(new Runnable(r) { 
+      //    public void run() {
+      //      ((Builder<? extends Community>)builder).build(); 
+      //      update_com_selector_list();
+      //    }
+      //  }
+      //  );
+      //  count++;
+      //}
       val_drawer.getShelf().addSeparator(0.125)
         .addDrawer(10, 0.75)
         .addModel("Label-SS4", "- Active Community -").setFont(int(ref_size/1.5)).getShelf()
@@ -329,8 +329,6 @@ class Simulation {
     } 
     );
 
-    //macromain_tickable = new Tickable(ticking_pile) { public void tick(float f) { inter.macro_main.tick(); } };
-
     srun_reset = new sRun(sbloc, "sim reset", "reset", new Runnable() { 
       public void run() { 
         reset();
@@ -354,9 +352,9 @@ class Simulation {
       srun_nxtt.run();
     } });
     
-    Tickable ti = new Tickable(ticking_pile, 2) { public void tick(float t) { inter.macro_main.tick(); } };
+    macromain_tickable = new Tickable(ticking_pile) { public void tick(float f) { inter.macro_main.tick(); } };
 
-    buil_base_comu();
+    //buil_base_comu();
 
     build_ui();
   }
@@ -460,6 +458,12 @@ class Simulation {
   }
 }
 
+
+
+
+
+
+
 abstract class Community {
 
   nFrontPanel com_front;
@@ -476,7 +480,7 @@ abstract class Community {
     if (com_front == null) {
       com_front = new nFrontPanel(screen_gui, sim.inter.taskpanel, "Community "+name);
       nFrontTab tab = com_front.addTab("community");
-      tab.getShelf(0)
+      tab.addShelf()
         .addDrawer(10, 0.75)
         .addModel("Label-S4", "-"+name+" Community Control-").setFont(int(ref_size/1.4)).getShelf()
         .addSeparator(0.125)
@@ -609,6 +613,9 @@ abstract class Community {
   abstract Entity build();
   abstract Entity addEntity();
 }
+
+
+
 
 
 

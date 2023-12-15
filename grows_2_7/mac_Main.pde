@@ -45,28 +45,23 @@ class Macro_Main extends Macro_Sheet {
   
   void build_macro_menus() {
     inter.main_menu.addEntry("Macros", new Runnable() { public void run() { build_macro_frontpanel(); } } );
-    inter.main_menu.addEntry("Templates Datas", new Runnable() { 
-      public void run() { 
-        dataBlocPreview();
-      }
-    } 
-    );
+    //inter.main_menu.addEntry("Templates Datas", new Runnable() { 
+    //  public void run() { 
+    //    dataBlocPreview();
+    //  }
+    //} 
+    //);
     macro_tool = new nToolPanel(screen_gui, ref_size, 0.125, true, true);
     macro_tool.addShelf()
       .addDrawer(3.25, 1)
-        .addCtrlModel("Menu_Button_Small_Outline-S1-P1", "-")
-          .setRunnable(new Runnable() { public void run() { 
-            if (isReduc) enlarg(); 
-            else reduc();
-          }})
+        .addLinkedModel("Menu_Button_Small_Outline-S1-P1", "-")
+          .setLinkedValue(macro_reduc)
           .setFont(int(ref_size/1.9)).getDrawer()
-        .addCtrlModel("Menu_Button_Small_Outline-S1-P2", "M")
-          .setRunnable(new Runnable() { public void run() { 
-            build_macro_frontpanel();
-          }})
-          .setFont(int(ref_size/1.9)).getDrawer()
-        .addLinkedModel("Menu_Button_Small_Outline-S1-P3", "S")
+        .addLinkedModel("Menu_Button_Small_Outline-S1-P2", "S")
           .setLinkedValue(show_macro)
+          .setFont(int(ref_size/1.9)).getDrawer()
+        .addCtrlModel("Menu_Button_Small_Outline-S1-P3", "M")
+          .setRunnable(new Runnable() { public void run() { build_macro_frontpanel(); }})
           .setFont(int(ref_size/1.9)).getDrawer()
         ;
   
@@ -76,8 +71,8 @@ class Macro_Main extends Macro_Sheet {
     if (macro_front == null) {
       macro_front = new nFrontPanel(screen_gui, inter.taskpanel, "MACRO");
       macro_front.addTab("Base")
-        .getShelf(0)
-          .addDrawer(1.25)
+        .addShelf()
+          .addDrawer(10, 1.25)
             .addWidget(new nWidget(screen_gui, "Bang", int(ref_size/1.9), ref_size*0.25, ref_size*0.25, ref_size*2.5, ref_size)).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
               if (mmain().selecting_sheet != null) mmain().selecting_sheet.addBang(); }}).getDrawer()
             .addWidget(new nWidget(screen_gui, "Switch", int(ref_size/1.9), ref_size*3, ref_size*0.25, ref_size*2.5, ref_size)).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
@@ -139,8 +134,8 @@ class Macro_Main extends Macro_Sheet {
       build_sValue_Tab(screen_gui, data.types);
       build_Files_Tab(screen_gui);
       macro_front.setNonClosable();
-      macro_front.setPosition(screen_gui.view.pos.x + screen_gui.view.size.x - macro_front.grabber.getLocalSX(), 
-                                      screen_gui.view.pos.y + (screen_gui.view.size.y / 15) );
+      //macro_front.setPosition(screen_gui.view.pos.x + screen_gui.view.size.x - macro_front.grabber.getLocalSX(), 
+      //                                screen_gui.view.pos.y + (screen_gui.view.size.y / 15) );
         ;
     } else macro_front.popUp();
   }
@@ -149,7 +144,7 @@ class Macro_Main extends Macro_Sheet {
     savepath_value = new sStr(macro_sbloc, savepath, "savepath", "save");
     nFrontTab ftab = macro_front.addTab("Files");
 
-    ftab.getShelf(0)
+    ftab.addShelf()
       .addDrawer(10, 0.8)
         .addModel("Label-S4", "- Templates Saving File -").setFont(int(ref_size/1.4)).getShelf()
       .addSeparator(0.0625)
@@ -187,7 +182,7 @@ class Macro_Main extends Macro_Sheet {
     nFrontTab ttab = macro_front.addTab("Templates");
     ttab.addEventOpen(new Runnable() { public void run() {
       update_template_list(template_list);
-    }}).getShelf(0)
+    }}).addShelf()
       .addDrawer(0.75)
       .addModel("Label-S4", "- Templates -").setFont(int(ref_size/1.4)).getShelf()
       .addSeparator(0.0625)
@@ -235,24 +230,17 @@ class Macro_Main extends Macro_Sheet {
           }})
           .getShelf();
       
-      
-      
-      
-      
-      
-      
-    
     templates_entry = new ArrayList<String>(); // mmain().data.getCountOfType("flt")
     templates_value = new ArrayList<Save_Bloc>(); // mmain().data.getCountOfType("flt")
 
-    template_list = ttab.getShelf(0)
+    template_list = ttab.getShelf()
       .addSeparator(0.25)
       .addList(6, 10, 1)
         .addEventChange_Builder(new Runnable() { public void run() {
           int id = ((nList)builder).last_choice_index;
           if (templates_value != null && id < templates_value.size()) selected_template = templates_value.get(id);
         }});
-    ttab.getShelf(0).addSeparator(0.25);
+    //ttab.getShelf(0).addSeparator(0.25);
     update_template_list(template_list);
   }
   
@@ -265,48 +253,6 @@ class Macro_Main extends Macro_Sheet {
     for (Save_Bloc v : templates_value) templates_entry.add(v.name);
     mlogln("entrys nb "+templates_entry.size());
     list.setEntrys(templates_entry);
-  }
-  
-  
-  Save_Bloc recurs_sbloc, prev_sbloc;
-  void dataBlocPreview() {
-    nDropMenu data_menu = new nDropMenu(screen_gui, ref_size*0.8, 12.5, false, false);
-    for (Save_Bloc b : templates_sbloc.blocs) { 
-      data_menu.addEntry(b.name, new Runnable(b) { 
-        public void run() { 
-          recurs_sbloc = ((Save_Bloc)builder);
-          recursivesBlocPreview();
-        }
-      } 
-      );
-    }
-    data_menu.drop(screen_gui);
-  }
-  void recursivesBlocPreview() {
-    nDropMenu sbloc_menu = new nDropMenu(screen_gui, ref_size*0.8, 12.5, false, false);
-    sbloc_menu.addEntry("prev", new Runnable() { 
-      public void run() { 
-        recurs_sbloc = prev_sbloc;
-        prev_sbloc = null;
-        if (recurs_sbloc != null) recursivesBlocPreview(); 
-        else dataBlocPreview();
-      }
-    } 
-    );
-    for (Save_Bloc b : recurs_sbloc.blocs) { 
-      sbloc_menu.addEntry(b.name, new Runnable(b) { 
-        public void run() { 
-          prev_sbloc = recurs_sbloc;
-          recurs_sbloc = ((Save_Bloc)builder);
-          recursivesBlocPreview();
-        }
-      } 
-      );
-    }
-    for (Save_Data b : recurs_sbloc.datas) { 
-      nCtrlWidget w = sbloc_menu.addEntry(b.name+":"+b.data);
-    }
-    sbloc_menu.drop(screen_gui);
   }
   
   void file_save() {
@@ -368,7 +314,7 @@ class Macro_Main extends Macro_Sheet {
         update_selector_list(selector_list, "flt"); }
     } } );
     nFrontTab tb = macro_front.addTab("sValue");
-    nDrawer val_drawer = tb.getShelf(0)
+    nDrawer val_drawer = tb.addShelf()
       .addSeparator(0.25).addDrawer(1);
     
     int count = 0;
@@ -466,23 +412,38 @@ class Macro_Main extends Macro_Sheet {
   nGUI cam_gui, screen_gui;
   sValueBloc macro_sbloc;
   Save_Bloc templates_sbloc;
-  sBoo show_macro;
+  sBoo show_macro, macro_reduc;
   
   
   void addTickAskMethod(Runnable r) { tickAskMethods.add(r); }
   void tick() { tickpile.tick(); }
-  
-  
-  
-  void reduc() { super.reduc(); 
-    //grabber.setPosition(cam_gui.view.pos.x+cam_gui.view.size.x/2, cam_gui.view.pos.y);
+  void reduc() { 
+    if (!macro_reduc.get()) { macro_reduc.set(true); return; }
+    super.reduc(); 
+    grabber.setPosition(cam_gui.view.pos.x+cam_gui.view.size.x/2, cam_gui.view.pos.y);
     back.hide(); 
-    //for (nWidget w : menubuttons) w.show();
-    //for (nWidget w : subHeadWidgets) w.hide();
-    setWidth(ref_size*8); }
+    setWidth(ref_size*8 / cam.cam_scale.get());
+    grabber.setTextVisibility(false); }
+  void enlarg() { 
+    if (show_macro.get()) { 
+      if (macro_reduc.get()) { macro_reduc.set(false); return; }
+      super.enlarg(); 
+      grabber.setTextVisibility(true); } 
+  }
   void askTick() { runEvents(tickAskMethods); }
-  void show() { super.show(); if (isReduc) back.hide(); szone.ON = true; closer.hide(); }
-  void hide() { super.hide(); szone.ON = false; }
+  void show() { 
+    if (!show_macro.get()) { show_macro.set(true); return; }
+    super.show(); 
+    if (isReduc) back.hide(); 
+    closer.hide(); 
+    reduc.hide(); 
+    szone.ON = true; 
+  }
+  void hide() { 
+    if (show_macro.get()) { show_macro.set(false); return; }
+    super.hide(); 
+    szone.ON = false; 
+  }
   Macro_Main(sInterface _int) {
     super(_int.cam_gui, null, 0, -_int.cam.view.size.y/2);
     inter = _int;
@@ -491,31 +452,33 @@ class Macro_Main extends Macro_Sheet {
     cam_gui = inter.cam_gui; screen_gui = inter.screen_gui;
     macro_sbloc = new sValueBloc(inter.data, "Macro");
     templates_sbloc = new Save_Bloc("Templates");
-    show_macro = new sBoo(macro_sbloc, true, "show_macro", "show");
+    show_macro = new sBoo(macro_sbloc, false, "show_macro", "show");
     show_macro.addEventChange(new Runnable() { public void run() {
-      if (show_macro.get()) show(); else hide();
+      if (show_macro.get()) show(); 
+      else hide(); 
     }});
-    //inter.cam_gui.addEventFrame(new Runnable() { public void run() {
-    //  //if (isReduc) { 
-    //  //  grabber.setPosition(cam_gui.view.pos.x+cam_gui.view.size.x/2, 
-    //  //                                 cam_gui.view.pos.y); 
-    //  //  if (cam.cam_scale.get() * grabber.getLocalSX() > cam_gui.view.size.x) grabber.hide();
-    //  //  else grabber.show();
-    //  //}
-    //} } );
+    macro_reduc = new sBoo(macro_sbloc, isReduc, "macro_reduc", "reduc");
+    macro_reduc.addEventChange(new Runnable() { public void run() {
+      if (macro_reduc.get()) { isReduc = true; reduc(); }
+      else { isReduc = false; enlarg(); }
+    }});
+    cam.addEventMove(new Runnable() { public void run() {
+      if (isReduc) { 
+        grabber.setPosition(cam_gui.view.pos.x+cam_gui.view.size.x/2, cam_gui.view.pos.y); 
+        grabber.setSize(ref_size*9.25 / cam.cam_scale.get(), ref_size*0.75 / cam.cam_scale.get()); } } } );
+    cam.addEventZoom(new Runnable() { public void run() {
+      if (isReduc) { 
+        grabber.setPosition(cam_gui.view.pos.x+cam_gui.view.size.x/2, cam_gui.view.pos.y);
+        grabber.setSize(ref_size*9.25 / cam.cam_scale.get(), ref_size*0.75 / cam.cam_scale.get()); } } } );
     info = new nInfo(gui, int(ref_size/1.5)).setLayer(menu_layer+1);
     tickpile = new Ticking_pile();
     
-    //front.hide();
-    //reduc.hide(); 
-    closer.setBackground().setSX(0).setText(""); 
-    reduc.setBackground().setSX(0).setText(""); 
+    //closer.setBackground().setSX(0).setText(""); 
+    //reduc.setBackground().setSX(0).setText(""); 
     grabber.setSize(ref_size*9.25, ref_size)
-      //.setField(false)
+      .setField(false)
       ;
     grabber.setText("MACRO");
-    
-    //grabber.hide();
     
     szone = new nSelectZone(gui).addEventEndSelect(new Runnable() { public void run() {
       ;
@@ -524,56 +487,37 @@ class Macro_Main extends Macro_Sheet {
       selecting_sheet = null;
       selected_macro.clear();
     }});
-    menugroup = new nExcludeGroup();
-    //for (nWidget w : menubuttons) menugroup.add(w);
-    //sload = new nWidget(gui, "Load", int(ref_size/1.5), 0, 0, ref_size*5, ref_size)
-    //  .setTrigger()
-    //  .setParent(ssheet)
-    //  .setLayer(menu_layer)
-    //  .stackDown()
-    //  .hide()
-    //  .addEventTrigger(new Runnable() { public void run() {
-    //    enlarg();
-    //    sdata_load();
-    //    childDragged();
-    //    menugroup.closeAll();
-    //  }})
-    //  ;
-    //ssave = new nWidget(gui, "Save", int(ref_size/1.5), 0, 0, ref_size*5, ref_size)
-    //  .setTrigger()
-    //  .setParent(sload)
-    //  .setLayer(menu_layer)
-    //  .stackDown()
-    //  .hide()
-    //  .addEventTrigger(new Runnable() { 
-    //  public void run() {
-    //    sdata_save();
-    //    menugroup.closeAll();
-    //  }
-    //}
-    //)
-    //;
-    //subMenuWidgets.add(ssave);
-    //if (menubuttons.size() > 0) menubuttons.get(0).setParent(grabber);
+    
     setLayer(0);
     toLayerTop();
     
-    reduc();
+    
+    build_macro_menus();
+    
+    inter.screen_gui.addEventSetup(new Runnable() { public void run() { 
+      if (macro_reduc.get()) reduc(); 
+      else enlarg(); 
+      if (show_macro.get()) show(); 
+      else hide(); 
+      grabber.setPosition(cam_gui.view.pos.x+cam_gui.view.size.x/2, cam_gui.view.pos.y);
+      grabber.setSize(ref_size*9.25 / cam.cam_scale.get(), ref_size*0.75 / cam.cam_scale.get());
+    } } );  
+    
+    
+    
   }
   void clear() { empty(); super.clear(); 
-    //sload.clear(); ssave.clear(); 
+    
   }
   Macro_Abstract setWidth(float w) {
     super.setWidth(w); grabber.setSX(ref_size*9.25); return this; }
   void toLayerTop() { 
     super.toLayerTop(); 
-    //sload.toLayerTop(); 
-    //ssave.toLayerTop(); 
+    
   }
   void setLayer(int l) { 
     super.setLayer(l); 
-    //sload.setLayer(menu_layer); 
-    //ssave.setLayer(menu_layer); 
+    
   }
 }
 

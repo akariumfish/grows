@@ -41,7 +41,6 @@ class sInterface {
   nToolPanel toolpanel;
   nDropMenu main_menu;
   nTaskPanel taskpanel;
-  //nWindowPanel window;
   nWindowPanel files_panel;
   float size = 40;
 
@@ -50,7 +49,7 @@ class sInterface {
   Save_Bloc main_savebloc;
   void filesManagement() {
     files_panel = new nWindowPanel(screen_gui, taskpanel, "Files");
-    files_panel.getShelf()
+    files_panel.addShelf()
       .addSeparator(0.0625)
       .addDrawer(1)
       .addModel("Label-S4", "Select File :                                   ").getDrawer()
@@ -201,12 +200,8 @@ class sInterface {
     data = new DataHolder();
     sbloc = new sValueBloc(data, "interface");
     cam = new Camera(input, sbloc)
-      .addEventZoom(new Runnable() { 
-      public void run() { 
-        cam_gui.updateScale();
-      }
-    } 
-    );
+      .addEventZoom(new Runnable() { public void run() { cam_gui.updateView(); } } )
+      .addEventMove(new Runnable() { public void run() { cam_gui.updateView(); } } );
     framerate = new sFramerate(sbloc, 60);
     gui_theme = new nTheme();
     exclude_group = new nExcludeGroup();
@@ -244,10 +239,9 @@ class sInterface {
     } 
     );
 
-    macro_main = new Macro_Main(this);
     build_default_ui(size);
-
-    macro_main.build_macro_menus();
+    
+    macro_main = new Macro_Main(this);
   }
 
   sInterface addToCamDrawerPile(Drawable d) { 
@@ -335,7 +329,17 @@ class Camera {
     sbloc = new sValueBloc(d, "camera");
     grid = new sBoo(sbloc, true, "show grid", "grid");
     cam_scale = new sFlt(sbloc, 1.0, "cam scale", "scale");
+    cam_scale.addEventChange(new Runnable() { public void run() {
+      view.pos.set(screen_to_cam(new PVector(0, 0)));
+      view.size.set(screen_to_cam(new PVector(width, height)).sub(view.pos)); 
+      runEvents(eventsZoom);
+      runEvents(eventsMove); }});
     cam_pos = new sVec(sbloc, "cam pos", "pos");
+    cam_pos.addEventChange(new Runnable() { public void run() {
+      view.pos.set(screen_to_cam(new PVector(0, 0)));
+      view.size.set(screen_to_cam(new PVector(width, height)).sub(view.pos)); 
+      runEvents(eventsZoom);
+      runEvents(eventsMove); }});
     view = new Rect(0, 0, width, height);
     view.pos.set(screen_to_cam(new PVector(0, 0)));
     view.size.set(screen_to_cam(new PVector(width, height)).sub(view.pos));
@@ -347,9 +351,9 @@ class Camera {
     eventsZoom.add(r); 
     return this;
   }
-  ArrayList<Runnable> eventsDrag = new ArrayList<Runnable>();
-  Camera addEventDrag(Runnable r) { 
-    eventsDrag.add(r); 
+  ArrayList<Runnable> eventsMove = new ArrayList<Runnable>();
+  Camera addEventMove(Runnable r) { 
+    eventsMove.add(r); 
     return this;
   }
 
@@ -418,23 +422,28 @@ class Camera {
     if (!input.getState("MouseLeft") && grabbed) grabbed = false; 
     if (input.getState("MouseLeft") && grabbed) { 
       cam_pos.add((mouse.x - pmouse.x)*cam_scale.get(), (mouse.y - pmouse.y)*cam_scale.get());
-      runEvents(eventsDrag);
+      view.pos.set(screen_to_cam(new PVector(0, 0)));
+      view.size.set(screen_to_cam(new PVector(width, height)).sub(view.pos));
+      runEvents(eventsMove);
     }
 
     //permet le zoom
     if (input.mouseWheelUp) { 
       cam_scale.set(cam_scale.get()*1/ZOOM_FACTOR); 
       cam_pos.mult(1/ZOOM_FACTOR); 
+      view.pos.set(screen_to_cam(new PVector(0, 0)));
+      view.size.set(screen_to_cam(new PVector(width, height)).sub(view.pos));
+      runEvents(eventsMove);
       runEvents(eventsZoom);
     }
     if (input.mouseWheelDown) {
       cam_scale.set(cam_scale.get()*ZOOM_FACTOR); 
       cam_pos.mult(ZOOM_FACTOR); 
+      view.pos.set(screen_to_cam(new PVector(0, 0)));
+      view.size.set(screen_to_cam(new PVector(width, height)).sub(view.pos));
+      runEvents(eventsMove);
       runEvents(eventsZoom);
     }
-
-    view.pos.set(screen_to_cam(new PVector(0, 0)));
-    view.size.set(screen_to_cam(new PVector(width, height)).sub(view.pos));
   }
 
   PVector cam_to_screen(PVector p) {

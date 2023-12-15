@@ -1,4 +1,78 @@
 
+
+class BoxComu extends Community {
+  
+  void comPanelBuild(nFrontPanel sim_front) {
+    nFrontTab tab = com_front.addTab(name);
+    tab.addShelf()
+      .addDrawerFactValue(spacing_min, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(spacing_max, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(spacing_diff, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(spacing_max_dist, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(box_size_min, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(box_size_max, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(duplicate_prob, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(corner_space, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(max_age, 2, 10, 1)
+      .addSeparator(0.125)
+      ;
+  }
+  
+  sFlt spacing_min , spacing_max, spacing_diff, spacing_max_dist, box_size_min, 
+    box_size_max, duplicate_prob, corner_space;
+  
+  sInt max_age;
+  
+  //sBoo draw_circle = new sBoo(simval, false);
+  
+  int cnt = 0;
+  
+  BoxComu(Simulation _c) { super(_c, "Box ", 0);
+    spacing_min = new sFlt(sbloc, 50, "box_spacing_min", "");
+    spacing_max = new sFlt(sbloc, 200, "box_spacing_max", "");
+    spacing_diff = new sFlt(sbloc, 1, "box_spacing_diff", "");
+    spacing_max_dist = new sFlt(sbloc, 10000, "box_spacing_max_dist", "");
+    box_size_min = new sFlt(sbloc, 100, "box_size_min", "");
+    box_size_max = new sFlt(sbloc, 400, "box_size_max", "");
+    duplicate_prob = new sFlt(sbloc, 5.0, "box_duplicate_prob", "");
+    corner_space = new sFlt(sbloc, 40, "box_corner_space", "");
+    max_age = new sInt(sbloc, 2000, "box max_age", "");
+    
+    
+  }
+  void custom_pre_tick() {}
+  void custom_build() {}
+  
+  
+  void custom_post_tick() { 
+    cnt+=2;
+    if (cnt > 2400) cnt -= 2400;
+  }
+  void custom_cam_draw_pre_entity() {}
+  void custom_reset() { cnt = 0; }
+  void custom_cam_draw_post_entity() { 
+    //float r = spacing_max_dist.get();  
+    //noFill();
+    //stroke(255);
+    ////ellipse(0, 0, r, r);
+    
+  }//
+  
+  Box build() { return new Box(this); }
+  Box addEntity() { return newEntity(); }
+  Box newEntity() { 
+    for (Entity e : list) if (!e.active) { e.activate(); return (Box)e; } return null; }
+}
+
+
 class Box extends Entity {
   Rect rect = new Rect();
   Box origin;
@@ -225,77 +299,4 @@ class Box extends Entity {
     return this; }
   Box clear() { return this; }
   BoxComu com() { return ((BoxComu)com); }
-}
-
-
-class BoxComu extends Community {
-  
-  void comPanelBuild(nFrontPanel sim_front) {
-    nFrontTab tab = com_front.addTab(name);
-    tab.getShelf(0)
-      .addDrawerFactValue(spacing_min, 2, 10, 1)
-      .addSeparator(0.125)
-      .addDrawerFactValue(spacing_max, 2, 10, 1)
-      .addSeparator(0.125)
-      .addDrawerFactValue(spacing_diff, 2, 10, 1)
-      .addSeparator(0.125)
-      .addDrawerFactValue(spacing_max_dist, 2, 10, 1)
-      .addSeparator(0.125)
-      .addDrawerFactValue(box_size_min, 2, 10, 1)
-      .addSeparator(0.125)
-      .addDrawerFactValue(box_size_max, 2, 10, 1)
-      .addSeparator(0.125)
-      .addDrawerFactValue(duplicate_prob, 2, 10, 1)
-      .addSeparator(0.125)
-      .addDrawerFactValue(corner_space, 2, 10, 1)
-      .addSeparator(0.125)
-      .addDrawerFactValue(max_age, 2, 10, 1)
-      .addSeparator(0.125)
-      ;
-  }
-  
-  sFlt spacing_min , spacing_max, spacing_diff, spacing_max_dist, box_size_min, 
-    box_size_max, duplicate_prob, corner_space;
-  
-  sInt max_age;
-  
-  //sBoo draw_circle = new sBoo(simval, false);
-  
-  int cnt = 0;
-  
-  BoxComu(Simulation _c) { super(_c, "Box ", 0);
-    spacing_min = new sFlt(sbloc, 50, "box_spacing_min", "");
-    spacing_max = new sFlt(sbloc, 200, "box_spacing_max", "");
-    spacing_diff = new sFlt(sbloc, 1, "box_spacing_diff", "");
-    spacing_max_dist = new sFlt(sbloc, 10000, "box_spacing_max_dist", "");
-    box_size_min = new sFlt(sbloc, 100, "box_size_min", "");
-    box_size_max = new sFlt(sbloc, 400, "box_size_max", "");
-    duplicate_prob = new sFlt(sbloc, 5.0, "box_duplicate_prob", "");
-    corner_space = new sFlt(sbloc, 40, "box_corner_space", "");
-    max_age = new sInt(sbloc, 2000, "box max_age", "");
-    
-    
-  }
-  void custom_pre_tick() {}
-  void custom_build() {}
-  
-  
-  void custom_post_tick() { 
-    cnt+=2;
-    if (cnt > 2400) cnt -= 2400;
-  }
-  void custom_cam_draw_pre_entity() {}
-  void custom_reset() { cnt = 0; }
-  void custom_cam_draw_post_entity() { 
-    //float r = spacing_max_dist.get();  
-    //noFill();
-    //stroke(255);
-    ////ellipse(0, 0, r, r);
-    
-  }//
-  
-  Box build() { return new Box(this); }
-  Box addEntity() { return newEntity(); }
-  Box newEntity() { 
-    for (Entity e : list) if (!e.active) { e.activate(); return (Box)e; } return null; }
 }

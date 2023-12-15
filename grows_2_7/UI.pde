@@ -57,7 +57,7 @@ class nGUI {
   nGUI setMouse(PVector v) { mouseVector = v; return this; }
   nGUI setpMouse(PVector v) { pmouseVector = v; return this; }
   nGUI setView(Rect v) { view = v; scale = width / view.size.x; return this; }
-  nGUI updateScale() { scale = width / view.size.x; return this; }
+  nGUI updateView() { scale = width / view.size.x; return this; }
   nGUI setTheme(nTheme v) { theme = v; return this; }
   nGUI addEventFrame(Runnable r) { eventsFrame.add(r); return this; }
   nGUI addEventFound(Runnable r) { hoverable_pile.addEventFound(r); return this; }
@@ -116,10 +116,10 @@ class nLinkedWidget extends nWidget {
     return this; }
   nLinkedWidget setLinkedValue(sBoo b) { 
     bval = b;
-    b.addEventChange(new Runnable(this) { public void run() { 
-      ((nLinkedWidget)builder).setSwitchState(bval.get()); } } );
     setSwitch();
     if (b.get()) setOn();
+    b.addEventChange(new Runnable(this) { public void run() { 
+      ((nLinkedWidget)builder).setSwitchState(bval.get()); } } );
     addEventSwitchOn(new Runnable() { public void run() { bval.set(true); } } );
     addEventSwitchOff(new Runnable() { public void run() { bval.set(false); } } );
     return this; }
@@ -293,8 +293,8 @@ class nSlide extends nWidget {
 
 class nWidget {
   
-  nWidget setPanelDrawer(nPanelDrawer d) { pan_drawer = d; return this; }
-  nPanelDrawer getPanelDrawer() { return pan_drawer; }
+  //nWidget setPanelDrawer(nPanelDrawer d) { pan_drawer = d; return this; }
+  //nPanelDrawer getPanelDrawer() { return pan_drawer; }
   nWidget setDrawer(nDrawer d) { ndrawer = d; return this; }
   nDrawer getDrawer() { return ndrawer; }
   nShelf getShelf() { return ndrawer.shelf; }
@@ -363,6 +363,7 @@ class nWidget {
   nWidget changeText(String s) { label = s; return this; }
   nWidget setFont(int s) { look.textFont = s; return this; }
   nWidget setTextAlignment(int s) { textAlignment = s; return this; }
+  nWidget setTextVisibility(boolean s) { show_text = s; return this; }
   
   nWidget setLook(nLook l) { look.copy(l); return this; }
   nWidget setLook(nTheme t, String r) { look.copy(t.getLook(r)); return this; }
@@ -391,8 +392,9 @@ class nWidget {
   }
   
   nWidget copy(nWidget w) {
-    eventFrameRun.clear(); for (Runnable r : w.eventFrameRun) eventFrameRun.add(r);
-  //  ArrayList<Runnable> eventPositionChange = new ArrayList<Runnable>();
+  //eventFrameRun.clear(); for (Runnable r : w.eventFrameRun) eventFrameRun.add(r);
+  
+  //ArrayList<Runnable> eventPositionChange = new ArrayList<Runnable>();
   //ArrayList<Runnable> eventShapeChange = new ArrayList<Runnable>();
   //ArrayList<Runnable> eventLayerChange = new ArrayList<Runnable>();
   //ArrayList<Runnable> eventVisibilityChange = new ArrayList<Runnable>();
@@ -417,7 +419,7 @@ class nWidget {
     placeLeft = w.placeLeft; placeRight = w.placeRight; placeUp = w.placeUp; placeDown = w.placeDown;
     hide = w.hide; drawerHideState = w.drawerHideState; hoverHideState = w.hoverHideState;
     constantOutlineWeight = w.constantOutlineWeight;
-    textAlignment = w.textAlignment;
+    textAlignment = w.textAlignment; show_text = w.show_text;
     look.copy(w.look);
     setLayer(w.layer);
     setPosition(w.localrect.pos.x, w.localrect.pos.y);
@@ -551,15 +553,17 @@ class nWidget {
     if (!switchState) {
       switchState = true;
       runEvents(eventSwitchOnRun);
-      for (nWidget b : excludes) b.setOff();
-    }
+      for (nWidget b : excludes) b.setOff(); }
   }
-  
+  void forceOn() {
+    switchState = true;
+    runEvents(eventSwitchOnRun);
+    for (nWidget b : excludes) b.setOff(); }
+    
   void setOff() {
     if (switchState) {
       switchState = false;
       runEvents(eventSwitchOffRun); } }
-  
   void forceOff() {
     switchState = false;
     runEvents(eventSwitchOffRun); }
@@ -650,7 +654,7 @@ class nWidget {
   private nWidget parent = null;
   private ArrayList<nWidget> childs = new ArrayList<nWidget>();
   private nLook look;
-  private nPanelDrawer pan_drawer = null;
+  //private nPanelDrawer pan_drawer = null;
   private nDrawer ndrawer = null;
   
   private String label;
@@ -672,7 +676,7 @@ class nWidget {
   private boolean alignX = false, stackX = false, alignY = false, stackY = false;
   private boolean centerX = false, centerY = false;
   private boolean placeLeft = false, placeRight = false, placeUp = false, placeDown = false;
-  private boolean hide = false, drawerHideState = true, hoverHideState = true;
+  private boolean hide = false, drawerHideState = true, hoverHideState = true, show_text = true;
   private int layer = 0, textAlignment = CENTER;
  
   ArrayList<Runnable> eventPositionChange = new ArrayList<Runnable>();
@@ -719,21 +723,22 @@ class nWidget {
       else strokeWeight(look.outlineWeight);
       rect(getX() + wf*look.outlineWeight/2, getY() + wf*look.outlineWeight/2, 
            getSX() - wf*look.outlineWeight, getSY() - wf*look.outlineWeight);
-           
-      textAlign(textAlignment);
-      textFont(getFont(look.textFont));
-      String l = label;
-      if (showCursor) {
-        String str = label.substring(0, cursorPos);
-        String end = label.substring(cursorPos, label.length());
-        if (cursorCount < cursorCycle / 2) l = str + "|" + end;
-        else l = str + " " + end;
-        cursorCount++;
-        if (cursorCount > cursorCycle) cursorCount = 0;
+      if (show_text) {
+        textAlign(textAlignment);
+        textFont(getFont(look.textFont));
+        String l = label;
+        if (showCursor) {
+          String str = label.substring(0, cursorPos);
+          String end = label.substring(cursorPos, label.length());
+          if (cursorCount < cursorCycle / 2) l = str + "|" + end;
+          else l = str + " " + end;
+          cursorCount++;
+          if (cursorCount > cursorCycle) cursorCount = 0;
+        }
+        fill(look.textColor); 
+        if (textAlignment == LEFT) text(l, getX() + getSY() / 2, getY() + (look.textFont / 3.0) + (getLocalSY() / 2.0));
+        else text(l, getX() + getSX() / 2, getY() + (look.textFont / 3.0) + (getLocalSY() / 2.0));
       }
-      fill(look.textColor); 
-      text(l, getX() + getSX() / 2, getY() + (look.textFont / 3.0) + (getLocalSY() / 2.0));
-      
     } } ;
   }
   

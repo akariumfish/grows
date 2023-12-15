@@ -54,7 +54,7 @@ class GrowerComu extends Community {
 
   void comPanelBuild(nFrontPanel sim_front) {
     nFrontTab tab = com_front.addTab(name);
-    tab.getShelf(0)
+    tab.addShelf()
       .addDrawerWatch(activeGrower, 10, 0.7)
       .addSeparator(0.125)
       .addDrawerDoubleButton(create_floc, srun_killg, 10, 0.9)

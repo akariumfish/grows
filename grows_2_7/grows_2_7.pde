@@ -11,6 +11,30 @@
 
 
 
+
+
+
+
+psy
+  rdv, nouveau patiens, depression severe chronique
+  
+raisin
+  mail auber > mail intro, difficulter deplacement, demande premier contact mail, situation ...
+  
+  
+  
+compta 18
+
+
+
+
+
+
+
+
+
+
+
 PApplet
   Log
     DEBUG_SAVE
@@ -62,8 +86,8 @@ FlocComu fcom;
 
 
 void setup() {//executé au demarage
-  //size(1600, 900);//taille de l'ecran
-  fullScreen();
+  size(1600, 900);//taille de l'ecran
+  //fullScreen();
   noSmooth();//pas d'antialiasing
   //smooth();//anti aliasing
   
@@ -74,18 +98,17 @@ void setup() {//executé au demarage
   gcom = new GrowerComu(simul);
   fcom = new FlocComu(simul);
   
-  simul.addCommunityBuilder("Grow", new Builder<GrowerComu>(simul) { public GrowerComu build() { 
-    return new GrowerComu(((Simulation)builder)); }});
-  simul.addCommunityBuilder("Floc", new Builder<FlocComu>(simul) { public FlocComu build() { 
-    return new FlocComu(((Simulation)builder)); }});
-  simul.addCommunityBuilder("Box", new Builder<BoxComu>(simul) { public BoxComu build() { 
-    return new BoxComu(((Simulation)builder)); }});
+  //simul.addCommunityBuilder("Grow", new Builder<GrowerComu>(simul) { public GrowerComu build() { 
+  //  return new GrowerComu(((Simulation)builder)); }});
+  //simul.addCommunityBuilder("Floc", new Builder<FlocComu>(simul) { public FlocComu build() { 
+  //  return new FlocComu(((Simulation)builder)); }});
+  //simul.addCommunityBuilder("Box", new Builder<BoxComu>(simul) { public BoxComu build() { 
+  //  return new BoxComu(((Simulation)builder)); }});
   
   interf.toolpanel.reduc();
   interf.taskpanel.reduc();
   //simul.pause.set(true);
-  //interf.filesManagement();
-  //interf.macro_main.show_macro.set(false);
+  //interf.macro_main.build_macro_frontpanel();
   
   logln("end models: "+interf.gui_theme.models.size());
   background(0);//fond noir

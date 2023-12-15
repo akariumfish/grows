@@ -161,7 +161,7 @@ int
 shr
 active
 val
-80
+98
 0
 0
 floc POURSUITE
@@ -639,7 +639,7 @@ int
 shr
 active
 val
-473
+348
 0
 0
 grow age
@@ -697,7 +697,7 @@ int
 shr
 growers nb
 val
-11
+14
 0
 0
 grow lmin
@@ -1009,7 +1009,7 @@ int
 shr
 tick
 val
-2428
+3772
 0
 0
 pause
@@ -1140,20 +1140,6 @@ Macro
 0
 2
 28
-savepath
-14
-4
-8
-ref
-savepath
-typ
-str
-shr
-save
-val
-macro.sdata
-0
-0
 show_macro
 14
 4
@@ -1166,6 +1152,20 @@ shr
 show
 val
 0
+0
+0
+macro_reduc
+14
+4
+8
+ref
+macro_reduc
+typ
+boo
+shr
+reduc
+val
+1
 0
 0
 interface
@@ -1191,7 +1191,7 @@ int
 shr
 sec
 val
-24
+7
 0
 0
 median_framerate
@@ -1205,7 +1205,7 @@ flt
 shr
 mfr
 val
-54.595085
+53.859962
 0
 0
 frame_since_reset
@@ -1219,7 +1219,7 @@ int
 shr
 frsr
 val
-1213
+428
 0
 0
 frame_duration

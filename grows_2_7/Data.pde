@@ -30,6 +30,8 @@ abstract class sValue {
   abstract String getString();
   abstract void clear();
   sValue addEventChange(Runnable r) { eventsChange.add(r); return this; }
+  sValue addEventAllChange(Runnable r) { eventsAllChange.add(r); return this; }
+  void doChange() { runEvents(eventsAllChange); has_changed = true; }
   sValueBloc bloc;
   boolean has_changed = false;
   String ref, type, shrt;
@@ -41,6 +43,7 @@ abstract class sValue {
     bloc.values.put(ref, this); }
   void frame() { if (has_changed) runEvents(eventsChange); has_changed = false; }
   ArrayList<Runnable> eventsChange = new ArrayList<Runnable>();
+  ArrayList<Runnable> eventsAllChange = new ArrayList<Runnable>();
   void save_to_bloc(Save_Bloc svb) {
     logln("sv save " + ref);
     svb.newData("ref", ref);
@@ -67,7 +70,7 @@ class sInt extends sValue {
   int get() { return val; }
   void set(int v) { 
     if (limited) { if (v > max) v = max; if (v < min) v = min; }
-    if (v != val) has_changed = true; val = v; }
+    if (v != val) { val = v; doChange(); } }
   void add(int v) { set(get()+v); }
   void save_to_bloc(Save_Bloc svb) { super.save_to_bloc(svb);
     svb.newData("val", val);
@@ -76,21 +79,21 @@ class sInt extends sValue {
     set(svb.getInt("val"));
   }
 }
-class sDat extends sValue {
-  String getString() { return val.name + val.data; }
-  void clear() { if (val != null) val.clear(); }
-  Save_Data val;
-  sDat(sValueBloc b, String n, String d) { super(b, "dat", n, ""); set(new Save_Data(n, d)); }
-  Save_Data get() { return val; }
-  void set(Save_Data v) { val = v; }
-  void save_to_bloc(Save_Bloc svb) { super.save_to_bloc(svb);
-    if (val != null) svb.newData("name", val.name);
-    if (val != null) svb.newData("data", val.data);
-  }
-  void load_from_bloc(Save_Bloc svb) { super.load_from_bloc(svb);
-    set(new Save_Data(svb.getData("name"), svb.getData("data")));
-  }
-}
+//class sDat extends sValue {
+//  String getString() { return val.name + val.data; }
+//  void clear() { if (val != null) val.clear(); }
+//  Save_Data val;
+//  sDat(sValueBloc b, String n, String d) { super(b, "dat", n, ""); set(new Save_Data(n, d)); }
+//  Save_Data get() { return val; }
+//  void set(Save_Data v) { val = v; }
+//  void save_to_bloc(Save_Bloc svb) { super.save_to_bloc(svb);
+//    if (val != null) svb.newData("name", val.name);
+//    if (val != null) svb.newData("data", val.data);
+//  }
+//  void load_from_bloc(Save_Bloc svb) { super.load_from_bloc(svb);
+//    set(new Save_Data(svb.getData("name"), svb.getData("data")));
+//  }
+//}
 
 class sFlt extends sValue {
   boolean limited = false; float min, max;
@@ -102,7 +105,7 @@ class sFlt extends sValue {
   float get() { return val; }
   void set(float v) { 
     if (limited) { if (v > max) v = max; if (v < min) v = min; }
-    if (v != val) has_changed = true; val = v; }
+    if (v != val) { val = v; doChange(); } }
   void add(float v) { set(get()+v); }
   void save_to_bloc(Save_Bloc svb) { super.save_to_bloc(svb);
     svb.newData("val", val);
@@ -118,7 +121,7 @@ class sBoo extends sValue {
   boolean val = false, def;
   sBoo(sValueBloc b, boolean v, String n, String s) { super(b, "boo", n, s); val = v; def = val; }
   boolean get() { return val; }
-  void set(boolean v) { if (v != val) { has_changed = true; val = v; } }
+  void set(boolean v) { if (v != val) { val = v; doChange(); } }
   void save_to_bloc(Save_Bloc svb) { super.save_to_bloc(svb);
     svb.newData("val", val);
   }
@@ -133,7 +136,7 @@ class sStr extends sValue {
   String val = null, def;
   sStr(sValueBloc b, String v, String n, String s) { super(b, "str", n, s); val = copy(v); def = copy(val); }
   String get() { return copy(val); }
-  void set(String v) { if (!v.equals(val)) { has_changed = true; val = copy(v); } }
+  void set(String v) { if (!v.equals(val)) { val = copy(v); doChange(); } }
   void save_to_bloc(Save_Bloc svb) { super.save_to_bloc(svb);
     svb.newData("val", val);
   }
@@ -149,19 +152,24 @@ class sVec extends sValue {
   sVec(sValueBloc b, String n, String s) { super(b, "vec", n, s); }
   float x() { return val.x; }
   float y() { return val.y; }
-  sVec x(float v) { if (v != val.x) { has_changed = true; val.x = v; } return this; }
-  sVec y(float v) { if (v != val.y) { has_changed = true; val.y = v; } return this; }
-  sVec set(PVector v) { x(v.x); y(v.y); return this; }
-  sVec set(float _x, float _y) { x(_x); y(_y); return this; }
-  sVec add(float _x, float _y) { x(_x+val.x); y(_y+val.y); return this; }
-  sVec mult(float m) { x(val.x*m); y(val.y*m); return this; }
+  PVector getVct() { return new PVector(val.x, val.y); }
+  sVec setx(float v) { if (v != val.x) { val.x = v; doChange(); } return this; }
+  sVec sety(float v) { if (v != val.y) { val.y = v; doChange(); } return this; }
+  sVec set(float _x, float _y) { 
+    if (_x != val.x || _y != val.y) 
+    val.x = _x; val.y = _y; doChange(); return this;  }
+  sVec set(PVector v) { set(v.x, v.y); return this; }
+  sVec addx(float _x) { setx(val.x+_x); return this; }
+  sVec addy(float _y) { sety(val.y+_y); return this; }
+  sVec add(float _x, float _y) { set(val.x+_x, val.y+_y); return this; }
+  sVec add(PVector v) { add(v.x, v.y); return this; }
+  sVec add(sVec v) { add(v.x(), v.y()); return this; }
+  sVec mult(float m) { set(val.x*m, val.y*m); return this; }
   void save_to_bloc(Save_Bloc svb) { super.save_to_bloc(svb);
     svb.newData("x", val.x);
-    svb.newData("y", val.y);
-  }
+    svb.newData("y", val.y); }
   void load_from_bloc(Save_Bloc svb) { super.load_from_bloc(svb);
-    set(svb.getFloat("x"), svb.getFloat("y"));
-  }
+    set(svb.getFloat("x"), svb.getFloat("y")); }
 }
 
 class sRun extends sValue {
@@ -169,7 +177,7 @@ class sRun extends sValue {
   void clear() { }
   private Runnable val;
   sRun(sValueBloc b, String n, String s, Runnable r) { super(b, "run", n, s);  val = r; }
-  sRun run() { val.run(); return this; }
+  sRun run() { val.run(); doChange(); return this; }
   void save_to_bloc(Save_Bloc svb) { super.save_to_bloc(svb); }
   void load_from_bloc(Save_Bloc svb) { super.load_from_bloc(svb); }
 }
@@ -317,37 +325,37 @@ class sValueBloc {
       }
     }
   }
-  void save_copy_to(Save_Bloc sb) { save_copy_to(this, sb); }
-  void load_copy_from(Save_Bloc sb) { load_copy_from(this, sb); }
+  //void save_copy_to(Save_Bloc sb) { save_copy_to(this, sb); }
+  //void load_copy_from(Save_Bloc sb) { load_copy_from(this, sb); }
   
-  void save_copy_to(sValueBloc vb, Save_Bloc sb) {
-    logln("svb " + vb.ref + " save copy of Save_Bloc");
-    clear();
-    for (Save_Bloc csb : sb.blocs) {
-      sValueBloc cvb = new sValueBloc(vb, csb.name);
-      save_copy_to(cvb, csb);
-    }
-    for (Save_Data csd : sb.datas) {
-      sDat sdata = new sDat(vb, csd.name, csd.data);
-    }
-  }
-  void load_copy_from(sValueBloc vb, Save_Bloc sb) {
-    logln("svb " + vb.ref + " load copy to Save_Bloc");
-    sb.clear();
-    for (Map.Entry b : vb.blocs.entrySet()) { 
-      sValueBloc cvb = (sValueBloc)b.getValue(); 
-      Save_Bloc csb = sb.newBloc(cvb.ref);
-      load_copy_from(cvb, csb);
-    }
+  //void save_copy_to(sValueBloc vb, Save_Bloc sb) {
+  //  logln("svb " + vb.ref + " save copy of Save_Bloc");
+  //  clear();
+  //  for (Save_Bloc csb : sb.blocs) {
+  //    sValueBloc cvb = new sValueBloc(vb, csb.name);
+  //    save_copy_to(cvb, csb);
+  //  }
+  //  for (Save_Data csd : sb.datas) {
+  //    sDat sdata = new sDat(vb, csd.name, csd.data);
+  //  }
+  //}
+  //void load_copy_from(sValueBloc vb, Save_Bloc sb) {
+  //  logln("svb " + vb.ref + " load copy to Save_Bloc");
+  //  sb.clear();
+  //  for (Map.Entry b : vb.blocs.entrySet()) { 
+  //    sValueBloc cvb = (sValueBloc)b.getValue(); 
+  //    Save_Bloc csb = sb.newBloc(cvb.ref);
+  //    load_copy_from(cvb, csb);
+  //  }
     
-    for (Map.Entry b : vb.values.entrySet()) { 
-      sValue csv = (sValue)b.getValue(); 
-      if (csv.type.equals("dat")) {
-        sDat sd = (sDat)csv;
-        sb.newData(sd.get().name, sd.get().data);
-      }
-    }
-  }
+  //  for (Map.Entry b : vb.values.entrySet()) { 
+  //    sValue csv = (sValue)b.getValue(); 
+  //    if (csv.type.equals("dat")) {
+  //      sDat sd = (sDat)csv;
+  //      sb.newData(sd.get().name, sd.get().data);
+  //    }
+  //  }
+  //}
 }
 /*
   

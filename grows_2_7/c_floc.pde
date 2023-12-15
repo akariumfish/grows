@@ -3,7 +3,7 @@ class FlocComu extends Community {
   
   void comPanelBuild(nFrontPanel sim_front) {
     nFrontTab tab = com_front.addTab(name);
-    tab.getShelf(0)
+    tab.addShelf()
       .addDrawerDoubleButton(DRAWMODE_DEF, DRAWMODE_DEBUG, 10, 1)
       .addSeparator(0.125)
       .addDrawerDoubleButton(point_to_mouse, point_to_center, 10, 1)

@@ -75,7 +75,7 @@ class Macro_Sheet extends Macro_Abstract {
     for (Macro_Sheet_Output m : sheet_outputs) m.enlarg();
     //if (menubuttons.size() > 0) menubuttons.get(0).show();
     //for (nWidget w : subHeadWidgets) w.hide();
-    mmain().menugroup.closeAll();
+    //mmain().menugroup.closeAll();
     childDragged();
   }
   
@@ -94,9 +94,14 @@ class Macro_Sheet extends Macro_Abstract {
   
   void show() {
     super.show();
+    if (isReduc) reduc(); 
+    else { 
+      enlarg();
+      for (Macro_Abstract m : child_macro) m.parentEnlarg(); 
+    }
     //for (nWidget w : subHeadWidgets) w.hide();
-    for (Macro_Sheet_Input m : sheet_inputs) m.show();
-    for (Macro_Sheet_Output m : sheet_outputs) m.show();
+    //for (Macro_Sheet_Input m : sheet_inputs) m.show();
+    //for (Macro_Sheet_Output m : sheet_outputs) m.show();
   }
   void hide() {
     super.hide();
@@ -894,7 +899,10 @@ class Macro_Sheet extends Macro_Abstract {
     mlog("templ save " + grabber.getText());
     if (sheet_savebloc != null) sheet_savebloc.clear();
     sheet_savebloc = mmain().templates_sbloc.newBloc("Tmplt_"+grabber.getText());
+    PVector p = new PVector(grabber.getLocalX(), grabber.getLocalY());
+    grabber.setPosition(0, 0);
     to_save(sheet_savebloc);
+    grabber.setPosition(p.x, p.y);
   }
   
   
