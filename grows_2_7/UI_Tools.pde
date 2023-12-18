@@ -111,6 +111,127 @@ class nColorPanel extends nWindowPanel {
 
 
 
+class nExplorer extends nDrawer {
+  
+  ArrayList<String> explorer_entry;
+  ArrayList<sValueBloc> explorer_blocs;
+  ArrayList<sValue> explorer_values;
+  sValueBloc explored_bloc, selected_bloc;
+  sValue selected_value;
+  int selected_bloc_index = 0, selected_value_index = 0;
+  nList explorer_list;
+  
+  nExplorer setBloc(sValueBloc sb) { explored_bloc = sb; update(); return this; }
+  
+  nShelf shelf;
+  nWidget bloc_info, val_info;
+  
+  nDrawer setLayer(int l) { super.setLayer(l); shelf.setLayer(l); return this; }
+  nDrawer toLayerTop() { super.toLayerTop(); shelf.toLayerTop(); return this; }
+  
+  ArrayList<Runnable> eventChangeRun = new ArrayList<Runnable>();
+  nExplorer addEventChange(Runnable r)       { eventChangeRun.add(r); return this; }
+  
+  nExplorer addEventChange_Builder(Runnable r) { eventChangeRun.add(r); r.builder = this; return this; }
+  
+  nExplorer(nShelf s) {
+    super(s, s.ref_size*10, s.ref_size*11.75);
+    explorer_entry = new ArrayList<String>();
+    explorer_blocs = new ArrayList<sValueBloc>();
+    explorer_values = new ArrayList<sValue>();
+    shelf = new nShelf(s.shelfPanel, s.space_factor);
+    shelf.addSeparator(0.25);
+    shelf.ref.setParent(ref);
+    explorer_list = shelf.addList(5, 10, 1).setTextAlign(LEFT)
+      .addEventChange_Builder(new Runnable() { 
+      public void run() {
+        int ind = ((nList)builder).last_choice_index;
+        if (ind == 0 && explored_bloc != null) {
+          explored_bloc = explored_bloc.parent;
+          selected_bloc = null;
+          selected_value = null;
+          update_list();
+          runEvents(eventChangeRun);
+          
+        } else if (ind != 0 && ind < explorer_blocs.size()+1) {
+          if (selected_bloc == explorer_blocs.get(ind-1)) {
+            explored_bloc = selected_bloc;
+            selected_bloc = null;
+            selected_value = null;
+            update_list();
+            runEvents(eventChangeRun);
+          } else {
+            selected_bloc = explorer_blocs.get(ind-1);
+            selected_value = null;
+            update_info();
+            runEvents(eventChangeRun);
+          }
+        } else if (ind != 0 && ind - explorer_blocs.size() < explorer_values.size()+1) {
+          selected_bloc = null;
+          selected_value = explorer_values.get(ind-1 - explorer_blocs.size());
+          
+          update_info();
+          runEvents(eventChangeRun);
+        } 
+      } } )
+      ;
+    
+    bloc_info = shelf.addSeparator(0.25)
+      .addDrawer(2)
+        .addModel("Label-S4", "Selected Bloc :").setTextAlignment(LEFT, TOP);
+    
+    val_info = shelf.addSeparator(0.5)
+      .addDrawer(3)
+        .addModel("Label-S4", "Selected Value :").setTextAlignment(LEFT, TOP);
+    
+    update_list();
+    
+  }
+  
+  void update_info() {
+    if (selected_bloc != null) 
+      bloc_info.setText("Selected Bloc : "+selected_bloc.base_ref
+                       +"\n    ref: " + selected_bloc.ref
+                       +"\n    type: " + selected_bloc.type
+                       +"    use: " + selected_bloc.use);
+    if (selected_value != null) 
+      val_info.setText("Selected Value :\n   "+selected_value.ref
+                      +"\n    type: " + selected_value.type
+                      +"\n    value: " + selected_value.getString());
+  }
+  
+  void update() {
+    selected_bloc = null;
+    selected_value = null;
+    update_list();
+  }
+  void update_list() {
+    explorer_entry.clear();
+    explorer_blocs.clear();
+    explorer_values.clear();
+    if (explored_bloc != null) {
+      //println(); println(explored_bloc.getHierarchy(false));
+      explorer_entry.add("..");
+      for (Map.Entry me : explored_bloc.blocs.entrySet()) {
+        sValueBloc cvb = (sValueBloc)me.getValue();
+        explorer_blocs.add(cvb); 
+        explorer_entry.add(cvb.base_ref + " " + cvb.use);
+        //explorer_entry.add((String)me.getKey());
+      }
+      for (Map.Entry me : explored_bloc.values.entrySet()) {
+        explorer_values.add((sValue)me.getValue()); 
+        explorer_entry.add("   - "+(String)me.getKey());
+      }
+      explorer_entry.add("end");
+    }
+    explorer_list.setEntrys(explorer_entry);
+    update_info();
+  }
+  
+}
+
+
+
 
 
 
@@ -133,7 +254,7 @@ class nCursor extends nWidget {
     refwidget = gui.theme.newWidget("ref").setParent(this).setPosition(ref_size, ref_size);
     setSize(ref_size*2, ref_size*2);
     setPosition(-ref_size, -ref_size);
-    setText(r).setFont(int(ref_size/2.0)).setTextAlignment(LEFT);
+    setText(r).setFont(int(ref_size/2.0)).setTextAlignment(LEFT, CENTER);
     setGrabbable();
     addEventDrag(new Runnable() {public void run() {sval.set(refwidget.getX(), refwidget.getY());}});
     sval = new sVec(bloc, r, "cursor");
@@ -160,11 +281,18 @@ class nDropMenu extends nBuilder {
     ref.setPosition(x, y).show(); 
     return this; }
   nDropMenu drop(nGUI g) { 
+    float p_x = g.mouseVector.x - larg/2;
     float p_y = g.mouseVector.y + haut/2;
     float total_haut = haut*menu_widgets.size();
-    if (p_y - total_haut < g.view.pos.y) p_y += g.view.pos.y - (p_y - total_haut);
+    
+    if (p_x + larg > g.view.pos.x + g.view.size.x) p_x = g.view.pos.x + g.view.size.x - larg;
+    if (p_x < g.view.pos.x) p_x = g.view.pos.x;
+    if (down && p_y + total_haut > g.view.pos.y + g.view.size.y) 
+      p_y = g.view.pos.y + g.view.size.y - total_haut;
+    if (!down && p_y - total_haut < g.view.pos.y) p_y += g.view.pos.y - (p_y - total_haut);
+    
     //openner = op; 
-    ref.setPosition(g.mouseVector.x - larg/2, p_y).show(); return this; }
+    ref.setPosition(p_x, p_y).show(); return this; }
   nDropMenu close() { ref.hide(); return this; }
   
   nWidget ref, opener;
@@ -196,7 +324,7 @@ class nDropMenu extends nBuilder {
   nWidget addEntry(String l, Runnable r) {
     nWidget ne = new nWidget(gui, l, int(haut/1.5), 0, 0, larg, haut)
       .setSwitch() 
-      .setTextAlignment(LEFT)
+      .setTextAlignment(LEFT, CENTER)
       .setHoverablePhantomSpace(ref_size / 4)
       .addEventSwitchOn(new Runnable() { public void run() { click(); }}) 
       ;
@@ -284,6 +412,9 @@ class nInfo {
 
 
 
+
+
+
 class nList extends nDrawer {
   
   //nPanelDrawer panel_drawer = null;
@@ -293,7 +424,7 @@ class nList extends nDrawer {
   //nGUI gui;
   ArrayList<nWidget> listwidgets = new ArrayList<nWidget>();
   ArrayList<String> entrys = new ArrayList<String>();
-  nWidget back;
+  nWidget back, last_choice_widget;
   nScroll scroll;
   float item_s;
   float larg;
@@ -334,6 +465,8 @@ class nList extends nDrawer {
     back.clear();
     return this;
   }
+  int align = CENTER;
+  nList setTextAlign(int a) { align = a; setListLength(list_widget_nb); return this; }
   nList(nShelf _sh, int _ent_nb, float _rs, float _lf, float _hf) {
     super(_sh, _rs*_lf, _rs*_hf*_ent_nb);
     list_widget_nb = _ent_nb;
@@ -355,23 +488,8 @@ class nList extends nDrawer {
         
         update_list();
       }});
-    for (int i = 0 ; i < list_widget_nb ; i++) {
-      nWidget ne = gui.theme.newWidget(gui, "List_Entry").setSize(larg - item_s, item_s)
-        .stackDown()
-        .setSwitch()
-        .addEventSwitchOn(new Runnable() { public void run() {
-          click();
-        }})
-        ;
-      if (listwidgets.size() > 0) ne.setParent(listwidgets.get(listwidgets.size()-1)); else ne.setParent(back);
-      listwidgets.add(ne);
-    }
-    for (nWidget w : listwidgets) w.toLayerTop();
+    setListLength(_ent_nb);
     
-    for (nWidget w : listwidgets) 
-      for (nWidget w2 : listwidgets)
-        if (w != w2) ;
-          //w.addExclude(w2);
   }
   
   void click() {
@@ -386,6 +504,7 @@ class nList extends nDrawer {
       }
       last_choice_index = i+entry_pos;
       last_choice_text = copy(listwidgets.get(i).getText());
+      last_choice_widget = listwidgets.get(i);
       runEvents(eventChangeRun);
     }
   }
@@ -409,14 +528,18 @@ class nList extends nDrawer {
     return this;
   }
   nList setListLength(int l) {
-    for (int i = 0 ; i < list_widget_nb ; i++) listwidgets.get(i).clear();
+    for (int i = 0 ; i < listwidgets.size() ; i++) listwidgets.get(i).clear();
     listwidgets.clear();
     list_widget_nb = l;
     for (int i = 0 ; i < list_widget_nb ; i++) {
       nWidget ne = gui.theme.newWidget(gui, "List_Entry").setSize(larg - item_s, item_s)
         .stackDown()
         .setSwitch()
-        .addEventSwitchOn(new Runnable() { public void run() {
+        .setTextAlignment(align, CENTER)
+        .addEventSwitchOn_Builder(new Runnable() { public void run() {
+          if (last_choice_widget != null && last_choice_widget != ((nWidget)builder)) 
+            last_choice_widget.setLook(gui.theme, "List_Entry");
+          ((nWidget)builder).setLook(gui.theme, "List_Entry_Selected");
           click();
         }})
         ;
@@ -537,7 +660,7 @@ class nScroll {
           runEvents(eventChangeRun);
         }})
         ;
-    down = new nWidget(gui, "V", int(w/1.5), 0, 0, w, w)
+    down = new nWidget(gui, "v", int(w/1.5), 0, 0, w, w)
         .setParent(back)
         .toLayerTop()
         .setOutlineColor(color(100))

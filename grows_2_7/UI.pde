@@ -10,15 +10,9 @@
 //conteneur de presets
 class nTheme {
   HashMap<String, nWidget> models = new HashMap<String, nWidget>();
-  HashMap<String, nLook> looks = new HashMap<String, nLook>();
-  nTheme addLook(String r, nLook l) { looks.put(r,l); return this; }
   nTheme addModel(String r, nWidget w) { models.put(r,w); return this; }
   nWidget getModel(String r) {  return models.get(r); }
-  nLook getLook(String r) {
-    for (Map.Entry me : looks.entrySet()) if (me.getKey().equals(r)) { 
-      nLook m = (nLook)me.getValue(); 
-      return m; }
-    return null; }
+  nLook getLook(String r) { return models.get(r).look; }
   nWidget newWidget(String r) { //only for theme model making !!
     for (Map.Entry me : models.entrySet()) if (me.getKey().equals(r)) { 
       nWidget m = (nWidget)me.getValue(); 
@@ -325,6 +319,7 @@ class nWidget {
   nWidget addEventTrigger_Builder(Runnable r) { eventTriggerRun.add(r); r.builder = this; return this; }
   
   nWidget addEventSwitchOn(Runnable r)   { eventSwitchOnRun.add(r); return this; }
+  nWidget addEventSwitchOn_Builder(Runnable r)   { r.builder = this; eventSwitchOnRun.add(r); return this; }
   nWidget addEventSwitchOff(Runnable r)  { eventSwitchOffRun.add(r); return this; }
   
   nWidget addEventFieldChange(Runnable r) { eventFieldChangeRun.add(r); return this; }
@@ -362,7 +357,7 @@ class nWidget {
   nWidget setText(String s) { if (s != null) { label = s; cursorPos = label.length(); } return this; }
   nWidget changeText(String s) { label = s; return this; }
   nWidget setFont(int s) { look.textFont = s; return this; }
-  nWidget setTextAlignment(int s) { textAlignment = s; return this; }
+  nWidget setTextAlignment(int sx, int sy) { textAlignX = sx; textAlignY = sy; return this; }
   nWidget setTextVisibility(boolean s) { show_text = s; return this; }
   
   nWidget setLook(nLook l) { look.copy(l); return this; }
@@ -419,7 +414,8 @@ class nWidget {
     placeLeft = w.placeLeft; placeRight = w.placeRight; placeUp = w.placeUp; placeDown = w.placeDown;
     hide = w.hide; drawerHideState = w.drawerHideState; hoverHideState = w.hoverHideState;
     constantOutlineWeight = w.constantOutlineWeight;
-    textAlignment = w.textAlignment; show_text = w.show_text;
+    textAlignX = w.textAlignX; textAlignY = w.textAlignY; show_text = w.show_text;
+    shapeRound = w.shapeRound;
     look.copy(w.look);
     setLayer(w.layer);
     setPosition(w.localrect.pos.x, w.localrect.pos.y);
@@ -512,7 +508,8 @@ class nWidget {
       localrect.size.x = v; 
       globalrect.size.x = getSX(); 
       if (stackX && placeLeft) globalrect.pos.x = getX(); 
-      for (nWidget w : childs) if ((w.stackX && w.placeRight) || (stackX && placeLeft)) w.changePosition(); 
+      for (nWidget w : childs) 
+        if (((w.stackX || w.alignX) && w.placeRight) || ((stackX || alignX) && placeLeft)) w.changePosition(); 
       runEvents(eventShapeChange); 
       return this; 
     } 
@@ -523,12 +520,15 @@ class nWidget {
       localrect.size.y = v; 
       globalrect.size.y = getSY(); 
       if (stackY && placeUp) globalrect.pos.y = getY(); 
-      for (nWidget w : childs) if ((w.stackY && w.placeDown) || (stackY && placeUp)) w.changePosition(); 
+      for (nWidget w : childs) 
+        if (((w.stackY || w.alignY) && w.placeDown) || ((stackY || alignY) && placeUp)) w.changePosition(); 
       runEvents(eventShapeChange); 
       return this; 
     } 
     return this; 
   }
+  
+  nWidget setRound(boolean c) { shapeRound = c; return this; }
   
   nWidget setStandbyColor(color c) { look.standbyColor = c; return this; }
   nWidget setHoveredColor(color c) { look.hoveredColor = c; return this; }
@@ -677,7 +677,8 @@ class nWidget {
   private boolean centerX = false, centerY = false;
   private boolean placeLeft = false, placeRight = false, placeUp = false, placeDown = false;
   private boolean hide = false, drawerHideState = true, hoverHideState = true, show_text = true;
-  private int layer = 0, textAlignment = CENTER;
+  private boolean shapeRound = false;
+  private int layer = 0, textAlignX = CENTER, textAlignY = CENTER;
  
   ArrayList<Runnable> eventPositionChange = new ArrayList<Runnable>();
   ArrayList<Runnable> eventShapeChange = new ArrayList<Runnable>();
@@ -712,7 +713,9 @@ class nWidget {
       else if (isHovered && (triggerMode || switchMode))             { fill(look.hoveredColor); } 
       else                                                           { fill(look.standbyColor); }
       noStroke();
-      if (!DEBUG_NOFILL) rect(getX(), getY(), getSX(), getSY());
+      ellipseMode(CORNER);
+      if (shapeRound) ellipse(getX(), getY(), getSX(), getSY());
+      else if (!DEBUG_NOFILL) rect(getX(), getY(), getSX(), getSY());
       
       noFill();
       if (showOutline || (hoverOutline && isHovered)) stroke(look.outlineColor);
@@ -721,11 +724,14 @@ class nWidget {
       float wf = 1;
       if (constantOutlineWeight) { wf = 1 / gui.scale; strokeWeight(look.outlineWeight / gui.scale); }
       else strokeWeight(look.outlineWeight);
-      rect(getX() + wf*look.outlineWeight/2, getY() + wf*look.outlineWeight/2, 
+      
+      
+      if (shapeRound) ellipse(getX() + wf*look.outlineWeight/2, getY() + wf*look.outlineWeight/2, 
            getSX() - wf*look.outlineWeight, getSY() - wf*look.outlineWeight);
+      else rect(getX() + wf*look.outlineWeight/2, getY() + wf*look.outlineWeight/2, 
+           getSX() - wf*look.outlineWeight, getSY() - wf*look.outlineWeight);
+      
       if (show_text) {
-        textAlign(textAlignment);
-        textFont(getFont(look.textFont));
         String l = label;
         if (showCursor) {
           String str = label.substring(0, cursorPos);
@@ -736,8 +742,22 @@ class nWidget {
           if (cursorCount > cursorCycle) cursorCount = 0;
         }
         fill(look.textColor); 
-        if (textAlignment == LEFT) text(l, getX() + getSY() / 2, getY() + (look.textFont / 3.0) + (getLocalSY() / 2.0));
-        else text(l, getX() + getSX() / 2, getY() + (look.textFont / 3.0) + (getLocalSY() / 2.0));
+        textAlign(textAlignX, textAlignY);
+        textFont(getFont(look.textFont));
+        //int line = 0;
+        //for (int i = 0 ; i < l.length() ; i++) if (l.charAt(i) == '\n') line+=1;
+        float tx = getX();
+        float ty = getY();
+        if (textAlignY == CENTER)         
+          ty += (getLocalSY() / 2.0)
+                - (look.textFont / 6.0)
+                //- (line * look.textFont / 3)
+                ;
+        //else if (textAlignY == BOTTOM) 
+        //  ty += (getLocalSY() / 2.0) - (line * look.textFont / 3);
+        if (textAlignX == LEFT)        tx += getSY() / 2;
+        else if (textAlignX == CENTER) tx += getSX() / 2;
+        text(l, tx, ty);
       }
     } } ;
   }
@@ -1123,6 +1143,12 @@ class Ticking_pile {
     }
   }
 }
+
+
+
+
+
+
 
 
 

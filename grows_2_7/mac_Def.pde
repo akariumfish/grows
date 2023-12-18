@@ -65,64 +65,20 @@ class MC_Connexion {
   }
 }
 
-
-
-
-//class MC_Run extends MC_Connexion {
-//  Macro_Input in;
-//  Runnable run = null;
-//  String run_key = null;
-//  nWidget label;
-  
-//  MC_Run setRunnable(String k) { run_key = k; 
-//    //run = parent.mmain().data.refered_runnable_map.get(k); 
-//    label.setText(run_key);
-//    return this; }
-
-//  MC_Run(Macro_Custom _p) {
-//    super(_p, "run");
-//    in = parent.addExtInput()
-//      .addEventReceive(new Runnable() { public void run() {
-//        if (run != null) run.run();
-//      }})
-//      .setFilterBang()
-//      ;
-//    label = new nWidget(parent.gui, "--", int(parent.ref_size/1.5), parent.ref_size*0.125, 0, 
-//                                                                    parent.ref_size*5.5, parent.ref_size)
-//      .setStandbyColor(color(255, 50))
-//      .setParent(in.connect)
-//      .stackRight()
-//      //.addEventFrame_Builder(new Runnable() { public void run() {
-//      //  if (run_key != null)  {
-//      //    ((nWidget)builder).setText(run_key);
-//      //  }
-//      //}})
-//      ;
-//    parent.widgets.add(label);
-//  }
-//  void to_save(Save_Bloc bloc) {
-//    super.to_save(bloc);
-//    if (run_key != null) bloc.newData("key", run_key);
-//  }
-//  void from_save(Save_Bloc bloc) {
-//    super.from_save(bloc);
-//    if (bloc.getData("key") != null) setRunnable(bloc.getData("key"));
-//  }
-//}
-
-
-
 class MC_Value_Watcher extends MC_Connexion {
   Macro_Output out;
   private sFlt f_val;
   private sInt i_val;
   private sBoo b_val;
+  private sVec v_val;
   nWidget label;
   MC_Value_Watcher setValue(sValue b) { 
     if (b.type.equals("flt")) setValue((sFlt)b);
     if (b.type.equals("int")) setValue((sInt)b);
     if (b.type.equals("boo")) setValue((sBoo)b);
+    if (b.type.equals("vec")) setValue((sVec)b);
     return this; }
+  MC_Value_Watcher setValue(sVec v) { v_val = v; return this; }
   MC_Value_Watcher setValue(sFlt v) { out.setDefFloat(); f_val = v; i_val = null; b_val = null; return this; }
   MC_Value_Watcher setValue(sInt v) { out.setDefInt(); i_val = v; f_val = null; b_val = null; return this; }
   MC_Value_Watcher setValue(sBoo v) { out.setDefBool(); b_val = v; i_val = null; f_val = null; return this; }
@@ -133,22 +89,26 @@ class MC_Value_Watcher extends MC_Connexion {
       if (f_val != null) out.send(newPacketFloat(f_val.get()));
       if (i_val != null) out.send(newPacketInt(i_val.get()));
       if (b_val != null) out.send(newPacketBool(b_val.get()));
+      if (v_val != null) out.send(newPacketVec(v_val.get()));
     }});
     
-    label = new nWidget(parent.gui, "--", int(parent.ref_size/1.5), -parent.ref_size*0.125, 0, 
-                                                                    parent.ref_size*5.5, parent.ref_size)
+    label = new nWidget(parent.gui, "--", int(parent.ref_size/1.9), -parent.ref_size*0.125, 0, 
+                                                                    parent.ref_size*2.25, parent.ref_size)
       .setStandbyColor(color(255, 50))
       .setParent(out.connect)
       .stackLeft()
       .addEventFrame_Builder(new Runnable() { public void run() {
         if (f_val != null)  {
-          ((nWidget)builder).setText(f_val.ref);
+          ((nWidget)builder).setText(f_val.shrt);
         }
         if (i_val != null)  {
-          ((nWidget)builder).setText(i_val.ref);
+          ((nWidget)builder).setText(i_val.shrt);
         }
         if (b_val != null)  {
-          ((nWidget)builder).setText(b_val.ref);
+          ((nWidget)builder).setText(b_val.shrt);
+        }
+        if (v_val != null)  {
+          ((nWidget)builder).setText(v_val.shrt);
         }
       }})
       ;
@@ -157,20 +117,20 @@ class MC_Value_Watcher extends MC_Connexion {
   void to_save(Save_Bloc bloc) {
     super.to_save(bloc);
     if (f_val != null) bloc.newData("f", f_val.ref);
-    if (b_val != null) bloc.newData("b", b_val.ref);
-    if (i_val != null) bloc.newData("i", i_val.ref);
+    else if (b_val != null) bloc.newData("b", b_val.ref);
+    else if (i_val != null) bloc.newData("i", i_val.ref);
+    else if (v_val != null) bloc.newData("v", v_val.ref);
   }
   void from_save(Save_Bloc bloc) {
     super.from_save(bloc);
     if (bloc.getData("f") != null) {
-      f_val = (sFlt)(parent.mmain().data.searchValue(bloc.getData("f")));
-    }
-    if (bloc.getData("b") != null) {
-      b_val = (sBoo)(parent.mmain().data.searchValue(bloc.getData("b")));
-    }
-    if (bloc.getData("i") != null) {
-      i_val = (sInt)(parent.mmain().data.searchValue(bloc.getData("i")));
-    }
+      f_val = (sFlt)(parent.parent.sheet_data.searchValue(bloc.getData("f"))); }
+    else if (bloc.getData("b") != null) {
+      b_val = (sBoo)(parent.parent.sheet_data.searchValue(bloc.getData("b"))); }
+    else if (bloc.getData("i") != null) {
+      i_val = (sInt)(parent.parent.sheet_data.searchValue(bloc.getData("i"))); }
+    else if (bloc.getData("v") != null) {
+      v_val = (sVec)(parent.parent.sheet_data.searchValue(bloc.getData("v"))); }
   }
 }
 
@@ -180,13 +140,17 @@ class MC_Value_Controller extends MC_Connexion {
   sInt i_val;
   sBoo b_val;
   sRun r_val;
+  sVec v_val;
   nWidget label;
   MC_Value_Controller setValue(sValue b) { 
     if (b.type.equals("flt")) setValue((sFlt)b);
     if (b.type.equals("int")) setValue((sInt)b);
     if (b.type.equals("boo")) setValue((sBoo)b);
     if (b.type.equals("run")) setValue((sRun)b);
+    if (b.type.equals("vec")) setValue((sVec)b);
     return this; }
+  MC_Value_Controller setValue(sVec v) { in.setFilterVec(); v_val = v; return this; }
+  
   MC_Value_Controller setValue(sFlt v) { in.setFilterNumber(); f_val = v; i_val = null; b_val = null; r_val = null; return this; }
   MC_Value_Controller setValue(sInt v) { in.setFilterNumber(); i_val = v; f_val = null; b_val = null; r_val = null; return this; }
   MC_Value_Controller setValue(sBoo v) { 
@@ -206,18 +170,20 @@ class MC_Value_Controller extends MC_Connexion {
         else if (in.getLastPacket().isBool() && b_val != null) b_val.set(in.getLastPacket().asBool());
         else if (in.getLastPacket().isBang() && b_val != null) b_val.set(!b_val.get());
         else if (in.getLastPacket().isBang() && r_val != null) r_val.run();
+        else if (in.getLastPacket().isVec() && v_val != null) v_val.set(in.getLastPacket().asVec());
       }})
       ;
-    label = new nWidget(parent.gui, "--", int(parent.ref_size/1.5), parent.ref_size*0.125, 0, 
-                                                                    parent.ref_size*5.5, parent.ref_size)
+    label = new nWidget(parent.gui, "--", int(parent.ref_size/1.9), parent.ref_size*0.125, 0, 
+                                                                    parent.ref_size*2.25, parent.ref_size)
       .setStandbyColor(color(255, 50))
       .setParent(in.connect)
       .stackRight()
       .addEventFrame_Builder(new Runnable() { public void run() {
-        if (f_val != null)  { ((nWidget)builder).setText(f_val.ref); }
-        else if (i_val != null)  { ((nWidget)builder).setText(i_val.ref); }
-        else if (b_val != null)  { ((nWidget)builder).setText(b_val.ref); }
-        else if (r_val != null)  { ((nWidget)builder).setText(r_val.ref); }
+        if (f_val != null)  { ((nWidget)builder).setText(f_val.shrt); }
+        else if (i_val != null)  { ((nWidget)builder).setText(i_val.shrt); }
+        else if (b_val != null)  { ((nWidget)builder).setText(b_val.shrt); }
+        else if (r_val != null)  { ((nWidget)builder).setText(r_val.shrt); }
+        else if (v_val != null)  { ((nWidget)builder).setText(v_val.shrt); }
       }})
       ;
     parent.widgets.add(label);
@@ -228,21 +194,25 @@ class MC_Value_Controller extends MC_Connexion {
     else if (b_val != null) bloc.newData("b", b_val.ref);
     else if (i_val != null) bloc.newData("i", i_val.ref);
     else if (r_val != null) bloc.newData("r", r_val.ref);
+    else if (v_val != null) bloc.newData("v", v_val.ref);
   }
   void from_save(Save_Bloc bloc) {
     super.from_save(bloc);
     if (bloc.getData("f") != null) {
-      f_val = (sFlt)(parent.mmain().data.searchValue(bloc.getData("f")));
+      f_val = (sFlt)(parent.parent.sheet_data.searchValue(bloc.getData("f")));
       in.setFilterNumber();  }
     else if (bloc.getData("b") != null) {
-      b_val = (sBoo)(parent.mmain().data.searchValue(bloc.getData("b")));
+      b_val = (sBoo)(parent.parent.sheet_data.searchValue(bloc.getData("b")));
       in.setFilterBin();  }
     else if (bloc.getData("i") != null) {
-      i_val = (sInt)(parent.mmain().data.searchValue(bloc.getData("i")));
+      i_val = (sInt)(parent.parent.sheet_data.searchValue(bloc.getData("i")));
       in.setFilterNumber();  }
     else if (bloc.getData("r") != null) {
-      r_val = (sRun)(parent.mmain().data.searchValue(bloc.getData("r")));
+      r_val = (sRun)(parent.parent.sheet_data.searchValue(bloc.getData("r")));
       in.setFilterBang();  }
+    else if (bloc.getData("v") != null) {
+      v_val = (sVec)(parent.parent.sheet_data.searchValue(bloc.getData("v")));
+      in.setFilterVec();  }
   }
 }
 
@@ -522,10 +492,12 @@ class Macro_Keyboard extends Macro_Abstract {
     out_s = addExtOutput()
       .setDefBool();
     tick = new Tickable(mmain().tickpile) { public void tick(float t) {
-        //if (kb.keyClick && field.getText().length() > 0 && field.getText().charAt(0) == key) out_t.send(newPacketBang());
-        //if (kb.keyButton && field.getText().length() > 0 && field.getText().charAt(0) == key) 
-        //  out_s.send(newPacketBool(true));
-        //else out_s.send(newPacketBool(false));
+        if (mmain().inter.input.keyAll.state && field.getText().length() > 0 && 
+            field.getText().charAt(0) == mmain().inter.input.getLastKey()) out_t.send(newPacketBang());
+        if (mmain().inter.input.keyAll.trigClick && field.getText().length() > 0 && 
+            field.getText().charAt(0) == mmain().inter.input.getLastKey()) 
+          out_s.send(newPacketBool(true));
+        else out_s.send(newPacketBool(false));
       } }
       .setLayer(0)
       ;
@@ -610,6 +582,14 @@ class Macro_Comp extends Macro_Abstract {
         if (pack.isInt()) {
           float f = pack.asInt();
           field1.setText(str(f)); }
+          
+        
+        float f1 = float(field1.getText());
+        float f2 = float(field2.getText());
+        if      (modeEQ.isOn() && f1 == f2) out.send(newPacketBool(true));
+        else if (modeSUP.isOn() && f1 > f2) out.send(newPacketBool(true));
+        else if (modeINF.isOn() && f1 < f2) out.send(newPacketBool(true));
+        else if (modeEQ.isOn() || modeSUP.isOn() || modeINF.isOn()) out.send(newPacketBool(false));
       }})
       .setFilterNumber()
       ;
@@ -623,18 +603,26 @@ class Macro_Comp extends Macro_Abstract {
         if (pack.isInt()) {
           float f = pack.asInt();
           field2.setText(str(f)); }
-      }})
-      .setFilterNumber()
-      ;
-    out = addExtOutput()
-      .setDefBool();
-    tick = new Tickable(mmain().tickpile) { public void tick(float t) {
+          
+        
         float f1 = float(field1.getText());
         float f2 = float(field2.getText());
         if      (modeEQ.isOn() && f1 == f2) out.send(newPacketBool(true));
         else if (modeSUP.isOn() && f1 > f2) out.send(newPacketBool(true));
         else if (modeINF.isOn() && f1 < f2) out.send(newPacketBool(true));
         else if (modeEQ.isOn() || modeSUP.isOn() || modeINF.isOn()) out.send(newPacketBool(false));
+      }})
+      .setFilterNumber()
+      ;
+    out = addExtOutput()
+      .setDefBool();
+    tick = new Tickable(mmain().tickpile) { public void tick(float t) {
+        //float f1 = float(field1.getText());
+        //float f2 = float(field2.getText());
+        //if      (modeEQ.isOn() && f1 == f2) out.send(newPacketBool(true));
+        //else if (modeSUP.isOn() && f1 > f2) out.send(newPacketBool(true));
+        //else if (modeINF.isOn() && f1 < f2) out.send(newPacketBool(true));
+        //else if (modeEQ.isOn() || modeSUP.isOn() || modeINF.isOn()) out.send(newPacketBool(false));
       } }
       .setLayer(0)
       ;
@@ -744,6 +732,14 @@ class Macro_Calc extends Macro_Abstract {
         if (pack.isInt()) {
           float f = pack.asInt();
           field1.setText(str(f)); }
+        
+        
+        float f1 = float(field1.getText());
+        float f2 = float(field2.getText());
+        if (modeADD.isOn()) out.send(newPacketFloat(str(f1 + f2)));
+        if (modeSUP.isOn()) out.send(newPacketFloat(str(f1 - f2)));
+        if (modeMUL.isOn()) out.send(newPacketFloat(str(f1 * f2)));
+        if (modeDIV.isOn() && f2 != 0) out.send(newPacketFloat(str(f1 / f2)));
       }})
       .setFilterNumber()
       ;
@@ -757,18 +753,25 @@ class Macro_Calc extends Macro_Abstract {
         if (pack.isInt()) {
           float f = pack.asInt();
           field2.setText(str(f)); }
-      }})
-      .setFilterNumber()
-      ;
-    out = addExtOutput()
-      .setDefFloat();
-    tick = new Tickable(mmain().tickpile) { public void tick(float t) {
+        
         float f1 = float(field1.getText());
         float f2 = float(field2.getText());
         if (modeADD.isOn()) out.send(newPacketFloat(str(f1 + f2)));
         if (modeSUP.isOn()) out.send(newPacketFloat(str(f1 - f2)));
         if (modeMUL.isOn()) out.send(newPacketFloat(str(f1 * f2)));
         if (modeDIV.isOn() && f2 != 0) out.send(newPacketFloat(str(f1 / f2)));
+      }})
+      .setFilterNumber()
+      ;
+    out = addExtOutput()
+      .setDefFloat();
+    tick = new Tickable(mmain().tickpile) { public void tick(float t) {
+        //float f1 = float(field1.getText());
+        //float f2 = float(field2.getText());
+        //if (modeADD.isOn()) out.send(newPacketFloat(str(f1 + f2)));
+        //if (modeSUP.isOn()) out.send(newPacketFloat(str(f1 - f2)));
+        //if (modeMUL.isOn()) out.send(newPacketFloat(str(f1 * f2)));
+        //if (modeDIV.isOn() && f2 != 0) out.send(newPacketFloat(str(f1 / f2)));
       } }
       .setLayer(0)
       ;
@@ -1232,6 +1235,51 @@ class Macro_Bin extends Macro_Abstract {
           if (pack.isBang()) out.send(newPacketBool(true)); } } } )
       .setFilterBin()
       ;
+    toLayerTop();
+    setWidth(ref_size*2.25);
+  }
+  void clear() {
+    super.clear();
+  }
+  void childDragged() {}
+  void setLayer(int l) {
+    super.setLayer(l);
+  }
+  void toLayerTop() {
+    super.toLayerTop();
+  }
+}
+class Macro_Vec extends Macro_Abstract {
+  Macro_Input in1, in2;
+  Macro_Output out1, out2;
+  Macro_Packet pack1, pack2;
+  
+  Macro_Vec(nGUI _gui, Macro_Sheet p, float x, float y) {
+    super(_gui, p, "vec", x, y);
+    
+    out1 = addExtOutput();
+    out2 = addExtOutput();
+    in1 = addExtInput()
+      .addEventReceive(new Runnable() { public void run() {
+        pack1 = in1.getLastPacket();
+        if (pack1 != null && pack1.isVec()) {
+          out1.send(newPacketFloat(pack1.asVec().x));
+          out2.send(newPacketFloat(pack1.asVec().y));
+        }
+        if (pack1 != null && pack1.isFloat() && pack2 != null && pack2.isFloat()) 
+          out1.send(newPacketVec(new PVector(pack1.asFloat(), pack2.asFloat())));
+        
+      } } );
+    in2 = addExtInput()
+      .addEventReceive(new Runnable() { public void run() {
+        pack2 = in2.getLastPacket();
+        if (pack2 != null && pack2.isVec()) {
+          out1.send(newPacketFloat(pack2.asVec().x));
+          out2.send(newPacketFloat(pack2.asVec().y));
+        }
+        if (pack1 != null && pack1.isFloat() && pack2 != null && pack2.isFloat()) 
+          out1.send(newPacketVec(new PVector(pack1.asFloat(), pack2.asFloat())));
+      } } );
     toLayerTop();
     setWidth(ref_size*2.25);
   }

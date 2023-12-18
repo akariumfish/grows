@@ -29,10 +29,22 @@ class nConstructor {
     gui.theme.addModel("Label_Back", gui.theme.newWidget("ref")
       .setStandbyColor(color(55))
       );
+    gui.theme.addModel("Label_HightLight_Back", gui.theme.newWidget("ref")
+      .setStandbyColor(color(210, 190, 30))
+      .setLabelColor(color(90, 80, 50))
+      .setFont(int(ref_size/2.1))
+      );
+    gui.theme.addModel("Label_DownLight_Back", gui.theme.newWidget("ref")
+      .setStandbyColor(color(70, 10, 10))
+      .setFont(int(ref_size/2.1))
+      );
     gui.theme.addModel("Button", gui.theme.newWidget("ref")
       .setStandbyColor(color(80))
       .setHoveredColor(color(110))
       .setClickedColor(color(130))
+      );
+    gui.theme.addModel("Button_Small_Text", gui.theme.newWidget("Button")
+      .setFont(int(ref_size/2.2))
       );
     gui.theme.addModel("Menu_Button", gui.theme.newWidget("Button")
       .setStandbyColor(color(80, 90, 80))
@@ -85,6 +97,103 @@ class nConstructor {
       .setOutline(true)
       .setOutlineColor(color(40, 40, 140))
       );
+    gui.theme.addModel("List_Entry_Selected", gui.theme.newWidget("ref")
+      .setStandbyColor(color(10, 100, 130))
+      .setHoveredColor(color(20, 110, 150))
+      .setClickedColor(color(30, 115, 175))
+      .setOutlineWeight(ref_size / 10)
+      .setOutline(true)
+      .setOutlineColor(color(100, 170, 210))
+      );
+      
+    
+    gui.theme.addModel("mc_ref", new nWidget()
+      .setLabelColor(color(200, 200, 200))
+      .setFont(int(ref_size/1.6))
+      );
+    gui.theme.addModel("MC_Hard_Back", gui.theme.newWidget("mc_ref")
+      .setStandbyColor(color(50, 50))
+      .setOutlineColor(color(105))
+      .setOutlineWeight(ref_size * 2.0 / 16.0)
+      .setOutline(true)
+      );
+    gui.theme.addModel("MC_Label_Back", gui.theme.newWidget("mc_ref")
+      .setStandbyColor(color(70))
+      .setOutlineColor(color(90))
+      .setOutlineWeight(ref_size / 16)
+      .setOutline(true)
+      );
+    gui.theme.addModel("MC_Hard_Back_Spot", gui.theme.newWidget("mc_ref")
+      .setStandbyColor(color(50))
+      .setOutlineColor(color(90))
+      .setOutlineWeight(ref_size / 16)
+      .setSize(ref_size*3, ref_size*1.5)
+      .setOutline(true)
+      );
+    gui.theme.addModel("MC_Soft_Back", gui.theme.newWidget("mc_ref")
+      .setStandbyColor(color(200, 50))
+      .setOutlineColor(color(200, 90))
+      .setOutlineWeight(ref_size / 16)
+      .setOutline(true)
+      );
+    gui.theme.addModel("MC_Grabber", gui.theme.newWidget("mc_ref")
+      .setStandbyColor(color(70))
+      .setHoveredColor(color(100))
+      .setClickedColor(color(130))
+      .setOutlineWeight(ref_size / 6)
+      .setOutline(true)
+      .setOutlineColor(color(150))
+      .setSize(ref_size*1, ref_size*1.25)
+      );
+    gui.theme.addModel("MC_Widget", gui.theme.newWidget("mc_ref")
+      .setStandbyColor(color(110))
+      .setHoveredColor(color(130))
+      .setClickedColor(color(150))
+      .setOutline(false)
+      .setLabelColor(color(200, 200, 200))
+      .setFont(int(ref_size/2.2))
+      .setSize(ref_size*1.75, ref_size*9/16)
+      .setTrigger()
+      );
+    gui.theme.addModel("MC_Widget_Solo", gui.theme.newWidget("MC_Widget")
+      .setSize(ref_size*2.75, ref_size*8/16)
+      .setPosition(ref_size*2/16, ref_size*8.0/16.0)
+      );
+    gui.theme.addModel("MC_Widget_Duo1", gui.theme.newWidget("MC_Widget")
+      .setSize(ref_size*2.75, ref_size*8/16)
+      .setPosition(ref_size*2/16, ref_size*3/16)
+      );
+    gui.theme.addModel("MC_Widget_Duo2", gui.theme.newWidget("MC_Widget")
+      .setSize(ref_size*2.75, ref_size*8/16)
+      .setPosition(ref_size*2/16, ref_size*13/16)
+      );
+    gui.theme.addModel("MC_Widget_Quad1", gui.theme.newWidget("MC_Widget")
+      .setSize(ref_size*20.0/16.0, ref_size*8/16)
+      .setPosition(ref_size*3/16, ref_size*3/16)
+      );
+    gui.theme.addModel("MC_Widget_Quad2", gui.theme.newWidget("MC_Widget")
+      .setSize(ref_size*20/16, ref_size*8/16)
+      .setPosition(ref_size*3/16, ref_size*13/16)
+      );
+    gui.theme.addModel("MC_Widget_Quad3", gui.theme.newWidget("MC_Widget")
+      .setSize(ref_size*20/16, ref_size*8/16)
+      .setPosition(ref_size*25/16, ref_size*3/16)
+      );
+    gui.theme.addModel("MC_Widget_Quad4", gui.theme.newWidget("MC_Widget")
+      .setSize(ref_size*20/16, ref_size*8/16)
+      .setPosition(ref_size*25/16, ref_size*13/16)
+      );
+    gui.theme.addModel("MC_Connect", gui.theme.newWidget("mc_ref")
+      .setStandbyColor(color(140, 140))
+      .setHoveredColor(color(180, 180))
+      .setClickedColor(color(180, 220))
+      .setOutlineWeight(ref_size / 12)
+      .setOutline(true)
+      .setOutlineColor(color(90))
+      .setRound(true)
+      .setSize(ref_size*14/16, ref_size*14/16)
+      );
+      
     make_outline("Button");
     make_outline("Menu_Button");
     make_outline("Head_Button");
@@ -94,6 +203,12 @@ class nConstructor {
     make_outline("Label_Back");
     make_outline("Auto_Watch_Label");
     make_outline("Auto_Button");
+    make_outline("Label_HightLight_Back");
+    make_outline("Button_Small_Text");
+    make_outline("Label_DownLight_Back");
+    make("Label_DownLight_Back");
+    make("Button_Small_Text");
+    make("Label_HightLight_Back");
     make("Auto_Button");
     make("Label");
     make("Label_Small_Text");
@@ -113,11 +228,23 @@ class nConstructor {
       .setOutlineWeight(ref_size / 8)
       .setOutline(true)
       );
+    gui.theme.addModel(base+"_Highlight_Outline", gui.theme.newWidget(base)
+      .setOutlineColor(color(190, 150, 30))
+      .setOutlineWeight(ref_size / 6)
+      .setOutline(true)
+      );
+    gui.theme.addModel(base+"_Downlight_Outline", gui.theme.newWidget(base)
+      .setOutlineColor(color(100, 100, 100))
+      .setOutlineWeight(ref_size / 10)
+      .setOutline(true)
+      );
     gui.theme.addModel(base+"_Small_Outline", gui.theme.newWidget(base+"_Outline")
       .setOutlineWeight(ref_size / 12)
       );
       
     make(base+"_Outline");
+    make(base+"_Highlight_Outline");
+    make(base+"_Downlight_Outline");
     make(base+"_Small_Outline");
   }
   void do_sizes(String base, String post, float w, float h) {
@@ -346,7 +473,7 @@ class nShelf extends nBuilder {
     d.addModel("Label_Small_Text-S1")
       .setText(val2.ref)
       .setPosition(ref_size*3.6, 0)
-      .setTextAlignment(LEFT)
+      .setTextAlignment(LEFT, CENTER)
       ;
     d.addWatcherModel("Auto_Watch_Label-S2")
       .setLinkedValue(val2)
@@ -381,7 +508,7 @@ class nShelf extends nBuilder {
     d.addModel("Label_Small_Text-S1")
       .setText(val2.ref)
       .setPosition(ref_size*4.3, 0)
-      .setTextAlignment(LEFT)
+      .setTextAlignment(LEFT, CENTER)
       ;
     d.addWatcherModel("Auto_Watch_Label")
       .setLinkedValue(val2)
@@ -418,7 +545,7 @@ class nShelf extends nBuilder {
     d.addModel("Label_Small_Text-S1")
       .setText(val2.ref)
       .setPosition(ref_size*3.6, 0)
-      .setTextAlignment(LEFT)
+      .setTextAlignment(LEFT, CENTER)
       ;
     d.addWatcherModel("Auto_Watch_Label-S2")
       .setLinkedValue(val2)
@@ -460,7 +587,7 @@ class nShelf extends nBuilder {
       .setPosition(0, 0)
       .setText(val.ref)
       .setFont(int(ref_size/1.9))
-      .setTextAlignment(LEFT)
+      .setTextAlignment(LEFT, CENTER)
       ;
     return this;
   }
@@ -476,7 +603,7 @@ class nShelf extends nBuilder {
       .setPosition(0, 0)
       .setText(val.ref)
       .setFont(int(ref_size/1.9))
-      .setTextAlignment(LEFT)
+      .setTextAlignment(LEFT, CENTER)
       ;
     return this;
   }
@@ -491,7 +618,7 @@ class nShelf extends nBuilder {
       .setSize(w*ref_size/10, h*ref_size)
       .setPosition(0, 0)
       .setText(val.ref)
-      .setTextAlignment(LEFT)
+      .setTextAlignment(LEFT, CENTER)
       ;
     return this;
   }
@@ -507,12 +634,13 @@ class nShelf extends nBuilder {
       .setPosition(0, 0)
       .setText(val.ref)
       .setFont(int(ref_size/1.9))
-      .setTextAlignment(LEFT)
+      .setTextAlignment(LEFT, CENTER)
       ;
     return this;
   }
   
   nDrawer getDrawer(int s) { return drawers.get(s); }
+  nDrawer getLastDrawer() { return drawers.get(drawers.size()-1); }
   nShelfPanel getShelfPanel() { return shelfPanel; }
   nFrontTab getTab() { return ((nFrontTab)shelfPanel); }
   nShelf setPosition(nWidget p, float x, float y) { ref.setParent(p).setPosition(x, y); return this; }
@@ -569,14 +697,12 @@ class nShelf extends nBuilder {
     ref.toLayerTop(); for (nDrawer d : drawers) d.toLayerTop(); return this; }
   nWidget customBuild(nWidget w) { return w.setParent(ref); }
   
-  
-  nList addList(int n, float wf, float hf) {
-    
+  nDrawer insertDrawer(nDrawer d) {
     if (max_drawer == 0 || drawers.size() < max_drawer) {
-      float w = wf * ref_size; float h = hf * n * ref_size; 
+      float w = d.drawer_width; float h = d.drawer_height; 
       if (drawers.size() >  0) h += space_factor*ref_size;
       //nDrawer d = new nDrawer(this, w, h); 
-      nList d = new nList(this, n, ref_size, wf, hf);
+      //nList d = new nList(this, n, ref_size, wf, hf);
       //d.ref.setPY(space_factor*ref_size/2);
       if (drawers.size() == 0) d.ref.setParent(ref);
       else if (drawers.size() == 1) {
@@ -596,10 +722,19 @@ class nShelf extends nBuilder {
       return d;  }
     return null;
   }
+  
+  nList addList(int n, float wf, float hf) {
+    nList d = new nList(this, n, ref_size, wf, hf);
+    insertDrawer(d);
+    return d;
+  }
+  
+  nExplorer addExplorer(String n) {
+    nExplorer d = new nExplorer(this);
+    insertDrawer(d);
+    return d;
+  }
 }
-
-
-
 
 
 
@@ -650,7 +785,10 @@ class nShelfPanel extends nBuilder {
     if (shelfs.size() == 0) w += ref_size * space_factor;
     panel.setSX(w); 
     max_width = w;
-    logln("shelfpanel " + w);
+    //logln("shelfpanel " + w);
+    return this; }
+  nShelfPanel setSpace(float _space_factor) { 
+    space_factor = _space_factor;
     return this; }
   nShelfPanel(nGUI _g, float _ref_size, float _space_factor) {
     super(_g, _ref_size);

@@ -4,29 +4,12 @@
 
 
 
-
-class RandomTryParam {// extends Callable
-  sValueBloc sbloc;
-  sFlt DIFFICULTY;
-  sBoo ON;
-  //sFlt test_by_tick;
-  int count = 0;
-  RandomTryParam(sValueBloc bloc, float d, boolean b, String n) { 
-    sbloc = new sValueBloc(bloc, n+" rng param");
-    DIFFICULTY = new sFlt(sbloc, 4, n+" dif", "dif");
-    ON = new sBoo(sbloc, true, n+" on", "on");
-    //test_by_tick = new sFlt(sbloc, 0);
-    DIFFICULTY.set(d); 
-    ON.set(b); 
-    //addChannel(frameend_chan);
-  }
-  boolean test() { 
-    if (ON.get()) count++; 
-    //test_by_tick.set(count / sim.tick_by_frame.get()); 
-    return ON.get() && crandom(DIFFICULTY.get()) > 0.5;
-  }
-  //void answer(Channel chan, float v) { count = 0; test_by_tick.set(0); }
+class GrowerPrint extends Blueprint {
+  GrowerPrint(Simulation s) { super(s, "Grower"); }
+  GrowerComu build(String n) { return new GrowerComu(sim, n); }
 }
+
+
 
 class GrowerComu extends Community {
 
@@ -51,10 +34,12 @@ class GrowerComu extends Community {
 
   //sLabel grower_nb_label;
   //sGraph graph = new sGraph();
+  
+  FlocComu fcom;
 
   void comPanelBuild(nFrontPanel sim_front) {
     nFrontTab tab = com_front.addTab(name);
-    tab.addShelf()
+    tab.getShelf()
       .addDrawerWatch(activeGrower, 10, 0.7)
       .addSeparator(0.125)
       .addDrawerDoubleButton(create_floc, srun_killg, 10, 0.9)
@@ -82,24 +67,24 @@ class GrowerComu extends Community {
       ;
   }
 
-  GrowerComu(Simulation _c) { 
-    super(_c, "Grower ", 500);
-    DEVIATION = new sFlt(sbloc, 8, "grow dev", "");
-    L_MIN = new sFlt(sbloc, 20, "grow lmin", "");
-    L_MAX = new sFlt(sbloc, 350, "grow lmax", "");
-    L_DIFFICULTY = new sFlt(sbloc, 180, "grow ldif", "");
-    OLD_AGE = new sFlt(sbloc, 666, "grow age", "");
+  GrowerComu(Simulation _c, String n) { 
+    super(_c, "Grower_"+n, "grow", 500);
+    DEVIATION = new sFlt(sbloc, 8, name+" dev", "dev");
+    L_MIN = new sFlt(sbloc, 20, name+" lmin", "lmin");
+    L_MAX = new sFlt(sbloc, 350, name+" lmax", "lmax");
+    L_DIFFICULTY = new sFlt(sbloc, 180, name+" ldif", "ldif");
+    OLD_AGE = new sFlt(sbloc, 666, name+" age", "age");
 
-    growP = new RandomTryParam(sbloc, 0.5, true, "grow grow");
-    sproutP = new RandomTryParam(sbloc, 2080, true, "grow sprout");
-    stopP = new RandomTryParam(sbloc, 1.25, true, "grow stop");
-    leafP = new RandomTryParam(sbloc, 2080, true, "grow leaf");
-    dieP = new RandomTryParam(sbloc, 3.6, true, "grow die");
+    growP = new RandomTryParam(sbloc, 0.5, true, name+" grow");
+    sproutP = new RandomTryParam(sbloc, 2080, true, name+"  sprout");
+    stopP = new RandomTryParam(sbloc, 1.25, true, name+"  stop");
+    leafP = new RandomTryParam(sbloc, 2080, true, name+"  leaf");
+    dieP = new RandomTryParam(sbloc, 3.6, true, name+"  die");
 
-    create_floc = new sBoo(sbloc, true, "grow create floc", "create floc");
-    activeGrower = new sInt(sbloc, 0, "activeGrower", "growers nb");
+    create_floc = new sBoo(sbloc, true, name+"  create floc", "create floc");
+    activeGrower = new sInt(sbloc, 0, name+" activeGrower", "growers nb");
 
-    srun_killg = new sRun(sbloc, "grow kill grower", "kill", new Runnable(list) { 
+    srun_killg = new sRun(sbloc, name+"  kill grower", "kill", new Runnable(list) { 
       public void run() { 
         for (Entity e : ((ArrayList<Entity>)builder)) {
           Grower g = (Grower)e;
@@ -152,6 +137,38 @@ class GrowerComu extends Community {
     return n;
   }
 }
+
+
+
+
+
+class RandomTryParam {// extends Callable
+  sValueBloc sbloc;
+  sFlt DIFFICULTY;
+  sBoo ON;
+  //sFlt test_by_tick;
+  int count = 0;
+  RandomTryParam(sValueBloc bloc, float d, boolean b, String n) { 
+    sbloc = new sValueBloc(bloc, n+" rng param");
+    DIFFICULTY = new sFlt(sbloc, 4, n+" dif", "dif");
+    ON = new sBoo(sbloc, true, n+" on", "on");
+    //test_by_tick = new sFlt(sbloc, 0);
+    DIFFICULTY.set(d); 
+    ON.set(b); 
+    //addChannel(frameend_chan);
+  }
+  boolean test() { 
+    if (ON.get()) count++; 
+    //test_by_tick.set(count / sim.tick_by_frame.get()); 
+    return ON.get() && crandom(DIFFICULTY.get()) > 0.5;
+  }
+  //void answer(Channel chan, float v) { count = 0; test_by_tick.set(0); }
+}
+
+
+
+
+
 
 class Grower extends Entity {
 
@@ -242,8 +259,8 @@ class Grower extends Entity {
 
     // stop growing
     if (start == 1 && !end && sprouts == 0 && com().stopP.test()) {
-      if (com().create_floc.get()) {
-        Floc f = fcom.newEntity();
+      if (com().create_floc.get() && com().fcom != null) {
+        Floc f = com().fcom.newEntity();
         if (f != null) {
           f.pos.x = pos.x;
           f.pos.y = pos.y;
@@ -312,3 +329,16 @@ class Grower extends Entity {
     return ((GrowerComu)com);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+         

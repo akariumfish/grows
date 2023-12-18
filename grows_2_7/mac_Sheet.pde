@@ -17,11 +17,7 @@ import java.util.Map;
 
 
 class Macro_Sheet extends Macro_Abstract {
-  nWidget  reduc 
-           //, sclear, sfield, ssheet, 
-           //addSheet, addExtIn, addExtOut, smenu, menu, tmenu;//, 
-           //templates, tfield, tselect, tup, tdown
-           ; 
+  nWidget  reduc; 
 
   ArrayList<Macro_Sheet_Input> sheet_inputs = new ArrayList<Macro_Sheet_Input>(0);
   ArrayList<Macro_Sheet_Output> sheet_outputs = new ArrayList<Macro_Sheet_Output>(0);
@@ -34,13 +30,12 @@ class Macro_Sheet extends Macro_Abstract {
 
   ArrayList<Macro_Abstract> child_macro = new ArrayList<Macro_Abstract>(0);
 
-  //String templatepath = "templates";
-
-  //ArrayList<nWidget> subMenuWidgets = new ArrayList<nWidget>();
-  //ArrayList<nWidget> subHeadWidgets = new ArrayList<nWidget>();
-
   boolean isReduc = false;
-
+  
+  Macro_Sheet setTitle(String t) {
+    grabber.setText(t);
+    return this;
+  }
   
   void reduc() {
     isReduc = true;
@@ -56,7 +51,6 @@ class Macro_Sheet extends Macro_Abstract {
       for (Macro_Abstract m : mmain().selected_macro) { m.selected = false; m.front.setOutline(false); }
       mmain().selected_macro.clear();
     }
-    //if (menubuttons.size() > 0) menubuttons.get(0).hide();
     for (Macro_Abstract m : child_macro) m.parentReduc();
     for (Macro_Sheet_Input m : sheet_inputs) m.reduc();
     for (Macro_Sheet_Output m : sheet_outputs) m.reduc();
@@ -73,9 +67,6 @@ class Macro_Sheet extends Macro_Abstract {
     for (Macro_Abstract m : child_macro) m.parentEnlarg();
     for (Macro_Sheet_Input m : sheet_inputs) m.enlarg();
     for (Macro_Sheet_Output m : sheet_outputs) m.enlarg();
-    //if (menubuttons.size() > 0) menubuttons.get(0).show();
-    //for (nWidget w : subHeadWidgets) w.hide();
-    //mmain().menugroup.closeAll();
     childDragged();
   }
   
@@ -99,9 +90,6 @@ class Macro_Sheet extends Macro_Abstract {
       enlarg();
       for (Macro_Abstract m : child_macro) m.parentEnlarg(); 
     }
-    //for (nWidget w : subHeadWidgets) w.hide();
-    //for (Macro_Sheet_Input m : sheet_inputs) m.show();
-    //for (Macro_Sheet_Output m : sheet_outputs) m.show();
   }
   void hide() {
     super.hide();
@@ -109,54 +97,12 @@ class Macro_Sheet extends Macro_Abstract {
     for (Macro_Sheet_Output m : sheet_outputs) m.hide();
   }
   
-  //ArrayList<nWidget> menubuttons = new ArrayList<nWidget>(0);
-
-  //nWidget newMenu(String name) {
-  //  float new_width = (sheet_width + ref_size*1.25) / (menubuttons.size() + 1);
-  //  nWidget menu = new nWidget(gui, name, int(ref_size/1.85), 0, 0, new_width, ref_size * 0.75)
-  //    .setSwitch()
-  //    .setLayer(layer)
-  //    .setOutlineColor(color(100))
-  //    .setOutlineWeight(ref_size / 16)
-  //    .setOutline(true)
-  //    ;
-  //  if (menubuttons.size() == 0) menu.setParent(reduc).stackDown();
-  //  else menu.setParent(menubuttons.get(menubuttons.size()-1)).stackRight();
-  //  for (nWidget w : menubuttons) w.setSX(new_width);
-  //  menubuttons.add(menu);
-  //  return menu;
-  //}
+  sValueBloc sheet_data;
+  void init_databloc() {
+    if (parent != null) sheet_data = new sValueBloc(parent.sheet_data, "Sheet_"+grabber.getText());
+  }
   
-  //Macro_Abstract setWidth(float w) {
-  //  super.setWidth(w);
-  //  float new_width = (sheet_width + ref_size*1.25) / (menubuttons.size());
-  //  for (nWidget m : menubuttons) m.setSX(new_width);
-  //  return this;
-  //}
-
-  //ArrayList<nWidget> addbuttons = new ArrayList<nWidget>(0);
-
-  //Macro_Sheet newAdd(String name, Runnable run) {
-  //  nWidget add = new nWidget(gui, name, int(ref_size/1.5), 0, 0, ref_size*5, ref_size)
-  //    .setTrigger()
-  //    .setLayer(mmain().menu_layer)
-  //    .stackDown()
-  //   // .hide()
-  //    .addEventTrigger(new Runnable() { 
-  //    public void run() { 
-  //      mmain().menugroup.closeAll();
-  //    }
-  //  }
-  //  )
-  //  .addEventTrigger(run)
-  //    ;
-  //  //if (addbuttons.size() == 0) add.setParent(addExtOut);
-  //  //else add.setParent(addbuttons.get(addbuttons.size()-1));
-  //  //addbuttons.add(add);
-  //  return this;
-  //}
-  
-  Macro_Sheet(nGUI _gui, Macro_Sheet p, float x, float y) {
+  Macro_Sheet(nGUI _gui, Macro_Sheet p, float x, float y, String tit) {
     super(_gui, p, "sheet", x, y);
   
     back.setSize(ref_size*3, ref_size * 0.75)
@@ -164,7 +110,7 @@ class Macro_Sheet extends Macro_Abstract {
       .setPassif();
     closer.setSX(ref_size);
     closer.setParent(grabber);
-    grabber.setText("");
+    grabber.setText(tit);
     
     //front.hide();
     selectable = false;
@@ -208,454 +154,11 @@ class Macro_Sheet extends Macro_Abstract {
     }
     )
     ;
-    //menu = newMenu("New")
-    //  .addEventSwitchOn(new Runnable() { 
-    //  public void run() {
-    //    addSheet.show();
-    //  }
-    //}
-    //)
-    //.addEventSwitchOff(new Runnable() { 
-    //  public void run() {
-    //    addSheet.hide();
-    //  }
-    //}
-    //)
-    //;
-    //addSheet = new nWidget(_gui, "Child Sheet", int(ref_size/1.5), 0, 0, ref_size*5, ref_size)
-    //  .setTrigger()
-    //  .setParent(menu)
-    //  .setLayer(mmain().menu_layer)
-    //  .stackDown()
-    // // .hide()
-    //  .addEventTrigger(new Runnable() { 
-    //  public void run() {
-    //    mmain().menugroup.closeAll();
-    //    addSheet();
-    //  }
-    //}
-    //)
-    //;
-    //addExtIn = new nWidget(_gui, "Sheet Input", int(ref_size/1.5), 0, 0, ref_size*5, ref_size)
-    //  .setTrigger()
-    //  .setParent(addSheet)
-    //  .setLayer(mmain().menu_layer)
-    //  .stackDown()
-    // // .hide()
-    //  .addEventTrigger(new Runnable(this) { 
-    //  public void run() {
-    //    mmain().menugroup.closeAll();
-    //    addSheetInput();
-    //  }
-    //}
-    //)
-    //;
-    //addExtOut = new nWidget(_gui, "Sheet Output", int(ref_size/1.5), 0, 0, ref_size*5, ref_size)
-    //  .setTrigger()
-    //  .setParent(addExtIn)
-    //  .setLayer(mmain().menu_layer)
-    //  .stackDown()
-    // // .hide()
-    //  .addEventTrigger(new Runnable(this) { 
-    //  public void run() {
-    //    mmain().menugroup.closeAll();
-    //    addSheetOutput();
-    //  }
-    //}
-    //)
-    //;
-    
-    //newAdd("Basic Macro", new Runnable() { public void run() { addPanelBasicMacro(); } } );
-    //newAdd("Custom sFlt", new Runnable() { public void run() { addPanelsFlt(); } } );
-    //newAdd("Custom sInt", new Runnable() { public void run() { addPanelsInt(); } } );
-    //newAdd("Custom sBoo", new Runnable() { public void run() { addPanelsBoo(); } } );
-    //newAdd("Custom Run", new Runnable() { public void run() { addPanelRun(); } } );
-
-    //smenu = newMenu("File")
-    //  .addEventSwitchOn(new Runnable() { 
-    //  public void run() {
-    //    sclear.show();
-    //  }
-    //}
-    //)
-    //.addEventSwitchOff(new Runnable() { 
-    //  public void run() {
-    //    sclear.hide();
-    //  }
-    //}
-    //)
-    //;
-    
-    //sclear = new nWidget(_gui, "Clear", int(ref_size/1.5), 0, 0, ref_size*5, ref_size)
-    //  .setTrigger()
-    //  .setParent(smenu)
-    //  .setLayer(mmain().menu_layer)
-    //  .stackDown()
-    // // .hide()
-    //  .addEventTrigger(new Runnable() { 
-    //  public void run() {
-    //    empty();
-    //    mmain().menugroup.closeAll();
-    //  }
-    //}
-    //)
-    //;
-    //sfield = new nWidget(_gui, 0, 0, ref_size*5, ref_size)
-    //  .setParent(sclear)
-    //  .stackDown()
-    //  .setLayer(mmain().menu_layer)
-    //  .setFont(int(ref_size/1.5))
-    //  .setText(savepath)
-    //  .setField(true)
-    //  //.setOutlineColor(color(180, 60))
-    //  .setOutlineWeight(ref_size / 16)
-    //  //.setOutline(true)
-    // // .hide()
-    //  .addEventFieldChange(new Runnable() { 
-    //  public void run() {
-    //    savepath = sfield.getText();
-    //  }
-    //}
-    //)
-    //;
-    
-    //ssheet = new nWidget(_gui, "Load as sheet", int(ref_size/1.5), 0, 0, ref_size*5, ref_size)
-    //  .setTrigger()
-    //  .setParent(sfield)
-    //  .setLayer(mmain().menu_layer)
-    //  .stackDown()
-    //  .addEventTrigger(new Runnable() { 
-    //  public void run() {
-    //    sdata_load_as();
-    //    childDragged();
-    //    mmain().menugroup.closeAll();
-    //  }
-    //}
-    //)
-    //;
-    
-    
-    //subMenuWidgets.add(addSheet);
-    //subMenuWidgets.add(addExtIn);
-    //subMenuWidgets.add(addExtOut);
-    //subMenuWidgets.add(sclear);
-    //subMenuWidgets.add(sfield);
-    //subMenuWidgets.add(ssheet);
-    //////subMenuWidgets.add(templates);
-    
-    //subHeadWidgets.add(addSheet);
-    //subHeadWidgets.add(sclear);
-    //////subHeadWidgets.add(templates);
-    
-    //for (nWidget w : subHeadWidgets) w.hide();
-    ////addSheet.hide(); sclear.hide(); templates.hide();
-    
-    if (mmain().menugroup != null) {
-      //for (nWidget w : menubuttons) mmain().menugroup.add(w);
-    }
     childDragged();
+    
+    init_databloc();
   }
   
-  //Macro_Sheet addPanelBasicMacro() {
-  //  nPanel pan = new nPanel(mmain().screen_gui, "Add Basic Macro", ref_size, ref_size)
-  //    .setWidth(ref_size*8.5)
-  //    .setItemHeight(ref_size*0.75)
-  //    .addDrawer(ref_size*1.25)
-  //      .addWidget("Bang", int(ref_size/1.9), ref_size*0.25, ref_size*0.25, ref_size*2.5, ref_size).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
-  //          //((nWidget)builder).getPanelDrawer().getPanel().clear();
-  //          if (mmain().selecting_sheet != null) mmain().selecting_sheet.addBang(); }}).getPanelDrawer()
-  //      .addWidget("Switch", int(ref_size/1.9), ref_size*3, ref_size*0.25, ref_size*2.5, ref_size).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
-  //          if (mmain().selecting_sheet != null) mmain().selecting_sheet.addSwitch(); }}).getPanelDrawer()
-  //      .addWidget("Key", int(ref_size/1.9), ref_size*5.75, ref_size*0.25, ref_size*2.5, ref_size).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
-  //          if (mmain().selecting_sheet != null) mmain().selecting_sheet.addKeyboard(); }}).getPanelDrawer()
-  //      .getPanel()
-  //    .addDrawer(ref_size*1.25)
-  //      .addWidget("Value", int(ref_size/1.9), ref_size*0.25, ref_size*0.25, ref_size*2.5, ref_size).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
-  //          if (mmain().selecting_sheet != null) mmain().selecting_sheet.addValue(); }}).getPanelDrawer()
-  //      .addWidget("Calc", int(ref_size/1.9), ref_size*3, ref_size*0.25, ref_size*2.5, ref_size).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
-  //          if (mmain().selecting_sheet != null) mmain().selecting_sheet.addCalc(); }}).getPanelDrawer()
-  //      .addWidget("Comp", int(ref_size/1.9), ref_size*5.75, ref_size*0.25, ref_size*2.5, ref_size).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
-  //          if (mmain().selecting_sheet != null) mmain().selecting_sheet.addComp(); }}).getPanelDrawer()
-  //      .getPanel()
-  //    .addDrawer(ref_size*1.25)
-  //      .addWidget("Delay", int(ref_size/1.9), ref_size*0.25, ref_size*0.25, ref_size*2.5, ref_size).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
-  //          if (mmain().selecting_sheet != null) mmain().selecting_sheet.addDelay(); }}).getPanelDrawer()
-  //      .addWidget("Pulse", int(ref_size/1.9), ref_size*3, ref_size*0.25, ref_size*2.5, ref_size).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
-  //          if (mmain().selecting_sheet != null) mmain().selecting_sheet.addPulse(); }}).getPanelDrawer()
-  //      .addWidget("Gate", int(ref_size/1.9), ref_size*5.75, ref_size*0.25, ref_size*2.5, ref_size).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
-  //          if (mmain().selecting_sheet != null) mmain().selecting_sheet.addGate(); }}).getPanelDrawer()
-  //      .getPanel()
-  //    .addDrawer(ref_size*1.25)
-  //      .addWidget("Bool", int(ref_size/1.9), ref_size*0.25, ref_size*0.25, ref_size*2.5, ref_size).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
-  //          if (mmain().selecting_sheet != null) mmain().selecting_sheet.addBool(); }}).getPanelDrawer()
-  //      .addWidget("Not", int(ref_size/1.9), ref_size*3, ref_size*0.25, ref_size*2.5, ref_size).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
-  //          if (mmain().selecting_sheet != null) mmain().selecting_sheet.addNot(); }}).getPanelDrawer()
-  //      .addWidget("Bool Val", int(ref_size/1.9), ref_size*5.75, ref_size*0.25, ref_size*2.5, ref_size).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
-  //          if (mmain().selecting_sheet != null) mmain().selecting_sheet.addValue().setBool(); }}).getPanelDrawer()
-  //      .getPanel()
-  //    .addDrawer(ref_size*1.25)
-  //      .addWidget("Comment", int(ref_size/1.9), ref_size*0.25, ref_size*0.25, ref_size*2.5, ref_size).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
-  //          if (mmain().selecting_sheet != null) mmain().selecting_sheet.addComment(); }}).getPanelDrawer()
-  //      .addWidget("Bin", int(ref_size/1.5), ref_size*3, ref_size*0.25, ref_size*2.5, ref_size).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
-  //          if (mmain().selecting_sheet != null) mmain().selecting_sheet.addBin(); }}).getPanelDrawer()
-  //      //.addWidget("Bool Val", int(ref_size/1.5), ref_size*5.75, ref_size*0.25, ref_size*2.5, ref_size).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
-  //      //    addValue(); }}).getPanelDrawer()
-  //      .getPanel()
-  //    .addDrawer(ref_size*1.25)
-  //      .addWidget("Sheet", int(ref_size/1.9), ref_size*0.25, ref_size*0.25, ref_size*2.5, ref_size).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
-  //          if (mmain().selecting_sheet != null) mmain().selecting_sheet.addSheet(); }}).getPanelDrawer()
-  //      .addWidget("In", int(ref_size/1.5), ref_size*3, ref_size*0.25, ref_size*2.5, ref_size).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
-  //          if (mmain().selecting_sheet != null) mmain().selecting_sheet.addSheetInput(); }}).getPanelDrawer()
-  //      .addWidget("Out", int(ref_size/1.5), ref_size*5.75, ref_size*0.25, ref_size*2.5, ref_size).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
-  //          if (mmain().selecting_sheet != null) mmain().selecting_sheet.addSheetOutput(); }}).getPanelDrawer()
-  //      .getPanel()
-  //    .addSeparator(ref_size*0.25)
-  //    .setLayer(mmain().menu_layer+1)
-  //    .toLayerTop()
-  //    //.setPosition(- ref_size*20, - ref_size*1)
-  //    .addEventClose(new Runnable() { public void run() {
-  //      ;
-  //    }})
-  //    ;
-  //  //pan.getGrabWidget().setParent(grabber);
-  //  return this;
-  //}
-  //Macro_Sheet addPanelsFlt() {
-  //  String[] t = new String[mmain().data.getCountOfType("flt")];
-  //  mmain().data.runIterator_Filter_Counted("flt", 
-  //    new Iterator<sValue>(t) { public void run(sValue v, int cnt) {
-  //      ((String[])builder)[cnt] = v.ref;
-  //    } }
-  //  );
-    
-  //  nPanel pan = new nPanel(mmain().screen_gui, "Add sFlt Connexion", ref_size, ref_size)
-  //    .setWidth(ref_size*8.5)
-  //    .setItemHeight(ref_size*0.75)
-  //    .addDrawer(ref_size*1.25)
-  //      .addWidget("ctrl", int(ref_size/1.5), ref_size*0.25, ref_size*0.25, ref_size*2.5, ref_size)
-  //        .setTrigger()
-  //        .addEventTrigger(new Runnable() { public void run() {
-  //          if (choice_flt != null && mmain().selecting_sheet != null) {
-  //            Macro_Custom m = mmain().selecting_sheet.addCustom()
-  //              .addValueController()
-  //                .setValue(choice_flt)
-  //                .getMacro()
-  //              ;
-  //            mmain().selecting_sheet.adding(m);
-  //            mmain().selecting_sheet.childDragged();
-  //          }
-  //        }})
-  //        .getPanelDrawer()
-  //      .addWidget("watch", int(ref_size/1.5), ref_size*3, ref_size*0.25, ref_size*2.5, ref_size)
-  //        .setTrigger()
-  //        .addEventTrigger(new Runnable() { public void run() {
-  //          if (choice_flt != null && mmain().selecting_sheet != null) {
-  //            Macro_Custom m = mmain().selecting_sheet.addCustom()
-  //              .addValueWatcher()
-  //                .setValue(choice_flt)
-  //                .getMacro()
-  //              ;
-  //            mmain().selecting_sheet.adding(m);
-  //            mmain().selecting_sheet.childDragged();
-  //          }
-  //        }})
-  //        .getPanelDrawer()
-  //      .addWidget("--", int(ref_size/1.5), ref_size*5.75, ref_size*0.25, ref_size*2.5, ref_size)
-  //        .setStandbyColor(color(255, 0))
-  //        .addEventFrame_Builder(new Runnable() { public void run() {
-  //          if (choice_flt != null) {
-  //            ((nWidget)builder).setText(str(choice_flt.get()));
-  //          }
-  //        }})
-  //        .getPanelDrawer()
-  //      .getPanel()
-  //    .addDrawer(ref_size*5.25)
-  //      .addList(ref_size*0.25, ref_size*0.25, ref_size*8, ref_size*1)
-  //        .setEntrys(t)
-  //        .addEventChange_Builder(new Runnable() { public void run() {
-  //          choice_flt = (sFlt)(mmain().data.searchValue(((nList)builder).last_choice_text));
-  //        }})
-  //        .getPanelDrawer()
-  //      .getPanel()
-  //    .addSeparator(ref_size*0.25)
-  //    .setLayer(mmain().menu_layer+1)
-  //    .toLayerTop()
-  //    //.setPosition(- ref_size*20, ref_size*7)
-  //    ;
-  //  //pan.getGrabWidget().setParent(grabber);
-  //  return this;
-  //}
-  //Macro_Sheet addPanelsInt() {
-  //  String[] t = new String[mmain().data.getCountOfType("int")];
-  //  mmain().data.runIterator_Filter_Counted("int", 
-  //    new Iterator<sValue>(t) { public void run(sValue v, int cnt) {
-  //      ((String[])builder)[cnt] = v.ref;
-  //    } }
-  //  );
-    
-  //  nPanel pan = new nPanel(mmain().screen_gui, "Add sInt Connexion", ref_size, ref_size)
-  //    .setWidth(ref_size*8.5)
-  //    .setItemHeight(ref_size*0.75)
-  //    .addDrawer(ref_size*1.25)
-  //      .addWidget("ctrl", int(ref_size/1.5), ref_size*0.25, ref_size*0.25, ref_size*2.5, ref_size)
-  //        .setTrigger()
-  //        .addEventTrigger(new Runnable() { public void run() {
-  //          if (choice_int != null && mmain().selecting_sheet != null) {
-  //            Macro_Custom m = mmain().selecting_sheet.addCustom()
-  //              .addValueController()
-  //                .setValue(choice_int)
-  //                .getMacro()
-  //              ;
-  //            mmain().selecting_sheet.adding(m);
-  //            mmain().selecting_sheet.childDragged();
-  //          }
-  //        }})
-  //        .getPanelDrawer()
-  //      .addWidget("watch", int(ref_size/1.5), ref_size*3, ref_size*0.25, ref_size*2.5, ref_size)
-  //        .setTrigger()
-  //        .addEventTrigger(new Runnable() { public void run() {
-  //          if (choice_int != null && mmain().selecting_sheet != null) {
-  //            Macro_Custom m = mmain().selecting_sheet.addCustom()
-  //              .addValueWatcher()
-  //                .setValue(choice_int)
-  //                .getMacro()
-  //              ;
-  //            mmain().selecting_sheet.adding(m);
-  //            mmain().selecting_sheet.childDragged();
-  //          }
-  //        }})
-  //        .getPanelDrawer()
-  //      .addWidget("--", int(ref_size/1.5), ref_size*5.75, ref_size*0.25, ref_size*2.5, ref_size)
-  //        .setStandbyColor(color(255, 0))
-  //        .addEventFrame_Builder(new Runnable() { public void run() {
-  //          if (choice_int != null) {
-  //            ((nWidget)builder).setText(str(choice_int.get()));
-  //          }
-  //        }})
-  //        .getPanelDrawer()
-  //      .getPanel()
-  //    .addDrawer(ref_size*5.25)
-  //      .addList(ref_size*0.25, ref_size*0.25, ref_size*8, ref_size*1)
-  //        .setEntrys(t)
-  //        .addEventChange_Builder(new Runnable() { public void run() {
-  //          choice_int = (sInt)(mmain().data.searchValue(((nList)builder).last_choice_text));
-  //        }})
-  //        .getPanelDrawer()
-  //      .getPanel()
-  //    .addSeparator(ref_size*0.25)
-  //    .setLayer(mmain().menu_layer+1)
-  //    .toLayerTop()
-  //    //.setPosition(- ref_size*20, ref_size*15)
-  //    .addEventClose(new Runnable() { public void run() {
-  //      ;
-  //    }})
-  //    ;
-  //  //pan.getGrabWidget().setParent(grabber);
-  //  return this;
-  //}
-  //Macro_Sheet addPanelsBoo() {
-  //  String[] t = new String[mmain().data.getCountOfType("boo")];
-  //  mmain().data.runIterator_Filter_Counted("boo", 
-  //    new Iterator<sValue>(t) { public void run(sValue v, int cnt) {
-  //      ((String[])builder)[cnt] = v.ref;
-  //    } }
-  //  );
-    
-  //  nPanel pan = new nPanel(mmain().screen_gui, "Add sBoo Connexion", ref_size, ref_size)
-  //    .setWidth(ref_size*8.5)
-  //    .setItemHeight(ref_size*0.75)
-  //    .addDrawer(ref_size*1.25)
-  //      .addWidget("ctrl", int(ref_size/1.5), ref_size*0.25, ref_size*0.25, ref_size*2.5, ref_size)
-  //        .setTrigger()
-  //        .addEventTrigger(new Runnable() { public void run() {
-  //          if (choice_boo != null && mmain().selecting_sheet != null) {
-  //            Macro_Custom m = mmain().selecting_sheet.addCustom()
-  //              .addValueController()
-  //                .setValue(choice_boo)
-  //                .getMacro()
-  //              ;
-  //            mmain().selecting_sheet.adding(m);
-  //            mmain().selecting_sheet.childDragged();
-  //          }
-  //        }})
-  //        .getPanelDrawer()
-  //      .addWidget("watch", int(ref_size/1.5), ref_size*3, ref_size*0.25, ref_size*2.5, ref_size)
-  //        .setTrigger()
-  //        .addEventTrigger(new Runnable() { public void run() {
-  //          if (choice_boo != null && mmain().selecting_sheet != null) {
-  //            Macro_Custom m = mmain().selecting_sheet.addCustom()
-  //              .addValueWatcher()
-  //                .setValue(choice_boo)
-  //                .getMacro()
-  //              ;
-  //            mmain().selecting_sheet.adding(m);
-  //            mmain().selecting_sheet.childDragged();
-  //          }
-  //        }})
-  //        .getPanelDrawer()
-  //      .addWidget("--", int(ref_size/1.5), ref_size*5.75, ref_size*0.25, ref_size*2.5, ref_size)
-  //        .setStandbyColor(color(255, 0))
-  //        .addEventFrame_Builder(new Runnable() { public void run() {
-  //          if (choice_boo != null) {
-  //            ((nWidget)builder).setText(str(choice_boo.get()));
-  //          }
-  //        }})
-  //        .getPanelDrawer()
-  //      .getPanel()
-  //    .addDrawer(ref_size*5.25)
-  //      .addList(ref_size*0.25, ref_size*0.25, ref_size*8, ref_size*1)
-  //        .setEntrys(t)
-  //        .addEventChange_Builder(new Runnable() { public void run() {
-  //          choice_boo = (sBoo)(mmain().data.searchValue(((nList)builder).last_choice_text));
-  //        }})
-  //        .getPanelDrawer()
-  //      .getPanel()
-  //    .addSeparator(ref_size*0.25)
-  //    .setLayer(mmain().menu_layer+1)
-  //    .toLayerTop()
-  //    //.setPosition(ref_size*20, -ref_size*1)
-  //    .addEventClose(new Runnable() { public void run() {
-  //      ;
-  //    }})
-  //    ;
-  //  //pan.getGrabWidget().setParent(grabber);
-  //  return this;
-  //}
-  //Macro_Sheet addPanelRun() {
-  //  String[] t = new String[mmain().data.refered_runnable_map.size()];
-  //  int cnt = 0;
-  //  for (Map.Entry me : mmain().data.refered_runnable_map.entrySet()) {
-  //    t[cnt] = (String)me.getKey();
-  //    cnt++; }
-    
-  //  nPanel pan = new nPanel(mmain().screen_gui, "Add Runnable Connexion", ref_size, ref_size)
-  //    .setWidth(ref_size*8.5)
-  //    .setItemHeight(ref_size*0.75)
-  //    .addDrawer(ref_size*5.25)
-  //      .addList(ref_size*0.25, ref_size*0.25, ref_size*8, ref_size*1)
-  //        .setEntrys(t)
-  //        .addEventChange_Builder(new Runnable() { public void run() {
-  //          if (mmain().selecting_sheet != null) {
-  //            Macro_Custom m = mmain().selecting_sheet.addCustom()
-  //              .addRun()
-  //                .setRunnable(((nList)builder).last_choice_text)
-  //                .getMacro()
-  //              ;
-  //            mmain().selecting_sheet.adding(m);
-  //            mmain().selecting_sheet.childDragged();
-  //          }
-  //        }})
-  //        .getPanelDrawer()
-  //      .getPanel()
-  //    .addSeparator(ref_size*0.25)
-  //    .setLayer(mmain().menu_layer+1)
-  //    .toLayerTop()
-  //    //.setPosition(ref_size*20, ref_size*7)
-  //    ;
-  //  //pan.getGrabWidget().setParent(grabber);
-  //  return this;
-  //}
-
   Macro_Input getInputByIndex(int i) {
     for (Macro_Input m : inputs) if (m.index == i) return m;
     return null;
@@ -752,9 +255,13 @@ class Macro_Sheet extends Macro_Abstract {
     childDragged();
     return m;
   }
-
+  Macro_Sheet addSheet(String t) {
+    Macro_Sheet m = new Macro_Sheet(gui, this, 0, ref_size*1.25, t);
+    adding(m); 
+    return m;
+  }
   Macro_Sheet addSheet() {
-    Macro_Sheet m = new Macro_Sheet(gui, this, 0, ref_size*1.25);
+    Macro_Sheet m = new Macro_Sheet(gui, this, 0, ref_size*1.25, "");
     adding(m); 
     return m;
   }
@@ -808,6 +315,11 @@ class Macro_Sheet extends Macro_Abstract {
     adding(m); 
     return m;
   }
+  Macro_Vec addVec() {
+    Macro_Vec m = new Macro_Vec(gui, this, 0, 0);
+    adding(m); 
+    return m;
+  }
   Macro_Gate addGate() {
     Macro_Gate m = new Macro_Gate(gui, this, 0, 0);
     adding(m); 
@@ -828,13 +340,38 @@ class Macro_Sheet extends Macro_Abstract {
     //adding(m); 
     return m;
   }
-
+  Macro_Custom addLinkedValue(sValue v) {
+    Macro_Custom m = new Macro_Custom(gui, this, 0, 0);
+    m.addValueWatcher().setValue(v);
+    m.addValueController().setValue(v);
+    adding(m); 
+    return m;
+  }
+  sInt newLinkedInt(int v, String n, String s) { 
+    sInt i = new sInt(sheet_data, v, n, s);
+    addLinkedValue(i); return i; }
+  sFlt newLinkedFlt(float v, String n, String s) { 
+    sFlt i = new sFlt(sheet_data, v, n, s);
+    addLinkedValue(i); return i; }
+  sBoo newLinkedBoo(boolean v, String n, String s) { 
+    sBoo i = new sBoo(sheet_data, v, n, s);
+    addLinkedValue(i); return i; }
+  sStr newLinkedStr(String v, String n, String s) { 
+    sStr i = new sStr(sheet_data, v, n, s);
+    addLinkedValue(i); return i; }
+  sVec newLinkedVec(PVector v, String n, String s) { 
+    sVec i = new sVec(sheet_data, n, s).set(v);
+    addLinkedValue(i); return i; }
+  sRun newLinkedRun(String n, String s, Runnable v) { 
+    sRun i = new sRun(sheet_data, n, s, v);
+    addLinkedValue(i); return i; }
+  
   void adding(Macro_Abstract m) {
     float add_pos = m.grabber.getLocalY() + ref_size*2;
     boolean found = false;
     while (!found) {
       m.grabber.setPosition(0, add_pos);
-      add_pos += ref_size*0.375;
+      add_pos += ref_size*0.5;
       boolean col = false;
       for (Macro_Abstract c : child_macro)
         if (m != c && rectCollide(m.back.getRect(), c.back.getRect())) col = true;
@@ -879,6 +416,8 @@ class Macro_Sheet extends Macro_Abstract {
 
     for (int i = sheet_inputs.size() - 1; i >= 0; i--) sheet_inputs.get(i).clear(); 
     for (int i = sheet_outputs.size() - 1; i >= 0; i--) sheet_outputs.get(i).clear();
+    
+    sheet_data.clear();
   }
   
   void empty() {
@@ -905,44 +444,9 @@ class Macro_Sheet extends Macro_Abstract {
     grabber.setPosition(p.x, p.y);
   }
   
-  
-  //void sdata_templates_save(sValueBloc sb) {
-  //  mlog("templ save " + grabber.getText());
-  //  if (sheet_savebloc != null) sheet_savebloc.clear();
-  //  sheet_savebloc = new Save_Bloc(grabber.getText());
-  //  to_save(sheet_savebloc);
-  //  if (sheet_valuebloc != null) sheet_valuebloc.clear();
-  //  sheet_valuebloc = new sValueBloc(sb, grabber.getText());
-  //  sheet_valuebloc.load_copy_from(sheet_savebloc);
-  //}
-  
-  
-  //void sdata_templates_load(sValueBloc tsb) {
-  //  mlog("templ load " + grabber.getText());
-  //  empty();
-  //  if (sheet_savebloc != null) sheet_savebloc.clear();
-  //  sheet_savebloc = new Save_Bloc("load");
-  //  tsb.save_copy_to(sheet_savebloc);
-  //  from_save(sheet_savebloc);
-  //  childDragged();
-  //}
-  
-  //void sdata_templates_load_as(sValueBloc tsb) {
-  //  mlog("templ load as " + grabber.getText());
-  //  if (sheet_savebloc != null) sheet_savebloc.clear();
-  //  sheet_savebloc = new Save_Bloc("load");
-  //  tsb.save_copy_to(sheet_savebloc);
-  //  Macro_Sheet m = addSheet();
-  //  m.from_save(sheet_savebloc);
-  //  m.grabber.setPosition(0, m.grabber.getLocalY() - m.back.getLocalY() + ref_size*1);
-  //  adding(m);
-  //  childDragged();
-  //  m.reduc();
-  //}
-  
-  
-  
   void to_save(Save_Bloc sbloc) {
+    clean_links();
+    
     mlogln("to save");
     //name title pos extco index
     super.to_save(sbloc);
@@ -966,6 +470,14 @@ class Macro_Sheet extends Macro_Abstract {
     //isreduc
     sbloc.newData("reduc", isReduc);
     
+  }
+  
+  void clean_links() {
+    int cnt = 0;
+    for (Macro_Output o : outputs) { o.index = cnt; cnt++; }
+    cnt = 0;
+    for (Macro_Input i : inputs) { i.index = cnt; cnt++; }
+    for (Macro_Abstract m : child_macro) m.clean_links();
   }
   
   void from_save(Save_Bloc sbloc) {
@@ -998,6 +510,7 @@ class Macro_Sheet extends Macro_Abstract {
         else if (bloc.getData("name").equals("key"))    addKeyboard().from_save(bloc);
         else if (bloc.getData("name").equals("gate"))   addGate().from_save(bloc);
         else if (bloc.getData("name").equals("com"))    addComment().from_save(bloc);
+        else if (bloc.getData("name").equals("vec"))    addVec().from_save(bloc);
         else if (bloc.getData("name").equals("custom")) { 
           Macro_Custom m = addCustom(); 
           m.from_save(bloc); 
@@ -1017,6 +530,5 @@ class Macro_Sheet extends Macro_Abstract {
     //isreduc
     if (sbloc.getBoolean("reduc")) reduc(); else childDragged();
     
-    mmain().menugroup.closeAll();
   }
 }

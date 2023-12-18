@@ -71,7 +71,7 @@ class Macro_Main extends Macro_Sheet {
     if (macro_front == null) {
       macro_front = new nFrontPanel(screen_gui, inter.taskpanel, "MACRO");
       macro_front.addTab("Base")
-        .addShelf()
+        .getShelf(0)
           .addDrawer(10, 1.25)
             .addWidget(new nWidget(screen_gui, "Bang", int(ref_size/1.9), ref_size*0.25, ref_size*0.25, ref_size*2.5, ref_size)).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
               if (mmain().selecting_sheet != null) mmain().selecting_sheet.addBang(); }}).getDrawer()
@@ -109,6 +109,8 @@ class Macro_Main extends Macro_Sheet {
               if (mmain().selecting_sheet != null) mmain().selecting_sheet.addComment(); }}).getDrawer()
           .addWidget(new nWidget(screen_gui, "Bin", int(ref_size/1.5), ref_size*3, ref_size*0.25, ref_size*2.5, ref_size)).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
               if (mmain().selecting_sheet != null) mmain().selecting_sheet.addBin(); }}).getDrawer()
+          .addWidget(new nWidget(screen_gui, "Vec", int(ref_size/1.5), ref_size*5.75, ref_size*0.25, ref_size*2.5, ref_size)).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
+              if (mmain().selecting_sheet != null) mmain().selecting_sheet.addVec(); }}).getDrawer()
           .getShelf()
         .addDrawer(1.25)
           .addWidget(new nWidget(screen_gui, "Sheet", int(ref_size/1.9), ref_size*0.25, ref_size*0.25, ref_size*2.5, ref_size)).setTrigger().addEventTrigger_Builder(new Runnable() { public void run() {
@@ -134,8 +136,8 @@ class Macro_Main extends Macro_Sheet {
       build_sValue_Tab(screen_gui, data.types);
       build_Files_Tab(screen_gui);
       macro_front.setNonClosable();
-      //macro_front.setPosition(screen_gui.view.pos.x + screen_gui.view.size.x - macro_front.grabber.getLocalSX(), 
-      //                                screen_gui.view.pos.y + (screen_gui.view.size.y / 15) );
+      macro_front.setPosition(screen_gui.view.pos.x + screen_gui.view.size.x - macro_front.grabber.getLocalSX(), 
+                                      screen_gui.view.pos.y + (screen_gui.view.size.y / 15) );
         ;
     } else macro_front.popUp();
   }
@@ -144,7 +146,7 @@ class Macro_Main extends Macro_Sheet {
     savepath_value = new sStr(macro_sbloc, savepath, "savepath", "save");
     nFrontTab ftab = macro_front.addTab("Files");
 
-    ftab.addShelf()
+    ftab.getShelf()
       .addDrawer(10, 0.8)
         .addModel("Label-S4", "- Templates Saving File -").setFont(int(ref_size/1.4)).getShelf()
       .addSeparator(0.0625)
@@ -182,7 +184,7 @@ class Macro_Main extends Macro_Sheet {
     nFrontTab ttab = macro_front.addTab("Templates");
     ttab.addEventOpen(new Runnable() { public void run() {
       update_template_list(template_list);
-    }}).addShelf()
+    }}).getShelf()
       .addDrawer(0.75)
       .addModel("Label-S4", "- Templates -").setFont(int(ref_size/1.4)).getShelf()
       .addSeparator(0.0625)
@@ -272,6 +274,8 @@ class Macro_Main extends Macro_Sheet {
     update_template_list(template_list);
   }
   
+  void init_saving() {
+  }
   //void sdata_save() {
   //  Save_Bloc sbloc = new Save_Bloc("save");
   //  to_save(sbloc);
@@ -314,7 +318,7 @@ class Macro_Main extends Macro_Sheet {
         update_selector_list(selector_list, "flt"); }
     } } );
     nFrontTab tb = macro_front.addTab("sValue");
-    nDrawer val_drawer = tb.addShelf()
+    nDrawer val_drawer = tb.getShelf()
       .addSeparator(0.25).addDrawer(1);
     
     int count = 0;
@@ -445,12 +449,13 @@ class Macro_Main extends Macro_Sheet {
     szone.ON = false; 
   }
   Macro_Main(sInterface _int) {
-    super(_int.cam_gui, null, 0, -_int.cam.view.size.y/2);
+    super(_int.cam_gui, null, 0, -_int.cam.view.size.y/2, "MACRO");
     inter = _int;
     data = inter.data;
     cam = inter.cam;
     cam_gui = inter.cam_gui; screen_gui = inter.screen_gui;
     macro_sbloc = new sValueBloc(inter.data, "Macro");
+    sheet_data = new sValueBloc(macro_sbloc, "Main Sheet");
     templates_sbloc = new Save_Bloc("Templates");
     show_macro = new sBoo(macro_sbloc, false, "show_macro", "show");
     show_macro.addEventChange(new Runnable() { public void run() {
@@ -502,8 +507,6 @@ class Macro_Main extends Macro_Sheet {
       grabber.setPosition(cam_gui.view.pos.x+cam_gui.view.size.x/2, cam_gui.view.pos.y);
       grabber.setSize(ref_size*9.25 / cam.cam_scale.get(), ref_size*0.75 / cam.cam_scale.get());
     } } );  
-    
-    
     
   }
   void clear() { empty(); super.clear(); 
@@ -565,18 +568,33 @@ abstract class Macro_Abstract {
   String name = null;
   
   boolean isHided = false;
+  boolean sheet_view = false;
   
   void parentReduc() {
-    hide();
+    if (parent.parent != null && parent.parent.isReduc == false && sheet_view) {
+      show();
+      grabber.setPassif().setOutline(false).setSY(ref_size * 0.75).setTextVisibility(true);
+      closer.hide(); inputs_ref.hide(); outputs_ref.hide(); back.hide(); panel.show();
+      
+    } else hide();
+    //hide();
   }
   void parentEnlarg() {
     show();
+    grabber.setGrabbable().setOutline(true).setSY(ref_size * 0.75).setTextVisibility(true);
   }
+  void clean_links() {}
   
   boolean selectable = true;
   boolean selected = false;
+  PVector group_pos = new PVector();
   
   Macro_Abstract self;
+  //void init_databloc() {
+  //  //if (parent != null) macro_data = new sValueBloc(parent.macro_data, "Macro_"+name);
+  //}
+  
+  Macro_Abstract setPosition(float x, float y) { grabber.setPosition(x, y); return this; }
   
   Macro_Abstract(nGUI _gui, Macro_Sheet p, String n, float x, float y) {
     self = this;
@@ -606,12 +624,36 @@ abstract class Macro_Abstract {
           grabber.setPY(grabber.getLocalY() - gui.view.size.y/(300*gui.scale));
         }
         if (selected) for (Macro_Abstract m : mmain().selected_macro) if (m.grabber != grabber) {
-          float mx = gui.mouseVector.x - gui.pmouseVector.x;
-          float my = gui.mouseVector.y - gui.pmouseVector.y;
-          m.grabber.setPX(m.grabber.getLocalX() + mx);
-          m.grabber.setPY(m.grabber.getLocalY() + my);
+          //float mx = gui.mouseVector.x - gui.pmouseVector.x;
+          //float my = gui.mouseVector.y - gui.pmouseVector.y;
+          m.grabber.setPX(grabber.getLocalX() + m.group_pos.x);
+          m.grabber.setPY(grabber.getLocalY() + m.group_pos.y);
+          //m.grabber.setPY(m.grabber.getLocalY() - m.grabber.getLocalY()%(ref_size * 0.5));
+          //m.grabber.setPX(m.grabber.getLocalX() - m.grabber.getLocalX()%(ref_size * 0.5));
         }
+        if (abs(grabber.getLocalX()) < ref_size*8 && abs(grabber.getLocalY()) < ref_size*3) {
+          sheet_view = true;
+        } else { 
+          sheet_view = false; 
+        }
+        grabber.setPY(grabber.getLocalY() - grabber.getLocalY()%(ref_size * 0.5));
+        grabber.setPX(grabber.getLocalX() - grabber.getLocalX()%(ref_size * 0.5));
         if (parent != null) parent.childDragged(); 
+      } } )
+      .addEventFrame(new Runnable() { public void run() { 
+        
+      } } )
+      .addEventGrab(new Runnable() { public void run() { 
+        if (selected) for (Macro_Abstract m : mmain().selected_macro) if (m.grabber != grabber) {
+          m.group_pos.x = m.grabber.getLocalX() - grabber.getLocalX();
+          m.group_pos.y = m.grabber.getLocalY() - grabber.getLocalY();
+        }
+      } } )
+      .addEventLiberate(new Runnable() { public void run() { 
+        if (selected) for (Macro_Abstract m : mmain().selected_macro) if (m.grabber != grabber) {
+          m.grabber.setPY(m.grabber.getLocalY() - m.grabber.getLocalY()%(ref_size * 0.5));
+          m.grabber.setPX(m.grabber.getLocalX() - m.grabber.getLocalX()%(ref_size * 0.5));
+        }
       } } )
       .setGrabbable()
       .setOutlineColor(color(100))
@@ -1088,6 +1130,8 @@ Macro_Packet newPacketFloat(String f) { return new Macro_Packet("float").addMsg(
 
 Macro_Packet newPacketInt(int f) { return new Macro_Packet("int").addMsg(str(f)); }
 
+Macro_Packet newPacketVec(PVector p) { return new Macro_Packet("vec").addMsg(str(p.x)).addMsg(str(p.y)); }
+
 Macro_Packet newPacketBool(boolean b) { 
   String r; 
   if (b) r = "T"; else r = "F"; 
@@ -1105,7 +1149,10 @@ class Macro_Packet {
   boolean isFloat() { return def.equals("float"); }
   boolean isInt()   { return def.equals("int"); }
   boolean isBool()  { return def.equals("bool"); }
+  boolean isVec()   { return def.equals("vec"); }
   
+  PVector asVec()   { 
+    if (isVec()) return new PVector(float(messages.get(0)), float(messages.get(1))); else return null; }
   float   asFloat()   { if (isFloat()) return float(messages.get(0)); else return 0; }
   int     asInt()   { if (isInt()) return int(messages.get(0)); else return 0; }
   boolean asBool()   {
@@ -1307,6 +1354,7 @@ class Macro_Output {
   Macro_Output setDefFloat() { last_def = "float"; return this; }
   Macro_Output setDefNumber() { last_def = "num"; return this; }
   Macro_Output setDefVal() { last_def = "val"; return this; }
+  Macro_Output setDefVec() { last_def = "vec"; return this; }
   
 }
 
@@ -1431,6 +1479,9 @@ class Macro_Input {
     return this; }
   Macro_Input setFilterValue() { //bool int and float
     filter = "val";
+    return this; }
+  Macro_Input setFilterVec() { //bool int and float
+    filter = "vec";
     return this; }
 }
 

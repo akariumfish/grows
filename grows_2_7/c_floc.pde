@@ -1,9 +1,18 @@
 
+
+
+class FlocPrint extends Blueprint {
+  FlocPrint(Simulation s) { super(s, "Floc"); }
+  FlocComu build(String n) { return new FlocComu(sim, n); }
+}
+
+
+
 class FlocComu extends Community {
   
   void comPanelBuild(nFrontPanel sim_front) {
     nFrontTab tab = com_front.addTab(name);
-    tab.addShelf()
+    tab.getShelf()
       .addDrawerDoubleButton(DRAWMODE_DEF, DRAWMODE_DEBUG, 10, 1)
       .addSeparator(0.125)
       .addDrawerDoubleButton(point_to_mouse, point_to_center, 10, 1)
@@ -35,22 +44,24 @@ class FlocComu extends Community {
   
   int startbox = 400;
   
-  FlocComu(Simulation _c) { super(_c, " Floc ", 100); 
-    POURSUITE = new sFlt(sbloc, 0.3, "floc POURSUITE", "poursuite");
-    FOLLOW = new sFlt(sbloc, 0.0036, "floc FOLLOW", "follox");
-    SPACING = new sFlt(sbloc, 95, "floc SPACING", "space");
-    SPEED = new sFlt(sbloc, 2, "floc SPEED", "speed");
-    LIMIT = new sInt(sbloc, 1600, "floc limit", "limit");
-    AGE = new sInt(sbloc, 2000, "floc age", "age");
-    HALO_SIZE = new sFlt(sbloc, 80, "floc HALO_SIZE", "Size");
-    HALO_DENS = new sFlt(sbloc, 0.15, "floc HALO_DENS", "Dens");
+  GrowerComu gcom;
+  
+  FlocComu(Simulation _c, String n) { super(_c, n+" Floc ", "floc", 100); 
+    POURSUITE = new sFlt(sbloc, 0.3, name+"floc POURSUITE", "poursuite");
+    FOLLOW = new sFlt(sbloc, 0.0036, name+"floc FOLLOW", "follox");
+    SPACING = new sFlt(sbloc, 95, name+"floc SPACING", "space");
+    SPEED = new sFlt(sbloc, 2, name+"floc SPEED", "speed");
+    LIMIT = new sInt(sbloc, 1600, name+"floc limit", "limit");
+    AGE = new sInt(sbloc, 2000, name+"floc age", "age");
+    HALO_SIZE = new sFlt(sbloc, 80, name+"floc HALO_SIZE", "Size");
+    HALO_DENS = new sFlt(sbloc, 0.15, name+"floc HALO_DENS", "Dens");
     
-    DRAWMODE_DEF = new sBoo(sbloc, true, "floc DRAWMODE_DEF", "draw1");
-    DRAWMODE_DEBUG = new sBoo(sbloc, false, "floc DRAWMODE_DEBUG", "draw2");
+    DRAWMODE_DEF = new sBoo(sbloc, true, name+"floc DRAWMODE_DEF", "draw1");
+    DRAWMODE_DEBUG = new sBoo(sbloc, false, name+"floc DRAWMODE_DEBUG", "draw2");
     
-    create_grower = new sBoo(sbloc, true, "floc create_grower", "create grow");
-    point_to_mouse = new sBoo(sbloc, false, "floc point_to_mouse", "to center");
-    point_to_center = new sBoo(sbloc, true, "floc point_to_center", "to mouse");
+    create_grower = new sBoo(sbloc, true, name+"floc create_grower", "create grow");
+    point_to_mouse = new sBoo(sbloc, false, name+"floc point_to_mouse", "to center");
+    point_to_center = new sBoo(sbloc, true, name+"floc point_to_center", "to mouse");
     //init_canvas();
     
   }
@@ -146,8 +157,8 @@ class Floc extends Entity {
   Floc tick() {
     age++;
     if (age > max_age) {
-      if (com().create_grower.get()) {
-        Grower ng = gcom.newEntity();
+      if (com().create_grower.get() && com().gcom != null) {
+        Grower ng = com().gcom.newEntity();
         if (ng != null) ng.define(new PVector(pos.x, pos.y), new PVector(1, 0).rotate(mov.heading()));
       }
       destroy();

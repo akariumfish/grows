@@ -38,54 +38,414 @@
 
 
 class sInterface {
+  
+
+  void filesManagement() {
+    files_panel = new nFrontPanel(screen_gui, taskpanel, "Files");
+    files_panel.setSpace(0.25);
+    nFrontTab files_tab = files_panel.addTab("Files");
+    files_tab.getShelf()
+      //.addSeparator(0.0625)
+      .addDrawer(0.6)
+        .addModel("Label-S4", "Select File :                                   ").setPY(-0.2*size).getShelf()
+      //.addSeparator(0.0625)
+      .addDrawer(0.75)
+        .addLinkedModel("Field-SS4", savepath).setLinkedValue(savepath_value).getShelf()
+      //.addSeparator(0.25)
+      .addDrawer(1)
+        .addModel("Label-S4", "File datas :                                   ").getDrawer()
+        .addCtrlModel("Button_Outline-S2", "Save")
+          .setRunnable(new Runnable() { public void run() { file_explorer_save(); } } )
+          .setPX(size*4)
+          .getDrawer()
+        .addCtrlModel("Button_Outline-S2", "Load")
+          .setRunnable(new Runnable() { public void run() { file_explorer_load(); } } )
+          .setPX(size*7)
+          .getShelf()
+      //.addSeparator(0.0625)
+          ;
+      
+    
+    files_tab.addShelf()
+      .addSeparator(0.725)
+      .addDrawer(1)
+        .addModel("Label-S4", "                                    ").getDrawer()
+        .addCtrlModel("Button_Small_Text-S2", "close file")
+          .setRunnable(new Runnable() { public void run() { 
+            
+            if (explored_bloc != null) explored_bloc.clear();
+            explored_bloc = new sValueBloc(interface_bloc, "File");
+            file_explorer.setBloc(explored_bloc);
+            file_explorer.update(); update_list(); 
+          } } )
+          .setPX(size*4)
+          .getDrawer()
+        .addCtrlModel("Button_Small_Text_Outline-S2", "go to data/")
+          .setRunnable(new Runnable() { public void run() { 
+            data_explorer.setBloc(data); data_explorer.update(); update_list(); } } )
+          .setPX(size*7)
+          .getShelf()
+      //.addSeparator(0.25)
+      .addDrawer(10, 1)
+        .addModel("Label-S4", "                                    ").getDrawer()
+        .addCtrlModel("Button_Small_Text_Outline-S2", "delete file bloc")
+          .setRunnable(new Runnable() { public void run() { 
+            if (file_explorer.selected_bloc != null) { file_explorer.selected_bloc.clear(); }
+            file_explorer.update();
+            update_list(); 
+          } } )
+          .setPX(size*4)
+          .getDrawer()
+        .addCtrlModel("Button_Small_Text_Outline-S2", "dump data")
+          //.setRunnable(new Runnable() { public void run() { full_data_save(); } } )
+          .setPX(size*7)
+          .getShelf()
+      //.addSeparator(0.0625)
+      ;
+      
+    
+    files_tab.getShelf(0)
+      .addSeparator(0.0625)
+      .addDrawer(2)
+        .addCtrlModel("Button_Small_Text_Outline-S3", "COPY BLOC\nINTO DATA")
+          .setRunnable(new Runnable() { public void run() { copy_file_to_data(); } } )
+          .setPX(size*0)
+          .setSY(size*2)
+          //.setFont(int(size/2.1))
+          .getDrawer()
+        .addCtrlModel("Button_Small_Text_Outline-S3", "TRANSFER\nFILE VALUES\nTO DATA")
+          .setRunnable(new Runnable() { public void run() { transfer_file_to_data(); } } )
+          .setPX(size*4)
+          .setSY(size*2)
+          //.setFont(int(size/2.1))
+          ;
+          
+    match_flag = files_tab.getShelf(0)
+      .getLastDrawer()
+        .addModel("Label_DownLight_Back_Downlight_Outline-S3", "MATCHING\nBLOCS PRINT")
+          .setPX(size*8)
+          .setSY(size*2)
+          .setFont(int(size/2.1));
+    
+    files_tab.getShelf(0)
+      .getLastDrawer()
+        .addCtrlModel("Button_Small_Text_Outline-S3", "TRANSFER\nDATA VALUES\nTO FILE")
+          .setRunnable(new Runnable() { public void run() { transfer_data_to_file(); } } )
+          .setPX(size*12)
+          .setSY(size*2)
+          //.setFont(int(size/2.1))
+          .getDrawer()
+        .addCtrlModel("Button_Small_Text_Outline-S3", "COPY BLOC\nINTO FILE")
+          .setRunnable(new Runnable() { public void run() { copy_data_to_file(); } } )
+          .setPX(size*16)
+          .setSY(size*2)
+          //.setFont(int(size/2.1))
+          .getShelf()
+      //.addSeparator(0.0625)
+      ;
+      
+    file_explorer = files_tab.getShelf(0)
+      .addExplorer("")
+        .addEventChange(new Runnable() { public void run() { 
+          //block if go to data, stays in file bloc
+          
+          update_list(); 
+        } } )
+        ;
+      
+      
+      
+    data_explorer = files_tab.getShelf(1)
+      .addSeparator(2.375)
+      .addExplorer("")
+        .setBloc(data)
+        .addEventChange(new Runnable() { public void run() { update_list(); } } )
+        ;
+    
+    files_tab.getShelf(1)
+     // .addSeparator(0.0625);
+      ;
+    
+    files_tab.getShelf(0)
+    
+    
+    
+    
+    
+      //.addSeparator(0.0625)
+      ;
+    //update_explorer_list();
+    
+    //test if bloc hierarchy match > transfer values < and >
+    //copy whole bloc both way
+
+  }
+  
+  
+  void copy_file_to_data() {
+    if (data_explorer.selected_bloc != null && file_explorer.selected_bloc != null) {
+      file_savebloc.clear();
+      file_explorer.selected_bloc.preset_to_save_bloc(file_savebloc);
+      data_explorer.explored_bloc.newBloc(file_savebloc, "copy");
+      data_explorer.update();
+      update_list();
+    } 
+  }
+  void copy_data_to_file() {
+    if (data_explorer.selected_bloc != null && explored_bloc != null) {
+      file_savebloc.clear();
+      data_explorer.selected_bloc.preset_to_save_bloc(file_savebloc);
+      explored_bloc.newBloc(file_savebloc, "copy");
+      file_explorer.update();
+      update_list();
+    } 
+  }
+  
+  void transfer_file_to_data() {
+    if (data_explorer.selected_bloc != null && file_explorer.selected_bloc != null &&
+        file_explorer.selected_bloc.getHierarchy(true)
+          .equals(data_explorer.selected_bloc.getHierarchy(true))) {
+      file_savebloc.clear();
+      file_explorer.selected_bloc.preset_to_save_bloc(file_savebloc);
+      data_explorer.selected_bloc.load_from_bloc(file_savebloc);
+      data_explorer.update();
+      update_list();
+    } 
+  }
+  void transfer_data_to_file() {
+    if (data_explorer.selected_bloc != null && file_explorer.selected_bloc != null &&
+        file_explorer.selected_bloc.getHierarchy(true)
+          .equals(data_explorer.selected_bloc.getHierarchy(true))) {
+      file_savebloc.clear();
+      data_explorer.selected_bloc.preset_to_save_bloc(file_savebloc);
+      file_explorer.selected_bloc.load_from_bloc(file_savebloc);
+      file_explorer.update();
+      update_list();
+    } 
+  }
+
+  void update_list() {
+    data_explorer.update_list();
+    file_explorer.update_list();
+    if (data_explorer.selected_bloc != null && file_explorer.selected_bloc != null) {
+      //logln("file "+file_explorer.selected_bloc.getHierarchy(true));
+      //logln("data "+data_explorer.selected_bloc.getHierarchy(true));
+      if (file_explorer.selected_bloc.getHierarchy(true)
+            .equals(data_explorer.selected_bloc.getHierarchy(true))) {
+        //logln("match");
+        match_flag.setLook(screen_gui.theme, "Label_HightLight_Back_Highlight_Outline-S3");
+        
+      } else match_flag.setLook(screen_gui.theme, "Label_DownLight_Back_Downlight_Outline-S3");
+      logln("");
+    } else match_flag.setLook(screen_gui.theme, "Label_DownLight_Back_Downlight_Outline-S3");
+  }
+  
+  //void full_data_save() {
+  //  file_savebloc.clear(); 
+  //  data.to_save_bloc(file_savebloc); 
+  //  file_savebloc.save_to(savepath); }
+  
+  void file_explorer_save() {
+    if (explored_bloc != null) {
+      file_savebloc.clear();
+      explored_bloc.preset_to_save_bloc(file_savebloc);
+      file_savebloc.save_to(savepath);
+    }
+  }
+  void file_explorer_load() {
+    file_savebloc.clear();
+    file_savebloc.load_from(savepath);
+    if (explored_bloc != null) explored_bloc.clear();
+    explored_bloc = interface_bloc.newBloc(file_savebloc, "file");
+    file_explorer.setBloc(explored_bloc);
+    update_list();
+  }
+  
+  void file_build() {
+    savepath_value = new sStr(interface_bloc, savepath, "savepath", "spath");
+    file_savebloc = new Save_Bloc(savepath);
+    //explored_bloc = interface_bloc.newBloc("file");
+    
+  }
+  
+  nWidget match_flag;
+  nFrontPanel files_panel;
+  String savepath = "save.sdata";
+  sStr savepath_value;
+  Save_Bloc file_savebloc;
+  
+  sValueBloc explored_bloc
+  //, selected_bloc
+    ;
+  nExplorer file_explorer, data_explorer;
+  
+  
+
+
   nToolPanel toolpanel;
   nDropMenu main_menu;
   nTaskPanel taskpanel;
-  nWindowPanel files_panel;
   float size = 40;
+  void build_default_ui(float ref_size) {
+    
+    taskpanel = new nTaskPanel(screen_gui, ref_size, 0.125);
 
-  String savepath = "save.sdata";
-  sStr savepath_value;
-  Save_Bloc main_savebloc;
-  void filesManagement() {
-    files_panel = new nWindowPanel(screen_gui, taskpanel, "Files");
-    files_panel.addShelf()
-      .addSeparator(0.0625)
-      .addDrawer(1)
-      .addModel("Label-S4", "Select File :                                   ").getDrawer()
-      .addCtrlModel("Button_Outline-S2", "SAVE")
-      .setRunnable(new Runnable() { 
+    main_menu = new nDropMenu(screen_gui, ref_size*0.9, 12.5, false, true);
+    main_menu.addEntry("Files", new Runnable() { public void run() { filesManagement(); } } );
+    
+    //main_menu.addEntry("GUI", new Runnable() { public void run() { 
+    //  new nColorPanel(screen_gui, taskpanel).setPosition(size*5, size*5); } } );
+    //main_menu.addEntry("Datas", new Runnable() { public void run() { dataBlocPreview(); } } );
+    
+    toolpanel = new nToolPanel(screen_gui, ref_size, 0.125, false, false);
+    toolpanel.addShelf()
+      .addDrawer(10, 0.625)
+      .addCtrlModel("Menu_Button_Small_Outline-SS4", "MENU", -0.125, -0.125).setTrigger()
+      .addEventTrigger_Builder(new Runnable() { 
       public void run() { 
-        file_save();
+        main_menu.drop(((nWidget)builder), toolpanel.panel.getX(), toolpanel.panel.getY());
+      }
+    }
+    )
+    .setFont(int(ref_size/1.9)).getDrawer();
+    
+    file_build(); //shortcut
+  }
+  
+  
+  
+
+  sInput input;
+  DataHolder data; 
+  sValueBloc interface_bloc;
+
+  nTheme gui_theme;
+  nGUI screen_gui, cam_gui;
+  nExcludeGroup exclude_group;
+
+  Camera cam;
+  sFramerate framerate;
+
+  Macro_Main macro_main;
+
+  sInterface() {
+    input = new sInput();
+    data = new DataHolder();
+    interface_bloc = new sValueBloc(data, "Interface");
+    cam = new Camera(input, interface_bloc)
+      .addEventZoom(new Runnable() { public void run() { cam_gui.updateView(); } } )
+      .addEventMove(new Runnable() { public void run() { cam_gui.updateView(); } } );
+    framerate = new sFramerate(interface_bloc, 60);
+    gui_theme = new nTheme();
+    exclude_group = new nExcludeGroup();
+    screen_gui = new nGUI(input, gui_theme)
+      .addEventFound(new Runnable() { 
+      public void run() { 
+        cam.GRAB = false; 
+        cam_gui.override = true;
       }
     } 
-    ).setPX(size*4).getDrawer()
-      .addCtrlModel("Button_Outline-S2", "LOAD")
-      .setRunnable(new Runnable() { 
+    )
+    .addEventNotFound(new Runnable() { 
       public void run() { 
-        file_load();
+        cam.GRAB = true; 
+        cam_gui.override = false;
       }
     } 
-    ).setPX(size*7).getShelf()
-      .addSeparator(0.0625)
-      .addDrawer(0.75)
-      .addLinkedModel("Field-SS4", savepath).setLinkedValue(savepath_value).getShelf()
-      .addSeparator(0.0625)
-      ;
+    );
+    cam_gui = new nGUI(input, gui_theme)
+      .setMouse(cam.mouse).setpMouse(cam.pmouse)
+      .setView(cam.view)
+      .addEventFound(new Runnable() { 
+      public void run() { 
+        cam.GRAB = false;
+      }
+    } 
+    )
+    .addEventNotFound(new Runnable() { 
+      public void run() { 
+        if (!screen_gui.hoverable_pile.found) { 
+          cam.GRAB = true; 
+          runEvents(eventsHoverNotFound);
+        }
+      }
+    } 
+    );
+
+    build_default_ui(size);
+    
+    macro_main = new Macro_Main(this);
+    
+    mySetup_UI_Comp(cam_gui, size);
   }
 
-  void file_save() {
-    //logln("file sav");
-    main_savebloc.clear();
-    data.save_to_bloc(main_savebloc);
-    main_savebloc.save_to(savepath);
+  sInterface addToCamDrawerPile(Drawable d) { 
+    d.setPile(cam_gui.drawing_pile); 
+    return this;
   }
-  void file_load() {
-    main_savebloc.clear();
-    main_savebloc.load_from(savepath);
-    data.load_from_bloc(main_savebloc);
+  sInterface addToScreenDrawerPile(Drawable d) { 
+    d.setPile(screen_gui.drawing_pile); 
+    return this;
+  }
+  
+  
+  
+  
+  
+
+  ArrayList<Runnable> eventsFrame = new ArrayList<Runnable>();
+  ArrayList<Runnable> eventsHoverNotFound = new ArrayList<Runnable>();
+  ArrayList<Runnable> eventsSetup = new ArrayList<Runnable>();
+  boolean is_starting = true;
+  sInterface addEventHoverNotFound(Runnable r) { 
+    eventsHoverNotFound.add(r); 
+    return this;
+  }
+  sInterface addEventFrame(Runnable r) { 
+    eventsFrame.add(r); 
+    return this;
+  }
+  sInterface addEventSetup(Runnable r) { 
+    eventsSetup.add(r); 
+    return this;
   }
 
+  void frame() {
+    input.frame_str(); // track mouse
+    framerate.frame(); // calc last frame
+    background(0);
+
+    if (is_starting) { 
+      is_starting = false; 
+      runEvents(eventsSetup);
+    }
+    runEvents(eventsFrame); // << sim runs here
+
+    screen_gui.frame();
+    cam.pushCam(); // matrice d'affichage
+    cam_gui.frame();
+    cam_gui.draw();
+    cam.popCam();
+    screen_gui.draw();
+
+    //info:
+    fill(255); 
+    textSize(18); 
+    textAlign(LEFT);
+    text(framerate.get() + " C " + trimStringFloat(cam.mouse.x) + 
+      "," + trimStringFloat(cam.mouse.y), 10, 24 );
+    text("S " + trimStringFloat(input.mouse.x) + 
+      "," + trimStringFloat(input.mouse.y), 250, 24 );
+
+    data.frame(); // reset flags
+    input.frame_end(); // reset flags
+  }
+  
+  
+  
+  
+  
+  
   sValueBloc recurs_sbloc, prev_sbloc;
   void dataBlocPreview() {
     nDropMenu data_menu = new nDropMenu(screen_gui, size*0.8, 12.5, false, false);
@@ -142,164 +502,7 @@ class sInterface {
     }
     sbloc_menu.drop(screen_gui);
   }
-
-  void build_default_ui(float ref_size) {
-
-    savepath_value = new sStr(sbloc, savepath, "savepath", "save");
-    main_savebloc = new Save_Bloc(savepath);
-
-    taskpanel = new nTaskPanel(screen_gui, ref_size, 0.125);
-
-    main_menu = new nDropMenu(screen_gui, ref_size*0.8, 12.5, false, true);
-    main_menu.addEntry("Files", new Runnable() { 
-      public void run() { 
-        filesManagement();
-      }
-    } 
-    );
-    main_menu.addEntry("GUI", new Runnable() { 
-      public void run() { 
-        new nColorPanel(screen_gui, taskpanel).setPosition(size*5, size*5);
-      }
-    } 
-    );
-    main_menu.addEntry("Datas", new Runnable() { 
-      public void run() { 
-        dataBlocPreview();
-      }
-    } 
-    );
-    toolpanel = new nToolPanel(screen_gui, ref_size, 0.125, false, false);
-    toolpanel.addShelf()
-      .addDrawer(10, 0.625)
-      .addCtrlModel("Menu_Button_Small_Outline-SS4", "MENU", -0.125, -0.125).setTrigger()
-      .addEventTrigger_Builder(new Runnable() { 
-      public void run() { 
-        main_menu.drop(((nWidget)builder), toolpanel.panel.getX(), toolpanel.panel.getY());
-      }
-    }
-    )
-    .setFont(int(ref_size/1.9)).getDrawer();
-  }
-
-  sInput input;
-  DataHolder data; 
-  sValueBloc sbloc;
-
-  nTheme gui_theme;
-  nGUI screen_gui, cam_gui;
-  nExcludeGroup exclude_group;
-
-  Camera cam;
-  sFramerate framerate;
-
-  Macro_Main macro_main;
-
-  sInterface() {
-    input = new sInput();
-    data = new DataHolder();
-    sbloc = new sValueBloc(data, "interface");
-    cam = new Camera(input, sbloc)
-      .addEventZoom(new Runnable() { public void run() { cam_gui.updateView(); } } )
-      .addEventMove(new Runnable() { public void run() { cam_gui.updateView(); } } );
-    framerate = new sFramerate(sbloc, 60);
-    gui_theme = new nTheme();
-    exclude_group = new nExcludeGroup();
-    screen_gui = new nGUI(input, gui_theme)
-      .addEventFound(new Runnable() { 
-      public void run() { 
-        cam.GRAB = false; 
-        cam_gui.override = true;
-      }
-    } 
-    )
-    .addEventNotFound(new Runnable() { 
-      public void run() { 
-        cam.GRAB = true; 
-        cam_gui.override = false;
-      }
-    } 
-    );
-    cam_gui = new nGUI(input, gui_theme)
-      .setMouse(cam.mouse).setpMouse(cam.pmouse)
-      .setView(cam.view)
-      .addEventFound(new Runnable() { 
-      public void run() { 
-        cam.GRAB = false;
-      }
-    } 
-    )
-    .addEventNotFound(new Runnable() { 
-      public void run() { 
-        if (!screen_gui.hoverable_pile.found) { 
-          cam.GRAB = true; 
-          runEvents(eventsHoverNotFound);
-        }
-      }
-    } 
-    );
-
-    build_default_ui(size);
-    
-    macro_main = new Macro_Main(this);
-  }
-
-  sInterface addToCamDrawerPile(Drawable d) { 
-    d.setPile(cam_gui.drawing_pile); 
-    return this;
-  }
-  sInterface addToScreenDrawerPile(Drawable d) { 
-    d.setPile(screen_gui.drawing_pile); 
-    return this;
-  }
-
-  ArrayList<Runnable> eventsFrame = new ArrayList<Runnable>();
-  ArrayList<Runnable> eventsHoverNotFound = new ArrayList<Runnable>();
-  ArrayList<Runnable> eventsSetup = new ArrayList<Runnable>();
-  boolean is_starting = true;
-  sInterface addEventHoverNotFound(Runnable r) { 
-    eventsHoverNotFound.add(r); 
-    return this;
-  }
-  sInterface addEventFrame(Runnable r) { 
-    eventsFrame.add(r); 
-    return this;
-  }
-  sInterface addEventSetup(Runnable r) { 
-    eventsSetup.add(r); 
-    return this;
-  }
-
-  void frame() {
-    input.frame_str(); // track mouse
-    framerate.frame(); // calc last frame
-    background(0);
-
-    if (is_starting) { 
-      is_starting = false; 
-      runEvents(eventsSetup);
-    }
-    runEvents(eventsFrame); // << sim runs here
-
-    screen_gui.frame();
-    cam.pushCam(); // matrice d'affichage
-    cam_gui.frame();
-    cam_gui.draw();
-    cam.popCam();
-    screen_gui.draw();
-
-    //info:
-    fill(255); 
-    textSize(18); 
-    textAlign(LEFT);
-    text(framerate.get() + " C " + trimStringFloat(cam.mouse.x) + 
-      "," + trimStringFloat(cam.mouse.y), 10, 24 );
-    text("S " + trimStringFloat(input.mouse.x) + 
-      "," + trimStringFloat(input.mouse.y), 250, 24 );
-
-    data.frame(); // reset flags
-    input.frame_end(); // reset flags
-  }
+  
 }
 
 

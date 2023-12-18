@@ -1,10 +1,19 @@
 
 
+
+class BoxPrint extends Blueprint {
+  BoxPrint(Simulation s) { super(s, "Box"); }
+  BoxComu build(String n) { return new BoxComu(sim, n); }
+}
+
+
+
+
 class BoxComu extends Community {
   
   void comPanelBuild(nFrontPanel sim_front) {
     nFrontTab tab = com_front.addTab(name);
-    tab.addShelf()
+    tab.getShelf()
       .addDrawerFactValue(spacing_min, 2, 10, 1)
       .addSeparator(0.125)
       .addDrawerFactValue(spacing_max, 2, 10, 1)
@@ -34,17 +43,17 @@ class BoxComu extends Community {
   //sBoo draw_circle = new sBoo(simval, false);
   
   int cnt = 0;
-  
-  BoxComu(Simulation _c) { super(_c, "Box ", 0);
-    spacing_min = new sFlt(sbloc, 50, "box_spacing_min", "");
-    spacing_max = new sFlt(sbloc, 200, "box_spacing_max", "");
-    spacing_diff = new sFlt(sbloc, 1, "box_spacing_diff", "");
-    spacing_max_dist = new sFlt(sbloc, 10000, "box_spacing_max_dist", "");
-    box_size_min = new sFlt(sbloc, 100, "box_size_min", "");
-    box_size_max = new sFlt(sbloc, 400, "box_size_max", "");
-    duplicate_prob = new sFlt(sbloc, 5.0, "box_duplicate_prob", "");
-    corner_space = new sFlt(sbloc, 40, "box_corner_space", "");
-    max_age = new sInt(sbloc, 2000, "box max_age", "");
+  FlocComu fcom;
+  BoxComu(Simulation _c, String n) { super(_c, n+" Box ", "box", 0);
+    spacing_min = new sFlt(sbloc, 50, name+"box_spacing_min", "");
+    spacing_max = new sFlt(sbloc, 200, name+"box_spacing_max", "");
+    spacing_diff = new sFlt(sbloc, 1, name+"box_spacing_diff", "");
+    spacing_max_dist = new sFlt(sbloc, 10000, name+"box_spacing_max_dist", "");
+    box_size_min = new sFlt(sbloc, 100, name+"box_size_min", "");
+    box_size_max = new sFlt(sbloc, 400, name+"box_size_max", "");
+    duplicate_prob = new sFlt(sbloc, 5.0, name+"box_duplicate_prob", "");
+    corner_space = new sFlt(sbloc, 40, name+"box_corner_space", "");
+    max_age = new sInt(sbloc, 2000, name+"box max_age", "");
     
     
   }
@@ -195,7 +204,7 @@ class Box extends Entity {
     age++;
     if (age > com().max_age.get()) this.destroy();
     
-    for (Entity e : fcom.list) if (e.active) {
+    if (com().fcom != null) for (Entity e : com().fcom.list) if (e.active) {
       Floc f = (Floc)e;
       if (rectCollide(f.pos, rect)) {
         this.destroy();
