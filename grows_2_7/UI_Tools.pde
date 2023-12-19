@@ -111,125 +111,6 @@ class nColorPanel extends nWindowPanel {
 
 
 
-class nExplorer extends nDrawer {
-  
-  ArrayList<String> explorer_entry;
-  ArrayList<sValueBloc> explorer_blocs;
-  ArrayList<sValue> explorer_values;
-  sValueBloc explored_bloc, selected_bloc;
-  sValue selected_value;
-  int selected_bloc_index = 0, selected_value_index = 0;
-  nList explorer_list;
-  
-  nExplorer setBloc(sValueBloc sb) { explored_bloc = sb; update(); return this; }
-  
-  nShelf shelf;
-  nWidget bloc_info, val_info;
-  
-  nDrawer setLayer(int l) { super.setLayer(l); shelf.setLayer(l); return this; }
-  nDrawer toLayerTop() { super.toLayerTop(); shelf.toLayerTop(); return this; }
-  
-  ArrayList<Runnable> eventChangeRun = new ArrayList<Runnable>();
-  nExplorer addEventChange(Runnable r)       { eventChangeRun.add(r); return this; }
-  
-  nExplorer addEventChange_Builder(Runnable r) { eventChangeRun.add(r); r.builder = this; return this; }
-  
-  nExplorer(nShelf s) {
-    super(s, s.ref_size*10, s.ref_size*11.75);
-    explorer_entry = new ArrayList<String>();
-    explorer_blocs = new ArrayList<sValueBloc>();
-    explorer_values = new ArrayList<sValue>();
-    shelf = new nShelf(s.shelfPanel, s.space_factor);
-    shelf.addSeparator(0.25);
-    shelf.ref.setParent(ref);
-    explorer_list = shelf.addList(5, 10, 1).setTextAlign(LEFT)
-      .addEventChange_Builder(new Runnable() { 
-      public void run() {
-        int ind = ((nList)builder).last_choice_index;
-        if (ind == 0 && explored_bloc != null) {
-          explored_bloc = explored_bloc.parent;
-          selected_bloc = null;
-          selected_value = null;
-          update_list();
-          runEvents(eventChangeRun);
-          
-        } else if (ind != 0 && ind < explorer_blocs.size()+1) {
-          if (selected_bloc == explorer_blocs.get(ind-1)) {
-            explored_bloc = selected_bloc;
-            selected_bloc = null;
-            selected_value = null;
-            update_list();
-            runEvents(eventChangeRun);
-          } else {
-            selected_bloc = explorer_blocs.get(ind-1);
-            selected_value = null;
-            update_info();
-            runEvents(eventChangeRun);
-          }
-        } else if (ind != 0 && ind - explorer_blocs.size() < explorer_values.size()+1) {
-          selected_bloc = null;
-          selected_value = explorer_values.get(ind-1 - explorer_blocs.size());
-          
-          update_info();
-          runEvents(eventChangeRun);
-        } 
-      } } )
-      ;
-    
-    bloc_info = shelf.addSeparator(0.25)
-      .addDrawer(2)
-        .addModel("Label-S4", "Selected Bloc :").setTextAlignment(LEFT, TOP);
-    
-    val_info = shelf.addSeparator(0.5)
-      .addDrawer(3)
-        .addModel("Label-S4", "Selected Value :").setTextAlignment(LEFT, TOP);
-    
-    update_list();
-    
-  }
-  
-  void update_info() {
-    if (selected_bloc != null) 
-      bloc_info.setText("Selected Bloc : "+selected_bloc.base_ref
-                       +"\n    ref: " + selected_bloc.ref
-                       +"\n    type: " + selected_bloc.type
-                       +"    use: " + selected_bloc.use);
-    if (selected_value != null) 
-      val_info.setText("Selected Value :\n   "+selected_value.ref
-                      +"\n    type: " + selected_value.type
-                      +"\n    value: " + selected_value.getString());
-  }
-  
-  void update() {
-    selected_bloc = null;
-    selected_value = null;
-    update_list();
-  }
-  void update_list() {
-    explorer_entry.clear();
-    explorer_blocs.clear();
-    explorer_values.clear();
-    if (explored_bloc != null) {
-      //println(); println(explored_bloc.getHierarchy(false));
-      explorer_entry.add("..");
-      for (Map.Entry me : explored_bloc.blocs.entrySet()) {
-        sValueBloc cvb = (sValueBloc)me.getValue();
-        explorer_blocs.add(cvb); 
-        explorer_entry.add(cvb.base_ref + " " + cvb.use);
-        //explorer_entry.add((String)me.getKey());
-      }
-      for (Map.Entry me : explored_bloc.values.entrySet()) {
-        explorer_values.add((sValue)me.getValue()); 
-        explorer_entry.add("   - "+(String)me.getKey());
-      }
-      explorer_entry.add("end");
-    }
-    explorer_list.setEntrys(explorer_entry);
-    update_info();
-  }
-  
-}
-
 
 
 
@@ -414,6 +295,133 @@ class nInfo {
 
 
 
+class nExplorer extends nDrawer {
+  
+  ArrayList<String> explorer_entry;
+  ArrayList<sValueBloc> explorer_blocs;
+  ArrayList<sValue> explorer_values;
+  sValueBloc explored_bloc, selected_bloc;
+  sValue selected_value;
+  int selected_bloc_index = 0, selected_value_index = 0;
+  nList explorer_list;
+  
+  nExplorer setBloc(sValueBloc sb) { if (sb != explored_bloc) { explored_bloc = sb; update(); } return this; }
+  
+  nShelf shelf;
+  nWidget bloc_info, val_info;
+  
+  nDrawer setLayer(int l) { super.setLayer(l); shelf.setLayer(l); return this; }
+  nDrawer toLayerTop() { super.toLayerTop(); shelf.toLayerTop(); return this; }
+  
+  ArrayList<Runnable> eventChangeRun = new ArrayList<Runnable>();
+  nExplorer addEventChange(Runnable r)       { eventChangeRun.add(r); return this; }
+  
+  nExplorer addEventChange_Builder(Runnable r) { eventChangeRun.add(r); r.builder = this; return this; }
+  
+  nExplorer(nShelf s) {
+    super(s, s.ref_size*10, s.ref_size*11.75);
+    explorer_entry = new ArrayList<String>();
+    explorer_blocs = new ArrayList<sValueBloc>();
+    explorer_values = new ArrayList<sValue>();
+    shelf = new nShelf(s.shelfPanel, s.space_factor);
+    shelf.addSeparator(0.25);
+    shelf.ref.setParent(ref);
+    explorer_list = shelf.addList(5, 10, 1).setTextAlign(LEFT)
+      .addEventChange_Builder(new Runnable() { 
+      public void run() {
+        int ind = ((nList)builder).last_choice_index;
+        if (ind == 0 && explored_bloc != null) {
+          explored_bloc = explored_bloc.parent;
+          selected_bloc = null;
+          selected_value = null;
+          update_list();
+          runEvents(eventChangeRun);
+          
+        } else if (ind != 0 && ind < explorer_blocs.size()+1) {
+          if (selected_bloc == explorer_blocs.get(ind-1)) {
+            explored_bloc = selected_bloc;
+            selected_bloc = null;
+            selected_value = null;
+            update_list();
+            runEvents(eventChangeRun);
+          } else {
+            selected_bloc = explorer_blocs.get(ind-1);
+            selected_value = null;
+            update_info();
+            runEvents(eventChangeRun);
+          }
+        } else if (ind != 0 && ind - explorer_blocs.size() < explorer_values.size()+1) {
+          selected_bloc = null;
+          selected_value = explorer_values.get(ind-1 - explorer_blocs.size());
+          
+          update_info();
+          runEvents(eventChangeRun);
+        } 
+      } } )
+      ;
+    
+    bloc_info = shelf.addSeparator(0.25)
+      .addDrawer(2)
+        .addModel("Label-S4", "Selected Bloc :").setTextAlignment(LEFT, TOP);
+    
+    val_info = shelf.addSeparator(0.5)
+      .addDrawer(3)
+        .addModel("Label-S4", "Selected Value :").setTextAlignment(LEFT, TOP);
+    
+    update_list();
+    
+  }
+  
+  void update_info() {
+    if (selected_bloc != null) 
+      bloc_info.setText("Selected Bloc : "+selected_bloc.base_ref
+                       +"\n    ref: " + selected_bloc.ref
+                       +"\n    type: " + selected_bloc.type
+                       +"    use: " + selected_bloc.use);
+    if (selected_value != null) 
+      val_info.setText("Selected Value :\n   "+selected_value.ref
+                      +"\n    type: " + selected_value.type
+                      +"\n    value: " + selected_value.getString());
+  }
+  
+  void update() {
+    selected_bloc = null;
+    selected_value = null;
+    update_list();
+  }
+  void update_list() {
+    explorer_entry.clear();
+    explorer_blocs.clear();
+    explorer_values.clear();
+    if (explored_bloc != null) {
+      //println(); println(explored_bloc.getHierarchy(false));
+      explorer_entry.add("..");
+      for (Map.Entry me : explored_bloc.blocs.entrySet()) {
+        sValueBloc cvb = (sValueBloc)me.getValue();
+        explorer_blocs.add(cvb); 
+        explorer_entry.add(cvb.base_ref + " " + cvb.use);
+        //explorer_entry.add((String)me.getKey());
+      }
+      for (Map.Entry me : explored_bloc.values.entrySet()) {
+        explorer_values.add((sValue)me.getValue()); 
+        explorer_entry.add("   - "+(String)me.getKey());
+      }
+      explorer_entry.add("end");
+    }
+    explorer_list.setEntrys(explorer_entry);
+    update_info();
+  }
+  
+}
+
+
+
+
+
+
+
+
+
 
 class nList extends nDrawer {
   
@@ -508,9 +516,15 @@ class nList extends nDrawer {
       runEvents(eventChangeRun);
     }
   }
+  void unselect() { last_choice_index = -1; last_choice_text = ""; update_list(); }
   void update_list() {
+    last_choice_widget = null;
     for (int i = 0 ; i < list_widget_nb ; i++) {
       nWidget w = listwidgets.get(i);
+      if (i + entry_pos == last_choice_index) { 
+        w.setLook(gui.theme, "List_Entry_Selected"); 
+        last_choice_widget = w; }
+      else w.setLook(gui.theme, "List_Entry");
       if (i + entry_pos < entrys.size()) w.setText(entrys.get(i + entry_pos)); else w.setText("");
     }
   }
@@ -523,8 +537,8 @@ class nList extends nDrawer {
     //scroll.setEntryNb(l.length);
 
     scroll.setView(list_widget_nb);
-    entry_pos = 0;
-    update_list();
+    entry_pos = 0; 
+    unselect();
     return this;
   }
   nList setListLength(int l) {

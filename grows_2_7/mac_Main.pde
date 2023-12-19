@@ -421,6 +421,8 @@ class Macro_Main extends Macro_Sheet {
   
   void addTickAskMethod(Runnable r) { tickAskMethods.add(r); }
   void tick() { tickpile.tick(); }
+  void askTick() { runEvents(tickAskMethods); }
+  
   void reduc() { 
     if (!macro_reduc.get()) { macro_reduc.set(true); return; }
     super.reduc(); 
@@ -434,7 +436,6 @@ class Macro_Main extends Macro_Sheet {
       super.enlarg(); 
       grabber.setTextVisibility(true); } 
   }
-  void askTick() { runEvents(tickAskMethods); }
   void show() { 
     if (!show_macro.get()) { show_macro.set(true); return; }
     super.show(); 

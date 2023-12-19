@@ -45,13 +45,10 @@ class sInterface {
     files_panel.setSpace(0.25);
     nFrontTab files_tab = files_panel.addTab("Files");
     files_tab.getShelf()
-      //.addSeparator(0.0625)
       .addDrawer(0.6)
         .addModel("Label-S4", "Select File :                                   ").setPY(-0.2*size).getShelf()
-      //.addSeparator(0.0625)
       .addDrawer(0.75)
         .addLinkedModel("Field-SS4", savepath).setLinkedValue(savepath_value).getShelf()
-      //.addSeparator(0.25)
       .addDrawer(1)
         .addModel("Label-S4", "File datas :                                   ").getDrawer()
         .addCtrlModel("Button_Outline-S2", "Save")
@@ -69,8 +66,7 @@ class sInterface {
     files_tab.addShelf()
       .addSeparator(0.725)
       .addDrawer(1)
-        .addModel("Label-S4", "                                    ").getDrawer()
-        .addCtrlModel("Button_Small_Text-S2", "close file")
+        .addCtrlModel("Button_Small_Text_Outline-S3-P1", "close file")
           .setRunnable(new Runnable() { public void run() { 
             
             if (explored_bloc != null) explored_bloc.clear();
@@ -78,29 +74,27 @@ class sInterface {
             file_explorer.setBloc(explored_bloc);
             file_explorer.update(); update_list(); 
           } } )
-          .setPX(size*4)
           .getDrawer()
-        .addCtrlModel("Button_Small_Text_Outline-S2", "go to data/")
+        .addCtrlModel("Button_Small_Text_Outline-S3-P2", "go to data/")
           .setRunnable(new Runnable() { public void run() { 
-            data_explorer.setBloc(data); data_explorer.update(); update_list(); } } )
-          .setPX(size*7)
+            data_explorer.setBloc(data); 
+            //data_explorer.update(); 
+            //update_list(); 
+          } } )
           .getShelf()
       //.addSeparator(0.25)
       .addDrawer(10, 1)
         .addModel("Label-S4", "                                    ").getDrawer()
-        .addCtrlModel("Button_Small_Text_Outline-S2", "delete file bloc")
+        .addCtrlModel("Button_Small_Text_Outline-S3-P1", "delete file bloc")
           .setRunnable(new Runnable() { public void run() { 
             if (file_explorer.selected_bloc != null) { file_explorer.selected_bloc.clear(); }
             file_explorer.update();
-            update_list(); 
+            //update_list(); 
           } } )
-          .setPX(size*4)
           .getDrawer()
-        .addCtrlModel("Button_Small_Text_Outline-S2", "dump data")
+        .addCtrlModel("Button_Small_Text_Outline-S3-P2", "dump data")
           //.setRunnable(new Runnable() { public void run() { full_data_save(); } } )
-          .setPX(size*7)
           .getShelf()
-      //.addSeparator(0.0625)
       ;
       
     
@@ -111,13 +105,11 @@ class sInterface {
           .setRunnable(new Runnable() { public void run() { copy_file_to_data(); } } )
           .setPX(size*0)
           .setSY(size*2)
-          //.setFont(int(size/2.1))
           .getDrawer()
         .addCtrlModel("Button_Small_Text_Outline-S3", "TRANSFER\nFILE VALUES\nTO DATA")
           .setRunnable(new Runnable() { public void run() { transfer_file_to_data(); } } )
           .setPX(size*4)
           .setSY(size*2)
-          //.setFont(int(size/2.1))
           ;
           
     match_flag = files_tab.getShelf(0)
@@ -188,7 +180,7 @@ class sInterface {
       file_explorer.selected_bloc.preset_to_save_bloc(file_savebloc);
       data_explorer.explored_bloc.newBloc(file_savebloc, "copy");
       data_explorer.update();
-      update_list();
+      //update_list();
     } 
   }
   void copy_data_to_file() {
@@ -197,7 +189,7 @@ class sInterface {
       data_explorer.selected_bloc.preset_to_save_bloc(file_savebloc);
       explored_bloc.newBloc(file_savebloc, "copy");
       file_explorer.update();
-      update_list();
+      //update_list();
     } 
   }
   
@@ -209,7 +201,7 @@ class sInterface {
       file_explorer.selected_bloc.preset_to_save_bloc(file_savebloc);
       data_explorer.selected_bloc.load_from_bloc(file_savebloc);
       data_explorer.update();
-      update_list();
+      //update_list();
     } 
   }
   void transfer_data_to_file() {
@@ -220,13 +212,13 @@ class sInterface {
       data_explorer.selected_bloc.preset_to_save_bloc(file_savebloc);
       file_explorer.selected_bloc.load_from_bloc(file_savebloc);
       file_explorer.update();
-      update_list();
+      //update_list();
     } 
   }
 
   void update_list() {
-    data_explorer.update_list();
-    file_explorer.update_list();
+    //data_explorer.update_list();
+    //file_explorer.update_list();
     if (data_explorer.selected_bloc != null && file_explorer.selected_bloc != null) {
       //logln("file "+file_explorer.selected_bloc.getHierarchy(true));
       //logln("data "+data_explorer.selected_bloc.getHierarchy(true));
@@ -258,7 +250,7 @@ class sInterface {
     if (explored_bloc != null) explored_bloc.clear();
     explored_bloc = interface_bloc.newBloc(file_savebloc, "file");
     file_explorer.setBloc(explored_bloc);
-    update_list();
+    //update_list();
   }
   
   void file_build() {

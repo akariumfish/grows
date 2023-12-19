@@ -386,27 +386,18 @@ class Macro_Sheet extends Macro_Abstract {
   void setLayer(int l) {
     super.setLayer(l);
     reduc.setLayer(l);
-    //for (nWidget w : menubuttons) w.setLayer(l);
-    //for (nWidget w : addbuttons) w.setLayer(mmain().menu_layer);
-    //for (nWidget w : subMenuWidgets) w.setLayer(mmain().menu_layer);
     for (Macro_Sheet_Input m : sheet_inputs) m.setLayer(l);
     for (Macro_Sheet_Output m : sheet_outputs) m.setLayer(l);
   }
   void toLayerTop() {
     super.toLayerTop();
     reduc.toLayerTop();
-    //for (nWidget w : menubuttons) w.toLayerTop();
-    //for (nWidget w : addbuttons) w.toLayerTop();
-    //for (nWidget w : subMenuWidgets) w.toLayerTop();
     for (Macro_Sheet_Input m : sheet_inputs) m.toLayerTop();
     for (Macro_Sheet_Output m : sheet_outputs) m.toLayerTop();
   }
   void clear() {
     super.clear(); 
     reduc.clear(); 
-    //for (int i = menubuttons.size() - 1; i >= 0; i--) menubuttons.get(i).clear(); 
-    //for (int i = subMenuWidgets.size() - 1; i >= 0; i--) subMenuWidgets.get(i).clear(); 
-    //for (int i = addbuttons.size() - 1; i >= 0; i--) addbuttons.get(i).clear(); 
 
     for (int i = child_macro.size() - 1; i >= 0; i--) child_macro.get(i).clear(); 
     for (int i = inputs.size() - 1; i >= 0; i--) inputs.get(i).clear(); 

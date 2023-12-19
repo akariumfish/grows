@@ -5,6 +5,25 @@
 // todo --------------------------
 /*
 
+
+ligne
+  extend drawer
+  can be trig switch field label
+  has a text pour l'info bulle
+  
+connection
+  priority button
+    2 round button on top of eachother on left top corner of the connect
+    1 round widget covering half of each button with the priority layer
+    
+show directly connected in/out to detect loop more easily
+
+macro turn:
+  all out who want to send do it, input save msg
+  once no out whant to send all input process msg in priority order and ask their out to send eventually
+  once all in have processed their msg we start again if there is an out who want to send
+
+
 nouveau forma macro :
   plus de custom, un type macro data qui fait tout
   macro back : réel 
@@ -160,7 +179,7 @@ class nMacroPanel extends nShelfPanel {
     soft_back = addModel("MC_Soft_Back")
       .clearParent()
       .setPassif()
-      //.hide()
+      .hide()
       ;
     soft_back.setParent(grabber).setSize(ref_size*15, ref_size*11)
       .setPosition(grabber.getLocalSX()/2-soft_back.getLocalSX()/2, 
@@ -304,7 +323,7 @@ class nWindowPanel extends nShelfPanel {
       .setPosition(3*ref_size-task.panel.getX() + task.adding_pos*ref_size*1.5, 
                    1*ref_size-task.panel.getY() + task.adding_pos*ref_size*1.5)
       .show()
-      //.addEventDrag(new Runnable() { public void run() { runEvents(eventDragRun); } } )
+      .addEventGrab(new Runnable() { public void run() { toLayerTop(); } } )
       ;
     
     task.adding_pos++;
@@ -484,6 +503,7 @@ class nFrontPanel extends nWindowPanel {
       current_tab.show();
       runEvents(current_tab.eventOpen); }
   }
+  nFrontPanel toLayerTop() { super.toLayerTop(); for (nFrontTab d : tabs) d.toLayerTop(); return this; }
   nFrontPanel clear() { 
     
     super.clear(); return this; }

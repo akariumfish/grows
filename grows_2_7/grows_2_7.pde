@@ -70,8 +70,8 @@ void setup() {//executé au demarage
   fcom.gcom = gcom;
   
   
-  //interf.toolpanel.reduc();
-  //interf.taskpanel.reduc();
+  interf.toolpanel.reduc();
+  interf.taskpanel.reduc();
   //interf.macro_main.macro_tool.reduc();
   //simul.pause.set(true);
   

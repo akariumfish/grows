@@ -83,7 +83,6 @@ class Simulation {
     cam_gui = inter.cam_gui;
     
     sheet = inter.macro_main.addSheet("Simulation");
-    sheet.reduc();
     //sheet.setPosition(0, -ref_size*3);
     
     //sbloc = sheet.sheet_data;
@@ -95,7 +94,7 @@ class Simulation {
     auto_reset = sheet.newLinkedBoo(true, "auto_reset", "auto reset");
     auto_reset_rng_seed = sheet.newLinkedBoo(true, "auto_reset_rng_seed", "auto rng");
     auto_reset_screenshot = sheet.newLinkedBoo(false, "auto_rest_screenshot", "auto shot");
-    show_com = sheet.newLinkedBoo(true, "show_com", "show");
+    show_com = sheet.newLinkedBoo(false, "show_com", "show");
     auto_reset_turn = sheet.newLinkedInt(4000, "auto_reset_turn", "auto turn");
     SEED = sheet.newLinkedInt(548651008, "SEED", "SEED");
 
@@ -136,6 +135,8 @@ class Simulation {
       }
     } 
     );
+    
+    sheet.reduc();
     
     inter.macro_main.addTickAskMethod(new Runnable() { public void run() {
       srun_nxtt.run();
@@ -394,7 +395,11 @@ class Simulation {
       selector_list = tab.getShelf(0)
         .addSeparator(0.25)
         .addList(5, 10, 1);
-      selector_list.addEventChange_Builder(new Runnable() { public void run() {} } );
+      selector_list.addEventChange_Builder(new Runnable() { public void run() {
+        nList sl = ((nList)builder); 
+        if (sl.last_choice_index < list.size()) 
+          list.get(sl.last_choice_index).build_com_frontpanel(inter.screen_gui, ref_size);
+      } } );
           
           
           
@@ -539,7 +544,6 @@ abstract class Community {
     type = ty;
 
     sheet = sim.inter.macro_main.addSheet("Community" + n);
-    sheet.reduc();
     //sheet.setPosition(0, -sim.ref_size*5);
     sbloc = sheet.sheet_data;
     max_entity = sheet.newLinkedInt(500, "max_entity", "max_pop");
@@ -561,6 +565,7 @@ abstract class Community {
       }
     }
     );
+    sheet.reduc();
 
     reset();
   }

@@ -620,6 +620,8 @@ class nWidget {
   nWidget() {   //only for theme model saving !!
     localrect = new Rect();
     globalrect = new Rect();
+    hover = new Hoverable(null, null);
+    hover.active = true;
     changePosition();
     look = new nLook();
     label = new String();
@@ -1076,18 +1078,18 @@ class Hoverable {
   Hoverable(Hoverable_pile p, Rect r) {
     layer = 0;
     pile = p;
-    pile.hoverables.add(this);
+    if (pile != null) pile.hoverables.add(this);
     rect = r;
   }
   Hoverable(Hoverable_pile p, Rect r, int l) {
     layer = l;
     pile = p;
-    pile.hoverables.add(this);
+    if (pile != null) pile.hoverables.add(this);
     rect = r;
   }
   void clear() { if (pile != null) pile.hoverables.remove(this); }
-  void toLayerTop() { pile.hoverables.remove(this); pile.hoverables.add(0, this); }
-  void toLayerBottom() { pile.hoverables.remove(this); pile.hoverables.add(this); }
+  void toLayerTop() { if (pile != null) { pile.hoverables.remove(this); pile.hoverables.add(0, this); } }
+  void toLayerBottom() { if (pile != null) {pile.hoverables.remove(this); pile.hoverables.add(this); } }
   Hoverable setLayer(int l) {
     layer = l;
     return this;

@@ -5,6 +5,7 @@ class nConstructor {
   nConstructor(nGUI _g, float s) {
     gui = _g; ref_size = s;
     gui.theme.addModel("ref", new nWidget()
+      //.setPassif()
       .setLabelColor(color(200, 200, 200))
       .setFont(int(ref_size/1.6))
       );
@@ -108,6 +109,7 @@ class nConstructor {
       
     
     gui.theme.addModel("mc_ref", new nWidget()
+      //.setPassif()
       .setLabelColor(color(200, 200, 200))
       .setFont(int(ref_size/1.6))
       );
