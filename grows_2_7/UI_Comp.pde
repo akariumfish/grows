@@ -283,9 +283,12 @@ class nWindowPanel extends nShelfPanel {
     grabber.hide(); 
     if (taskpanel_button != null) taskpanel_button.setStandbyColor(color(90)); }
   void popUp() { 
+    
     collapsed = false;
     if (task.hide) task.reduc();
-    grabber.show(); taskpanel_button.setStandbyColor(color(70)); 
+    grabber.show(); 
+    taskpanel_button.setStandbyColor(color(70)); 
+    toLayerTop();
   }
   nTaskPanel task;
   nWidget grabber, closer, reduc, collapse, taskpanel_button;

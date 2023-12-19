@@ -8,19 +8,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 PApplet
   Log
     DEBUG_SAVE
@@ -36,10 +23,8 @@ PApplet
     Interface.frame  >  frame events, drawing
 */
 
-
 boolean DEBUG_HOVERPILE = false;
 boolean DEBUG_NOFILL = false;
-boolean DEBUG_SAVE_FULL = false;
 boolean DEBUG_MACRO = true;
 
 boolean DEBUG = true;
@@ -55,19 +40,13 @@ void mlog(String s) {
 void mlogln(String s) {
   if (DEBUG_MACRO) println(s);
 }
-void slog(String s) {
-  if (DEBUG_SAVE_FULL) print(s);
-}
-void slogln(String s) {
-  if (DEBUG_SAVE_FULL) println(s);
-}
 
 sInterface interf;
 
 Simulation simul;
 
+//BoxComu bcom;
 GrowerComu gcom;
-BoxComu bcom;
 FlocComu fcom;
 
 
@@ -78,28 +57,28 @@ void setup() {//executé au demarage
   //smooth();//anti aliasing
   
   interf = new sInterface();
+  
+  
+  //interf.filesManagement();
+  
+  
   simul = new Simulation(interf);
+  gcom = new GrowerPrint(simul).build("grow");
+  fcom = new FlocPrint(simul).build("floc");
+  new BoxPrint(simul);
+  gcom.fcom = fcom;
+  fcom.gcom = gcom;
   
-  bcom = new BoxComu(simul);
-  gcom = new GrowerComu(simul);
-  fcom = new FlocComu(simul);
   
-  //simul.addCommunityBuilder("Grow", new Builder<GrowerComu>(simul) { public GrowerComu build() { 
-  //  return new GrowerComu(((Simulation)builder)); }});
-  //simul.addCommunityBuilder("Floc", new Builder<FlocComu>(simul) { public FlocComu build() { 
-  //  return new FlocComu(((Simulation)builder)); }});
-  //simul.addCommunityBuilder("Box", new Builder<BoxComu>(simul) { public BoxComu build() { 
-  //  return new BoxComu(((Simulation)builder)); }});
-  
-  interf.toolpanel.reduc();
-  interf.taskpanel.reduc();
+  //interf.toolpanel.reduc();
+  //interf.taskpanel.reduc();
+  //interf.macro_main.macro_tool.reduc();
   //simul.pause.set(true);
-  //interf.macro_main.build_macro_frontpanel();
   
-  logln("end models: "+interf.gui_theme.models.size());
+  //logln("end models: "+interf.gui_theme.models.size());
   background(0);//fond noir
   
-  interf.file_load();
+  //interf.file_load();
 }
 
 
