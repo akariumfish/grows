@@ -1,0 +1,1174 @@
+save.sdata
+1174
+4
+8
+__bloc_type
+def
+__bloc_ref
+data
+__bloc_bas
+data
+__bloc_use
+file
+4
+1160
+Sheet_CommunityGrower_grow
+514
+4
+8
+__bloc_type
+def
+__bloc_ref
+Sheet_CommunityGrower_grow
+__bloc_bas
+Sheet_CommunityGrower_grow
+__bloc_use
+copy
+22
+500
+Grower_grow  stop rng param
+46
+4
+8
+__bloc_type
+def
+__bloc_ref
+Grower_grow  stop rng param
+__bloc_bas
+Grower_grow  stop rng param
+__bloc_use
+
+2
+32
+Grower_grow  stop on
+16
+5
+10
+__bloc_type
+val
+ref
+Grower_grow  stop on
+typ
+boo
+shr
+on
+val
+1
+0
+0
+Grower_grow  stop dif
+16
+5
+10
+__bloc_type
+val
+ref
+Grower_grow  stop dif
+typ
+flt
+shr
+dif
+val
+1.25
+0
+0
+Grower_grow  leaf rng param
+46
+4
+8
+__bloc_type
+def
+__bloc_ref
+Grower_grow  leaf rng param
+__bloc_bas
+Grower_grow  leaf rng param
+__bloc_use
+
+2
+32
+Grower_grow  leaf dif
+16
+5
+10
+__bloc_type
+val
+ref
+Grower_grow  leaf dif
+typ
+flt
+shr
+dif
+val
+2080.0
+0
+0
+Grower_grow  leaf on
+16
+5
+10
+__bloc_type
+val
+ref
+Grower_grow  leaf on
+typ
+boo
+shr
+on
+val
+1
+0
+0
+Grower_grow  die rng param
+46
+4
+8
+__bloc_type
+def
+__bloc_ref
+Grower_grow  die rng param
+__bloc_bas
+Grower_grow  die rng param
+__bloc_use
+
+2
+32
+Grower_grow  die on
+16
+5
+10
+__bloc_type
+val
+ref
+Grower_grow  die on
+typ
+boo
+shr
+on
+val
+1
+0
+0
+Grower_grow  die dif
+16
+5
+10
+__bloc_type
+val
+ref
+Grower_grow  die dif
+typ
+flt
+shr
+dif
+val
+3.6
+0
+0
+Grower_grow grow rng param
+46
+4
+8
+__bloc_type
+def
+__bloc_ref
+Grower_grow grow rng param
+__bloc_bas
+Grower_grow grow rng param
+__bloc_use
+
+2
+32
+Grower_grow grow on
+16
+5
+10
+__bloc_type
+val
+ref
+Grower_grow grow on
+typ
+boo
+shr
+on
+val
+1
+0
+0
+Grower_grow grow dif
+16
+5
+10
+__bloc_type
+val
+ref
+Grower_grow grow dif
+typ
+flt
+shr
+dif
+val
+0.5
+0
+0
+Grower_grow  sprout rng param
+46
+4
+8
+__bloc_type
+def
+__bloc_ref
+Grower_grow  sprout rng param
+__bloc_bas
+Grower_grow  sprout rng param
+__bloc_use
+
+2
+32
+Grower_grow  sprout dif
+16
+5
+10
+__bloc_type
+val
+ref
+Grower_grow  sprout dif
+typ
+flt
+shr
+dif
+val
+2080.0
+0
+0
+Grower_grow  sprout on
+16
+5
+10
+__bloc_type
+val
+ref
+Grower_grow  sprout on
+typ
+boo
+shr
+on
+val
+1
+0
+0
+addCursor Grower_grow
+18
+6
+12
+__bloc_type
+val
+ref
+addCursor Grower_grow
+typ
+vec
+shr
+cursor
+x
+0.0
+y
+0.0
+0
+0
+adding_entity_nb 
+16
+5
+10
+__bloc_type
+val
+ref
+adding_entity_nb 
+typ
+int
+shr
+add nb
+val
+10
+0
+0
+adding_step 
+16
+5
+10
+__bloc_type
+val
+ref
+adding_step 
+typ
+int
+shr
+add stp
+val
+0
+0
+0
+Grower_grow lmin
+16
+5
+10
+__bloc_type
+val
+ref
+Grower_grow lmin
+typ
+flt
+shr
+lmin
+val
+20.0
+0
+0
+Grower_grow  create floc
+16
+5
+10
+__bloc_type
+val
+ref
+Grower_grow  create floc
+typ
+boo
+shr
+create floc
+val
+1
+0
+0
+Grower_grow activeGrower
+16
+5
+10
+__bloc_type
+val
+ref
+Grower_grow activeGrower
+typ
+int
+shr
+growers nb
+val
+12
+0
+0
+type
+16
+5
+10
+__bloc_type
+val
+ref
+type
+typ
+str
+shr
+type
+val
+grow
+0
+0
+active_entity 
+16
+5
+10
+__bloc_type
+val
+ref
+active_entity 
+typ
+int
+shr
+active_pop
+val
+495
+0
+0
+Grower_grow age
+16
+5
+10
+__bloc_type
+val
+ref
+Grower_grow age
+typ
+flt
+shr
+age
+val
+666.0
+0
+0
+max_entity
+16
+5
+10
+__bloc_type
+val
+ref
+max_entity
+typ
+int
+shr
+max_pop
+val
+500
+0
+0
+show_entity 
+16
+5
+10
+__bloc_type
+val
+ref
+show_entity 
+typ
+boo
+shr
+show
+val
+1
+0
+0
+Grower_grow ldif
+16
+5
+10
+__bloc_type
+val
+ref
+Grower_grow ldif
+typ
+flt
+shr
+ldif
+val
+180.0
+0
+0
+addCursor Grower_grow show cursor
+16
+5
+10
+__bloc_type
+val
+ref
+addCursor Grower_grow show cursor
+typ
+boo
+shr
+cursor
+val
+0
+0
+0
+add_entity
+14
+4
+8
+__bloc_type
+val
+ref
+add_entity
+typ
+run
+shr
+add_pop
+0
+0
+Grower_grow lmax
+16
+5
+10
+__bloc_type
+val
+ref
+Grower_grow lmax
+typ
+flt
+shr
+lmax
+val
+350.0
+0
+0
+Grower_grow dev
+16
+5
+10
+__bloc_type
+val
+ref
+Grower_grow dev
+typ
+flt
+shr
+dev
+val
+8.0
+0
+0
+Grower_grow  kill grower
+14
+4
+8
+__bloc_type
+val
+ref
+Grower_grow  kill grower
+typ
+run
+shr
+kill
+0
+0
+Sheet_Simulation
+216
+4
+8
+__bloc_type
+def
+__bloc_ref
+Sheet_Simulation
+__bloc_bas
+Sheet_Simulation
+__bloc_use
+copy
+13
+202
+auto_reset_turn
+16
+5
+10
+__bloc_type
+val
+ref
+auto_reset_turn
+typ
+int
+shr
+auto turn
+val
+4000
+0
+0
+sim rng reset
+14
+4
+8
+__bloc_type
+val
+ref
+sim rng reset
+typ
+run
+shr
+rst rng
+0
+0
+show_com
+16
+5
+10
+__bloc_type
+val
+ref
+show_com
+typ
+boo
+shr
+show
+val
+1
+0
+0
+tick_counter
+16
+5
+10
+__bloc_type
+val
+ref
+tick_counter
+typ
+int
+shr
+tick
+val
+2588
+0
+0
+pause
+16
+5
+10
+__bloc_type
+val
+ref
+pause
+typ
+boo
+shr
+pause
+val
+0
+0
+0
+auto_rest_screenshot
+16
+5
+10
+__bloc_type
+val
+ref
+auto_rest_screenshot
+typ
+boo
+shr
+auto shot
+val
+0
+0
+0
+auto_reset_rng_seed
+16
+5
+10
+__bloc_type
+val
+ref
+auto_reset_rng_seed
+typ
+boo
+shr
+auto rng
+val
+1
+0
+0
+auto_reset
+16
+5
+10
+__bloc_type
+val
+ref
+auto_reset
+typ
+boo
+shr
+auto reset
+val
+1
+0
+0
+SEED
+16
+5
+10
+__bloc_type
+val
+ref
+SEED
+typ
+int
+shr
+SEED
+val
+394229056
+0
+0
+sim reset
+14
+4
+8
+__bloc_type
+val
+ref
+sim reset
+typ
+run
+shr
+reset
+0
+0
+tick by frame
+16
+5
+10
+__bloc_type
+val
+ref
+tick by frame
+typ
+flt
+shr
+tck/frm
+val
+2.0
+0
+0
+sim next tick
+14
+4
+8
+__bloc_type
+val
+ref
+sim next tick
+typ
+run
+shr
+nxt tck
+0
+0
+force_next_tick
+16
+5
+10
+__bloc_type
+val
+ref
+force_next_tick
+typ
+int
+shr
+nxt tick
+val
+0
+0
+0
+Sheet_Communityfloc Floc ''
+366
+4
+8
+__bloc_type
+def
+__bloc_ref
+Sheet_Communityfloc Floc ''
+__bloc_bas
+Sheet_Communityfloc Floc 
+__bloc_use
+copy
+22
+352
+floc Floc floc HALO_DENS
+16
+5
+10
+__bloc_type
+val
+ref
+floc Floc floc HALO_DENS
+typ
+flt
+shr
+Dens
+val
+0.15
+0
+0
+addCursor floc Floc 
+18
+6
+12
+__bloc_type
+val
+ref
+addCursor floc Floc 
+typ
+vec
+shr
+cursor
+x
+0.0
+y
+0.0
+0
+0
+floc Floc floc create_grower
+16
+5
+10
+__bloc_type
+val
+ref
+floc Floc floc create_grower
+typ
+boo
+shr
+create grow
+val
+1
+0
+0
+floc Floc floc point_to_mouse
+16
+5
+10
+__bloc_type
+val
+ref
+floc Floc floc point_to_mouse
+typ
+boo
+shr
+to center
+val
+0
+0
+0
+floc Floc floc DRAWMODE_DEBUG
+16
+5
+10
+__bloc_type
+val
+ref
+floc Floc floc DRAWMODE_DEBUG
+typ
+boo
+shr
+draw2
+val
+0
+0
+0
+adding_entity_nb 
+16
+5
+10
+__bloc_type
+val
+ref
+adding_entity_nb 
+typ
+int
+shr
+add nb
+val
+10
+0
+0
+adding_step 
+16
+5
+10
+__bloc_type
+val
+ref
+adding_step 
+typ
+int
+shr
+add stp
+val
+0
+0
+0
+floc Floc floc SPACING
+16
+5
+10
+__bloc_type
+val
+ref
+floc Floc floc SPACING
+typ
+flt
+shr
+space
+val
+95.0
+0
+0
+addCursor floc Floc  show cursor
+16
+5
+10
+__bloc_type
+val
+ref
+addCursor floc Floc  show cursor
+typ
+boo
+shr
+cursor
+val
+0
+0
+0
+floc Floc floc limit
+16
+5
+10
+__bloc_type
+val
+ref
+floc Floc floc limit
+typ
+int
+shr
+limit
+val
+1600
+0
+0
+type
+16
+5
+10
+__bloc_type
+val
+ref
+type
+typ
+str
+shr
+type
+val
+floc
+0
+0
+active_entity 
+16
+5
+10
+__bloc_type
+val
+ref
+active_entity 
+typ
+int
+shr
+active_pop
+val
+39
+0
+0
+floc Floc floc point_to_center
+16
+5
+10
+__bloc_type
+val
+ref
+floc Floc floc point_to_center
+typ
+boo
+shr
+to mouse
+val
+1
+0
+0
+max_entity
+16
+5
+10
+__bloc_type
+val
+ref
+max_entity
+typ
+int
+shr
+max_pop
+val
+100
+0
+0
+show_entity 
+16
+5
+10
+__bloc_type
+val
+ref
+show_entity 
+typ
+boo
+shr
+show
+val
+1
+0
+0
+floc Floc floc DRAWMODE_DEF
+16
+5
+10
+__bloc_type
+val
+ref
+floc Floc floc DRAWMODE_DEF
+typ
+boo
+shr
+draw1
+val
+1
+0
+0
+add_entity
+14
+4
+8
+__bloc_type
+val
+ref
+add_entity
+typ
+run
+shr
+add_pop
+0
+0
+floc Floc floc SPEED
+16
+5
+10
+__bloc_type
+val
+ref
+floc Floc floc SPEED
+typ
+flt
+shr
+speed
+val
+2.0
+0
+0
+floc Floc floc HALO_SIZE
+16
+5
+10
+__bloc_type
+val
+ref
+floc Floc floc HALO_SIZE
+typ
+flt
+shr
+Size
+val
+80.0
+0
+0
+floc Floc floc FOLLOW
+16
+5
+10
+__bloc_type
+val
+ref
+floc Floc floc FOLLOW
+typ
+flt
+shr
+follox
+val
+0.0036
+0
+0
+floc Floc floc age
+16
+5
+10
+__bloc_type
+val
+ref
+floc Floc floc age
+typ
+int
+shr
+age
+val
+2000
+0
+0
+floc Floc floc POURSUITE
+16
+5
+10
+__bloc_type
+val
+ref
+floc Floc floc POURSUITE
+typ
+flt
+shr
+poursuite
+val
+0.3
+0
+0
+camera
+64
+4
+8
+__bloc_type
+def
+__bloc_ref
+camera
+__bloc_bas
+camera
+__bloc_use
+copy
+3
+50
+show grid
+16
+5
+10
+__bloc_type
+val
+ref
+show grid
+typ
+boo
+shr
+grid
+val
+1
+0
+0
+cam scale
+16
+5
+10
+__bloc_type
+val
+ref
+cam scale
+typ
+flt
+shr
+scale
+val
+0.75131476
+0
+0
+cam pos
+18
+6
+12
+__bloc_type
+val
+ref
+cam pos
+typ
+vec
+shr
+pos
+x
+0.0
+y
+0.0
+0
+0
