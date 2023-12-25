@@ -115,38 +115,52 @@ class nColorPanel extends nWindowPanel {
 
 
 
-
-
 class nCursor extends nWidget {
-  float x() { return sval.x(); }
-  float y() { return sval.y(); }
+  float x() { return pval.x(); }
+  float y() { return pval.y(); }
+  PVector dir() { if (dval.get().mag() > 0) return new PVector(dval.x(), dval.y()).setMag(1); 
+                  else return new PVector(1, 0).rotate(random(2*PI)); }
+  PVector pos() { return new PVector(pval.x(), pval.y()); }
   nGUI gui;
   float ref_size;
-  sVec sval;
+  sVec pval, dval;
   sBoo show;
   String ref;
-  nWidget refwidget, thiswidget;
-  nCursor(nGUI _g, sValueBloc bloc, float s, String r) {
+  nWidget refwidget, thiswidget, pointwidget;
+  nCursor(nGUI _g, sValueBloc bloc, String r) {
     super(_g);
-    new nConstructor(_g.theme, s);
+    new nConstructor(_g.theme, _g.theme.ref_size);
     thiswidget = this;
-    gui = _g; ref_size = s; ref = r;
+    gui = _g; ref_size = _g.theme.ref_size; ref = r;
     copy(gui.theme.getModel("Cursor"));
-    refwidget = gui.theme.newWidget("ref").setParent(this).setPosition(ref_size, ref_size);
+    refwidget = gui.theme.newWidget(gui, "ref").setParent(this).setPosition(ref_size, ref_size);
     setSize(ref_size*2, ref_size*2);
     setPosition(-ref_size, -ref_size);
     setText(r).setFont(int(ref_size/2.0)).setTextAlignment(LEFT, CENTER);
     setGrabbable();
-    addEventDrag(new Runnable() {public void run() {sval.set(refwidget.getX(), refwidget.getY());}});
-    sval = new sVec(bloc, r, "cursor");
-    show = new sBoo(bloc, false, r+" show cursor", "cursor"); //!!!!! is hided by default
-    if (show.get()) thiswidget.show(); else thiswidget.hide();
-    sval.addEventChange(new Runnable(sval) {public void run() {
+    addEventDrag(new Runnable() {public void run() {pval.set(refwidget.getX(), refwidget.getY());}});
+    pval = new sVec(bloc, r, "position");
+    pval.addEventChange(new Runnable(pval) {public void run() {
       sVec v = ((sVec)builder);
       thiswidget.setPosition(v.x()-ref_size, v.y()-ref_size);}});
+    
+    show = new sBoo(bloc, false, r, "show"); //!!!!! is hided by default
+   
+    pointwidget = gui.theme.newWidget(gui, "Pointer").setPosition(-ref_size/4, -ref_size/4).setSize(ref_size/2, ref_size/2);
+    pointwidget.setParent(refwidget).setGrabbable().setConstrainDistance(ref_size*2).toLayerTop();
+    dval = new sVec(bloc, r, "pointer");
+    dval.addEventChange(new Runnable(dval) {public void run() {
+      sVec v = ((sVec)builder);
+      if (v.get().mag() > ref_size*2) v.set(v.get().setMag(ref_size*2));
+      pointwidget.setPosition(v.x()-ref_size/4, v.y()-ref_size/4); }});
+    pointwidget.addEventDrag(new Runnable() {public void run() {
+      dval.set(pointwidget.getLocalX() + ref_size/4, pointwidget.getLocalY() + ref_size/4);}});
+    
+    if (show.get()) { thiswidget.show(); pointwidget.show(); } else { thiswidget.hide(); pointwidget.hide(); }
     show.addEventChange(new Runnable(show) {public void run() {
     sBoo v = ((sBoo)builder);
-      if (v.get()) thiswidget.show(); else thiswidget.hide();}});
+      if (v.get()) { thiswidget.show(); pointwidget.show(); } else { thiswidget.hide(); pointwidget.hide(); } }});
+    
     
   }
 }
@@ -262,35 +276,45 @@ class nExcludeGroup {
 
 class nInfo {
   void showText(String t) { 
-    label.setPX(-t.length()*(ref.getLocalSX() / 1.5) / 2).setSX(t.length()*(ref.getLocalSX() / 1.5));
+    float s = t.length()*(ref.getLocalSX() / 1.2);
+    float p = -t.length()*(ref.getLocalSX() / 1.2) / 2;
+    if (ref.getLocalX() + p + s > gui.view.pos.x + gui.view.size.x) 
+      p -= ref.getLocalX() + p + s - (gui.view.pos.x + gui.view.size.x);
+    if (ref.getLocalX() + p < gui.view.pos.x) p += gui.view.pos.x - (ref.getLocalX() + p);
+    label.setPX(p).setSX(s);
     label.setText(t); ref.show(); count = 3; toLayerTop();  }
   nInfo setLayer(int l) { label.setLayer(l); ref.setLayer(l); return this; }
   nInfo toLayerTop() { label.toLayerTop(); ref.toLayerTop(); return this; }
   nInfo(nGUI _g, float f) {
     gui = _g;
-    ref = new nWidget(gui, 0, 0, f, f)
+    ref = new nWidget(gui, 0, 0, f/2, f/2).setPassif()
       .setDrawable(new Drawable(_g.drawing_pile) { public void drawing() {
         fill(ref.look.standbyColor);
         noStroke();
-        triangle(ref.getX(), ref.getY(), 
-                 ref.getX() - ref.getSX(), ref.getY() - ref.getSY(), 
-                 ref.getX() + ref.getSX(), ref.getY() - ref.getSY() );
+        if (invert) triangle(ref.getX(), ref.getY(), 
+                 ref.getX() - ref.getSX()/2, ref.getY() + ref.getSY(), 
+                 ref.getX() + ref.getSX()/2, ref.getY() + ref.getSY() );
+        else triangle(ref.getX(), ref.getY() + ref.getSY(), 
+                 ref.getX() - ref.getSX()/2, ref.getY(), 
+                 ref.getX() + ref.getSX()/2, ref.getY() );
       } } )
-      .addEventFrame_Builder(new Runnable() { public void run() {
+      .addEventFrame(new Runnable() { public void run() {
         if (count > 0) {
           count--; if (count == 0) ref.hide();
           ref.setPosition(gui.mouseVector.x, gui.mouseVector.y);
+          if (gui.mouseVector.y < ref.getLocalSY()*3 && !invert) { invert = true; ref.stackDown(); label.stackDown().setPY(0); } 
+          else if (gui.mouseVector.y > ref.getLocalSY()*6 && invert) { invert = false; ref.stackUp(); label.stackUp().setPY(0); } 
         }
       } } );
-    label = new nWidget(gui, "", int(f), 0, -f, 0, f*1.5)
+    label = new nWidget(gui, "", int(f*0.8), 0, -f, 0, f*1).setPassif()
       .setParent(ref)
-      .stackUp()
+      .stackDown()
       ;
     ref.hide();
   }
   nWidget ref,label;
   nGUI gui;
-  int count = 0;
+  int count = 0; boolean invert;
 }
 
 
@@ -325,7 +349,7 @@ class nExplorer extends nDrawer {
   nExplorer addEventChange_Builder(Runnable r) { eventChangeRun.add(r); r.builder = this; return this; }
   
   nExplorer(nShelf s) {
-    super(s, s.ref_size*10, s.ref_size*11.75);
+    super(s, s.ref_size*10, s.ref_size*9);
     explorer_entry = new ArrayList<String>();
     explorer_blocs = new ArrayList<sValueBloc>();
     explorer_values = new ArrayList<sValue>();
@@ -367,27 +391,29 @@ class nExplorer extends nDrawer {
       ;
     
     bloc_info = shelf.addSeparator(0.25)
-      .addDrawer(2)
+      .addDrawer(1.4)
         .addModel("Label-S4", "Selected Bloc :").setTextAlignment(LEFT, TOP);
     
     val_info = shelf.addSeparator(0.5)
-      .addDrawer(3)
+      .addDrawer(1.4)
         .addModel("Label-S4", "Selected Value :").setTextAlignment(LEFT, TOP);
     
     update_list();
     
   }
-  
+  void selectEntry(String r) {
+    int i = 0;
+    for (Map.Entry me : explored_bloc.blocs.entrySet()) {
+      if (me.getKey().equals(r)) break;
+      i++; }
+    if (i < explorer_list.listwidgets.size()) explorer_list.listwidgets.get(i).setOn();
+  }
   void update_info() {
     if (selected_bloc != null) 
-      bloc_info.setText("Selected Bloc : "+selected_bloc.base_ref
-                       +"\n    ref: " + selected_bloc.ref
-                       +"\n    type: " + selected_bloc.type
-                       +"    use: " + selected_bloc.use);
+      bloc_info.setText("Selected Bloc :\n " + selected_bloc.type + " " + selected_bloc.ref);
     if (selected_value != null) 
-      val_info.setText("Selected Value :\n   "+selected_value.ref
-                      +"\n    type: " + selected_value.type
-                      +"\n    value: " + selected_value.getString());
+      val_info.setText("Selected Value : " + selected_value.type + " " + selected_value.ref
+                      +"\n = " + selected_value.getString() );
   }
   
   void update() {
@@ -401,7 +427,8 @@ class nExplorer extends nDrawer {
     explorer_values.clear();
     if (explored_bloc != null) {
       //println(); println(explored_bloc.getHierarchy(false));
-      explorer_entry.add("..");
+      if (explored_bloc.parent != starting_bloc) explorer_entry.add("..");
+      else explorer_entry.add("");
       for (Map.Entry me : explored_bloc.blocs.entrySet()) {
         sValueBloc cvb = (sValueBloc)me.getValue();
         explorer_blocs.add(cvb); 
@@ -737,6 +764,9 @@ class nSelectZone {
   nSelectZone addEventStartSelect(Runnable r)  { eventStartSelect.add(r); return this; }
   nSelectZone removeEventStartSelect(Runnable r)       { eventStartSelect.remove(r); return this; }
   ArrayList<Runnable> eventStartSelect = new ArrayList<Runnable>();
+  nSelectZone addEventSelecting(Runnable r)  { eventStartSelect.add(r); return this; }
+  nSelectZone removeEventSelecting(Runnable r)       { eventStartSelect.remove(r); return this; }
+  ArrayList<Runnable> eventSelecting = new ArrayList<Runnable>();
   
   boolean isSelecting() { return emptyClick; }
   
@@ -779,6 +809,7 @@ class nSelectZone {
         }
       }
       if (emptyClick) {
+        runEvents(eventSelecting);
         select_zone.size.x = gui.mouseVector.x - select_zone.pos.x;
         select_zone.size.y = gui.mouseVector.y - select_zone.pos.y;
         if (gui.in.getUnClick("MouseRight")) { 

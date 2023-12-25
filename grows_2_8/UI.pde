@@ -67,7 +67,7 @@ class nGUI {
     mouseVector = in.mouse; pmouseVector = in.pmouse;
     ref_size = _ref_size;
     view = new Rect(0, 0, width, height);
-    info = new nInfo(this, ref_size);
+    info = new nInfo(this, ref_size*0.75);
   }
   
   sInput in;
@@ -106,8 +106,9 @@ class nLinkedWidget extends nWidget {
     if (b.type.equals("boo")) setLinkedValue((sBoo)b);
     if (b.type.equals("str")) setLinkedValue((sStr)b);
     if (b.type.equals("run")) setLinkedValue((sRun)b);
+    if (b.type.equals("vec")) setLinkedValue((sVec)b);
     return this; }
-  sBoo bval; sInt ival; sFlt fval; sStr sval; sRun rval;
+  sBoo bval; sInt ival; sFlt fval; sStr sval; sRun rval; sVec vval;
   nLinkedWidget(nGUI g) { super(g); }
   
   nLinkedWidget setLinkedValue(sRun b) { 
@@ -145,6 +146,15 @@ class nLinkedWidget extends nWidget {
       String s = ((nLinkedWidget)builder).getText();
       if (!(s.length() > 0 && float(s) == 0) && !str(float(s)).equals("NaN")) fval.set(float(s)); } } );
     return this; }
+  nLinkedWidget setLinkedValue(sVec b) { 
+    vval = b;
+    setGrabbable();
+    setPosition(vval.x(), vval.y());
+    b.addEventChange(new Runnable(this) { public void run() { 
+      ((nLinkedWidget)builder).setPosition(vval.x(), vval.y()); } } );
+    addEventPositionChange(new Runnable(this) { public void run() { 
+      vval.set(((nLinkedWidget)builder).getLocalX(), ((nLinkedWidget)builder).getLocalY()); } } );
+    return this; }
   nLinkedWidget setLinkedValue(sStr b) { 
     sval = b;
     setText(sval.get());
@@ -162,8 +172,11 @@ class nWatcherWidget extends nWidget {
   nWatcherWidget setLinkedValue(sValue b) { 
     if (b.type.equals("flt")) setLinkedValue((sFlt)b);
     if (b.type.equals("int")) setLinkedValue((sInt)b);
+    if (b.type.equals("boo")) setLinkedValue((sBoo)b);
+    if (b.type.equals("str")) setLinkedValue((sStr)b);
+    if (b.type.equals("vec")) setLinkedValue((sVec)b);
     return this; }
-  sInt ival; sFlt fval;
+  sBoo bval; sInt ival; sFlt fval; sStr sval; sVec vval;
   nWatcherWidget(nGUI g) { super(g); }
   nWatcherWidget setLinkedValue(sInt b) { 
     ival = b; setText(str(ival.get()));
@@ -174,6 +187,24 @@ class nWatcherWidget extends nWidget {
     fval = b; setText(trimStringFloat(fval.get()));
     b.addEventChange(new Runnable(this) { public void run() { 
       ((nWatcherWidget)builder).setText(trimStringFloat(fval.get())); } } );
+    return this; }
+  nWatcherWidget setLinkedValue(sBoo b) { 
+    bval = b; 
+    if (bval.get()) setText("true"); else setText("false");
+    b.addEventChange(new Runnable(this) { public void run() { 
+      if (bval.get()) ((nWatcherWidget)builder).setText("true");
+      else ((nWatcherWidget)builder).setText("false"); } } );
+    return this; }
+  nWatcherWidget setLinkedValue(sStr b) { 
+    sval = b; setText(trimStringFloat(fval.get()));
+    b.addEventChange(new Runnable(this) { public void run() { 
+      ((nWatcherWidget)builder).setText(sval.get()); } } );
+    return this; }
+  nWatcherWidget setLinkedValue(sVec b) { 
+    vval = b; setText(trimStringFloat(fval.get()));
+    setText(trimStringFloat(vval.x()) + "," + trimStringFloat(vval.y()));
+    b.addEventChange(new Runnable(this) { public void run() { 
+      ((nWatcherWidget)builder).setText(trimStringFloat(vval.x()) + "," + trimStringFloat(vval.y())); } } );
     return this; }
 }
 
@@ -367,9 +398,12 @@ class nWidget {
   nWidget setFont(int s) { look.textFont = s; return this; }
   nWidget setTextAlignment(int sx, int sy) { textAlignX = sx; textAlignY = sy; return this; }
   nWidget setTextVisibility(boolean s) { show_text = s; return this; }
+  nWidget setInfo(String s) { if (s != null) { infoText = s; showInfo = true; } return this; }
+  nWidget setNoInfo() { showInfo = false; return this; }
   
   nWidget setLook(nLook l) { look.copy(l); return this; }
   nWidget setLook(nTheme t, String r) { look.copy(t.getLook(r)); return this; }
+  nWidget setLook(String r) { look.copy(gui.theme.getLook(r)); return this; }
   
   nWidget hide() { 
     if (!hide) {
@@ -423,7 +457,9 @@ class nWidget {
     hide = w.hide; drawerHideState = w.drawerHideState; hoverHideState = w.hoverHideState;
     constantOutlineWeight = w.constantOutlineWeight;
     textAlignX = w.textAlignX; textAlignY = w.textAlignY; show_text = w.show_text;
-    shapeRound = w.shapeRound; shapeLosange = w.shapeLosange;
+    shapeRound = w.shapeRound; shapeLosange = w.shapeLosange; 
+    showInfo = w.showInfo; infoText = str_copy(w.infoText);
+    constrainDlength = w.constrainDlength; constrainD = w.constrainD;
     look.copy(w.look);
     setLayer(w.layer);
     setPosition(w.localrect.pos.x, w.localrect.pos.y);
@@ -494,6 +530,7 @@ class nWidget {
   nWidget setFixed() { grabbable = false; hover.active = false; return this; }
   nWidget setConstrainX(boolean b) { constrainX = b; return this; }
   nWidget setConstrainY(boolean b) { constrainY = b; return this; }
+  nWidget setConstrainDistance(float b) { if (b == 0) constrainD = false; else { constrainDlength = b; constrainD = true; } return this; }
   nWidget setSelectable(boolean o) { isSelectable = o; hoverOutline = o; hover.active = true; return this; }
   nWidget setField(boolean o) { isField = o; setSelectable(o); return this; }
   
@@ -668,7 +705,7 @@ class nWidget {
   //private nPanelDrawer pan_drawer = null;
   private nDrawer ndrawer = null;
   
-  private String label;
+  private String label, infoText;
   private float mx = 0, my = 0, pmx = 0, pmy = 0;
   private int cursorPos = 0;
   private int cursorCount = 0;
@@ -681,14 +718,15 @@ class nWidget {
   private boolean isSelected = false;
   
   private boolean triggerMode = false, switchMode = false;
-  private boolean grabbable = false, constrainX = false, constrainY = false;
+  private boolean grabbable = false, constrainX = false, constrainY = false, constrainD = false;
+  private float constrainDlength = 0;
   private boolean isSelectable = false, isField = false, showCursor = false;
   private boolean showOutline = false, hoverOutline = false, constantOutlineWeight = false;
   private boolean alignX = false, stackX = false, alignY = false, stackY = false;
   private boolean centerX = false, centerY = false;
   private boolean placeLeft = false, placeRight = false, placeUp = false, placeDown = false;
   private boolean hide = false, drawerHideState = true, hoverHideState = true, show_text = true;
-  private boolean shapeRound = false, shapeLosange = false;
+  private boolean shapeRound = false, shapeLosange = false, showInfo = false;
   private int layer = 0, textAlignX = CENTER, textAlignY = CENTER;
  
   ArrayList<Runnable> eventPositionChange = new ArrayList<Runnable>();
@@ -793,6 +831,7 @@ class nWidget {
   void frame() {
     if (hover.mouseOver) {
       if (!isHovered) runEvents(eventMouseEnterRun);
+      if (showInfo) gui.info.showText(infoText);
       isHovered = true;
     } else {
       if (isHovered) runEvents(eventMouseLeaveRun); 
@@ -829,8 +868,14 @@ class nWidget {
         runEvents(eventLiberateRun);
       }
       if (isGrabbed && isClicked) {
-        if (!constrainX) setPX(gui.mouseVector.x + mx);
-        if (!constrainY) setPY(gui.mouseVector.y + my);
+        float nx = gui.mouseVector.x + mx, ny = gui.mouseVector.y + my;
+        if (constrainD) {
+          PVector p = new PVector(nx, ny);
+          if (p.mag() > constrainDlength) p.setMag(constrainDlength);
+          nx = p.x; ny = p.y;
+        }
+        if (!constrainX) setPX(nx);
+        if (!constrainY) setPY(ny);
         runEvents(eventDragRun);
       }
     }

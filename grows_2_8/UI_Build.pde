@@ -90,6 +90,15 @@ class nConstructor {
       .setOutline(true)
       .setOutlineConstant(true)
       );
+    theme.addModel("Pointer", theme.newWidget("ref")
+      .setStandbyColor(color(120))
+      .setHoveredColor(color(70))
+      .setClickedColor(color(220))
+      .setOutlineColor(color(70))
+      .setOutlineWeight(ref_size / 10)
+      .setOutline(true)
+      .setOutlineConstant(true)
+      );
     theme.addModel("List_Entry", theme.newWidget("ref")
       .setStandbyColor(color(10, 80, 90))
       .setHoveredColor(color(20, 90, 130))
@@ -257,6 +266,9 @@ class nConstructor {
   float[] sizes_val = { 0.5, 0.8, 1, 1.25, 1.5, 2, 2.5, 4, 8 };
   
   void make(String base) {
+    
+    do_sizes(base, "-S2/1", ref_size*2, ref_size);
+    
     do_sizes(base, "-SS1", ref_size*0.75, ref_size*0.75);
     do_sizes(base, "-SS2", ref_size*2.5, ref_size*0.75);
     do_sizes(base, "-SS3", ref_size*4, ref_size*0.75);
@@ -666,6 +678,7 @@ class nShelf extends nBuilder {
   nShelf clear() { super.clear(); for (nDrawer s : drawers) s.clear(); return this; }
   nDrawer addDrawer() { return addDrawer(0, 0); }
   nDrawer addDrawer(float h) { return addDrawer(0, h); }
+  nShelf addSeparator() { addDrawer(0, 0); return this; }
   nShelf addSeparator(float h) { addDrawer(0, h-space_factor); return this; }
   nShelf setMax(int m) { max_drawer = m; return this; }
   nDrawer addDrawer(float w, float h) { return insertDrawer(new nDrawer(this, w*ref_size, h*ref_size)); }

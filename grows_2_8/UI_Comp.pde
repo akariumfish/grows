@@ -96,6 +96,9 @@ class nWindowPanel extends nShelfPanel {
     taskpanel_button.setStandbyColor(color(70)); 
     toLayerTop();
   }
+  ArrayList<Runnable> eventCloseRun = new ArrayList<Runnable>();
+  nWindowPanel addEventClose(Runnable r)       { eventCloseRun.add(r); return this; }
+  
   nTaskPanel task;
   nWidget grabber, closer, reduc, collapse, taskpanel_button;
   Runnable run_show;
@@ -120,7 +123,7 @@ class nWindowPanel extends nShelfPanel {
     closer = addModel("Head_Button_Small_Outline-SS1").setText("X")
       .setTrigger()
       .addEventTrigger(new Runnable() { public void run() { 
-        //runEvents(eventCloseRun); 
+        runEvents(eventCloseRun); 
         clear(); } } )
       .setParent(grabber)
       .alignRight()
@@ -131,13 +134,6 @@ class nWindowPanel extends nShelfPanel {
       .setParent(closer)
       .stackLeft()
       ;
-    //reduc = addModel("Head_Button_Small_Outline-SS1").setText("-")
-    //  .setTrigger()
-    //  .addEventTrigger(new Runnable() { public void run() {
-    //    if (panel.isHided()) enlarg(); else reduc(); } } )
-    //  .setParent(collapse)
-    //  .stackLeft()
-    //  ;
     panel.setParent(grabber).stackDown();
     addShelf().addDrawer(10, 0);
     taskpanel_button = task.getWindowPanelButton(this);
@@ -225,6 +221,7 @@ class nFrontTab extends nShelfPanel {
 
 class nFrontPanel extends nWindowPanel {
   nFrontPanel setNonClosable() { closer.setText("").setBackground(); return this; }
+  nFrontTab getTab(int n) { return tabs.get(n); }
   ArrayList<nFrontTab> tabs = new ArrayList<nFrontTab>();
   ArrayList<nWidget> tab_widgets = new ArrayList<nWidget>();
   nFrontTab current_tab;

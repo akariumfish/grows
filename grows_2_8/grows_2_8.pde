@@ -4,7 +4,7 @@
 
 PATH TO THE END:
 
-new macro ousable
+new macro usable
   save template value link
 
 old sim et commu with old but cleanned menu
@@ -52,11 +52,11 @@ void mlogln(String s) {
 
 sInterface interf;
 
-//Simulation simul;
+Simulation simul;
 
 ////BoxComu bcom;
-//GrowerComu gcom;
-//FlocComu fcom;
+GrowerComu gcom;
+FlocComu fcom;
 
 
 void setup() {//executé au demarage
@@ -71,17 +71,23 @@ void setup() {//executé au demarage
   //interf.filesManagement();
   
   
-  //simul = new Simulation(interf);
-  //gcom = new GrowerPrint(simul).build("grow");
-  //fcom = new FlocPrint(simul).build("floc");
-  //new BoxPrint(simul);
+  simul = new Simulation(interf);
+  
+  //gcom = 
+  new GrowerPrint(simul)
+  //.build("grow")
+  ;
+  //fcom = 
+  new FlocPrint(simul)
+  //.build("floc")
+  ;
+  new BoxPrint(simul);
   //gcom.fcom = fcom;
   //fcom.gcom = gcom;
   
   
-  //interf.toolpanel.reduc();
+  //simul.toolpanel.reduc();
   //interf.taskpanel.reduc();
-  //interf.macro_main.macro_tool.reduc();
   //simul.pause.set(true);
   
   //logln("end models: "+interf.gui_theme.models.size());
@@ -90,7 +96,7 @@ void setup() {//executé au demarage
   //File file = new File(sketchPath());
   //if (file.isDirectory()) { String names[] = file.list(); } // all files in sketch directory
   
-  //interf.file_load();
+  interf.setup_load();
 }
 
 
@@ -131,6 +137,7 @@ void mouseMoved() {
 
 
 String copy(String s) { if (s != null) return s.substring(0, s.length()); else return null; }
+String str_copy(String s) { if (s != null) return s.substring(0, s.length()); else return null; }
 
 String trimStringFloat(float f) { return trimStringFloat(f, 2); }
 String trimStringFloat(float f, int p) {

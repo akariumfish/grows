@@ -62,41 +62,32 @@
 
 
 
-class Simulation {
+class Simulation extends Macro_Sheet {
   
-  Macro_Sheet sheet;
+  sValueBloc com_bloc;
   
-  sInt tick_counter; //conteur de tour depuis le dernier reset ou le debut
-  sBoo pause; //permet d'interompre le defilement des tour
-  sInt force_next_tick; 
-  sFlt tick_by_frame; //nombre de tour a executé par frame
-  sInt SEED; //seed pour l'aleatoire
-  sBoo auto_reset, auto_reset_rng_seed, auto_reset_screenshot, show_com;
-  sInt auto_reset_turn;
-  sRun srun_reset, srun_rngr, srun_nxtt;
-
-  float tick_pile = 0; //pile des tick a exec
-
   Simulation(sInterface _int) {
+    super(_int.macro_main, "Simulation", null);
     inter = _int;
-    ref_size = inter.size;
+    ref_size = inter.ref_size;
     cam_gui = inter.cam_gui;
     
-    sheet = inter.macro_main.addSheet("Simulation");
-    //sheet.setPosition(0, -ref_size*3);
+    unclearable = true;
     
-    //sbloc = sheet.sheet_data;
-    ticking_pile = new Ticking_pile();
-    tick_counter = sheet.newLinkedInt(0, "tick_counter", "tick");
-    tick_by_frame = sheet.newLinkedFlt(2, "tick by frame", "tck/frm");
-    pause = sheet.newLinkedBoo(false, "pause", "pause");
-    force_next_tick = sheet.newLinkedInt(0, "force_next_tick", "nxt tick");
-    auto_reset = sheet.newLinkedBoo(true, "auto_reset", "auto reset");
-    auto_reset_rng_seed = sheet.newLinkedBoo(true, "auto_reset_rng_seed", "auto rng");
-    auto_reset_screenshot = sheet.newLinkedBoo(false, "auto_rest_screenshot", "auto shot");
-    show_com = sheet.newLinkedBoo(false, "show_com", "show");
-    auto_reset_turn = sheet.newLinkedInt(4000, "auto_reset_turn", "auto turn");
-    SEED = sheet.newLinkedInt(548651008, "SEED", "SEED");
+    com_bloc = inter.interface_bloc.newBloc("Active_Community");
+    
+    setPosition(0, -ref_size*8);
+    val_descr.set("Control time, reset, random...");
+    tick_counter = value_bloc.newInt(0, "tick_counter", "tick");
+    tick_by_frame = value_bloc.newFlt(2, "tick by frame", "tck/frm");
+    pause = value_bloc.newBoo(false, "pause", "pause");
+    force_next_tick = value_bloc.newInt(0, "force_next_tick", "nxt tick");
+    auto_reset = value_bloc.newBoo(true, "auto_reset", "auto reset");
+    auto_reset_rng_seed = value_bloc.newBoo(true, "auto_reset_rng_seed", "auto rng");
+    auto_reset_screenshot = value_bloc.newBoo(false, "auto_rest_screenshot", "auto shot");
+    show_com = value_bloc.newBoo(false, "show_com", "show");
+    auto_reset_turn = value_bloc.newInt(4000, "auto_reset_turn", "auto turn");
+    SEED = value_bloc.newInt(548651008, "SEED", "SEED");
 
     inter.addEventFrame(new Runnable() { 
       public void run() { 
@@ -117,38 +108,70 @@ class Simulation {
     } 
     );
 
-    srun_reset = sheet.newLinkedRun("sim reset", "reset", new Runnable() { 
+    srun_reset = value_bloc.newRun("sim reset", "reset", new Runnable() { 
       public void run() { 
         reset();
       }
     } 
     );
-    srun_rngr = sheet.newLinkedRun("sim rng reset", "rst rng", new Runnable() { 
+    srun_rngr = value_bloc.newRun("sim rng reset", "rst rng", new Runnable() { 
       public void run() { 
         resetRng();
       }
     } 
     );
-    srun_nxtt = sheet.newLinkedRun("sim next tick", "nxt tck", new Runnable() { 
+    srun_nxtt = value_bloc.newRun("sim next tick", "nxt tck", new Runnable() { 
       public void run() { 
         force_next_tick.add(1);
       }
     } 
     );
     
-    sheet.reduc();
+    inter.addEventSetupLoad(new Runnable() { 
+      public void run() { 
+        sValueBloc bloc = ((sValueBloc)builder);
+        if (bloc.getBloc("Active_Community") != null) { 
+          bloc.getBloc("Active_Community").runBlocIterator(
+          new Iterator<sValueBloc>() { public void run(sValueBloc bloc) { 
+            for (Blueprint bp : Blueprint.list) 
+              if (bp.name.equals(bloc.base_ref)) bp.build();
+          }});
+        }
+      }
+    } 
+    );
+    addEventSetupLoad(new Runnable() { 
+      public void run() { 
+        reset();
+        sValueBloc bloc = ((sValueBloc)builder);
+        //if (bloc.getBloc("Simulation") != null) { transfer_values(bloc.getBloc("Simulation"), value_bloc); }
+        //for (Community c : list) c.setup_load(bloc);
+      }
+    } 
+    );
     
-    inter.macro_main.addTickAskMethod(new Runnable() { public void run() {
-      srun_nxtt.run();
-    } });
+    //sheet.reduc();
     
-    macromain_tickable = new Tickable(ticking_pile) { public void tick(float f) { inter.macro_main.tick(); } };
+    //inter.macro_main.addTickAskMethod(new Runnable() { public void run() {
+    //  srun_nxtt.run();
+    //} });
     
-    inter.macro_main.childDragged();
+    //macromain_tickable = new Tickable(ticking_pile) { public void tick(float f) { inter.macro_main.tick(); } };
     
-    build_ui();
+    build_toolpanel();
     
   }
+
+  sInt tick_counter; //conteur de tour depuis le dernier reset ou le debut
+  sBoo pause; //permet d'interompre le defilement des tour
+  sInt force_next_tick; 
+  sFlt tick_by_frame; //nombre de tour a executé par frame
+  sInt SEED; //seed pour l'aleatoire
+  sBoo auto_reset, auto_reset_rng_seed, auto_reset_screenshot, show_com;
+  sInt auto_reset_turn;
+  sRun srun_reset, srun_rngr, srun_nxtt;
+
+  float tick_pile = 0; //pile des tick a exec
 
   ArrayList<Runnable> eventsReset = new ArrayList<Runnable>();
   ArrayList<Runnable> eventsFrame = new ArrayList<Runnable>();
@@ -226,7 +249,7 @@ class Simulation {
       reset();
     }
 
-    ticking_pile.tick();
+    //ticking_pile.tick();
 
     //tick communitys
     for (Community c : list) c.tick();
@@ -248,12 +271,12 @@ class Simulation {
     for (Community c : list) if (c.show_entity.get()) c.draw_Screen();
   }
   
-  
-  nFrontPanel sim_front;
+  nToolPanel toolpanel;
   nDrawer val_drawer;
   
-  void build_ui() {
-    inter.toolpanel.getShelf(0)
+  void build_toolpanel() {
+    toolpanel = new nToolPanel(inter.screen_gui, ref_size, 0.125, false, false);
+    toolpanel.addShelf()
       .addDrawer(10, 0.75)
       .addModel("Label-S4", "-  GROWERS  -").setFont(int(ref_size)).getShelf()
       .addSeparator(0.25)
@@ -276,17 +299,22 @@ class Simulation {
       .addCtrlModel("Button-S3-P1", "Quick Save")
       .setRunnable(new Runnable() { 
       public void run() { 
-        //inter.file_save();
+        inter.full_data_save();
       }
     }
     ).getDrawer()
       .addCtrlModel("Button-S3-P2", "Quick Load")
       .setRunnable(new Runnable() { 
       public void run() { 
-        //inter.file_load();
+        inter.setup_load();
       }
     }
-    ).getDrawer()
+    ).getDrawer().getShelf()
+      .addDrawer(10, 1)
+      .addLinkedModel("Button-S3-P1", "grid")
+      .setLinkedValue(inter.cam.grid).getDrawer()
+      .addLinkedModel("Button-S3-P2", "auto load")
+      .setLinkedValue(inter.auto_load).getDrawer()
       .getShelfPanel()
       .addShelf()
       .addDrawer(10, 1)
@@ -310,13 +338,15 @@ class Simulation {
       .addCtrlModel("Button-S1-P7", ">").setLinkedValue(tick_by_frame).setFactor(1.25).getDrawer()
       .addCtrlModel("Button-S1-P8", ">>").setLinkedValue(tick_by_frame).setFactor(2).getShelf()
       .addDrawer(10, 1)
-      .addWatcherModel("Label_Back-S3-P1")
-      //.setLinkedValue(inter.test)
+      .addCtrlModel("Button-S3-P1", "Sim").setRunnable(new Runnable() { public void run() { 
+        build_sheet_menu(); } } )
       .getDrawer()
-      .addWatcherModel("Label_Back-S3-P2").setLinkedValue(tick_counter).getShelf()
+      .addCtrlModel("Button-S3-P2", "Files").setRunnable(new Runnable() { public void run() { 
+        inter.filesManagement(); } } ).getShelf()
       .addDrawer(10, 1)
       .addWatcherModel("Label_Back-S3-P1")
       .setLinkedValue(inter.framerate.median_framerate).getDrawer()
+      .addWatcherModel("Label_Back-S3-P2").setLinkedValue(tick_counter).getDrawer()
       .addLinkedModel("Button-S1-P9", "S")
       .setLinkedValue(show_com)
       .getShelfPanel()
@@ -325,31 +355,25 @@ class Simulation {
     selector_entry = new ArrayList<String>(); // mmain().data.getCountOfType("flt")
     selector_value = new ArrayList<Community>(); // mmain().data.getCountOfType("flt")
     
-    inter.main_menu.addEntry("Simulation", new Runnable() { 
-      public void run() { 
-        build_sim_frontpanel(inter.screen_gui);
-      }
-    } 
-    );
     inter.screen_gui.addEventSetup(new Runnable() { 
       public void run() { 
-        for (Blueprint c : com_blueprint) c.simPanelBuild(sim_front);
+        //for (Blueprint c : com_blueprint) c.simPanelBuild(sim_front);
 
         if (list.size() > 0) {
           update_com_selector_list();
         }
+        //build_sim_frontpanel(inter.screen_gui);
       }
     } 
     );  
   }
   
-  void build_sim_frontpanel(nGUI screen_gui) {
-    if (sim_front == null) {
-      sim_front = new nFrontPanel(screen_gui, inter.taskpanel, "Simulation");
-      nFrontTab tab = sim_front.addTab("Base");
+  
+  void build_custom_menu(nFrontPanel sheet_front) {
+    nFrontTab tab = sheet_front.addTab("Base");
 
       tab.getShelf()
-        .addDrawer(10, 0.6)
+        .addDrawer(10.25, 0.6)
         .addModel("Label-S4", "- Simulation Control -").setFont(int(ref_size/1.4)).getShelf()
         .addSeparator(0.125)
         .addDrawerWatch(tick_counter, 10, 1)
@@ -366,8 +390,9 @@ class Simulation {
         .addSeparator(0.125)
         .addDrawerTripleButton(pause, show_com, inter.cam.grid, 10, 1)
         .addSeparator(0.125)
-        .addDrawer(10, 0.75)
-        .addModel("Label-SS4", "- New Community -").setFont(int(ref_size/1.5)).getShelf()
+        //.addDrawer(10, 0.75)
+        //.addModel("Label-SS4", "- New Community -").setFont(int(ref_size/1.5))
+        //.getShelf()
         
         ;
       
@@ -381,12 +406,12 @@ class Simulation {
             .setTrigger()
             .addEventTrigger(new Runnable(r) { 
             public void run() {
-              ((Blueprint)builder).build(""); 
+              ((Blueprint)builder).build(); 
               update_com_selector_list(); } } );
           count++;
         }
       val_drawer.getShelf().addSeparator(0.125)
-        .addDrawer(10, 0.75)
+        .addDrawer(10.25, 0.75)
         .addModel("Label-SS4", "- Active Community -").setFont(int(ref_size/1.5)).getShelf()
         //.addSeparator(0.25)
         
@@ -398,7 +423,7 @@ class Simulation {
       selector_list.addEventChange_Builder(new Runnable() { public void run() {
         nList sl = ((nList)builder); 
         if (sl.last_choice_index < list.size()) 
-          list.get(sl.last_choice_index).build_com_frontpanel(inter.screen_gui, ref_size);
+          list.get(sl.last_choice_index).build_sheet_menu();
       } } );
           
           
@@ -426,11 +451,7 @@ class Simulation {
       //;
       
       update_com_selector_list();
-
-      sim_front.setNonClosable();
-    } else sim_front.popUp();
   }
-
   void update_com_selector_list() {
     selector_entry.clear();
     selector_value.clear();
@@ -470,9 +491,10 @@ static abstract class Blueprint {
   static ArrayList<Blueprint> list = new ArrayList<Blueprint>();
 
   Simulation sim;
-  String name;
+  String name, type;
+  int com_count = -1;
   
-  Blueprint(Simulation s, String nam) { name = nam; sim = s;
+  Blueprint(Simulation s, String nam, String typ) { name = nam; sim = s; type = typ;
     list.add(this); 
     count++;
     sim.com_blueprint.add(this);
@@ -483,23 +505,28 @@ static abstract class Blueprint {
   void simPanelBuild(nFrontPanel sim_front) {
     simPanelCustom(sim_front); }
   
-  abstract Community build(String n);
+  Community build() { 
+    sim.com_bloc.newBloc(name); com_count++; return build(name + "_" + com_count, type); }
+  protected abstract Community build(String n, String t);
   void simPanelCustom(nFrontPanel sim_front) {}
 }
 
 
-abstract class Community {
+abstract class Community extends Macro_Sheet {
   
-  nFrontPanel com_front;
+  Community clear() {
+    sim.list.remove(this);
+    adding_cursor.clear();
+    super.clear();
+    return this;
+  }
 
-  abstract void comPanelBuild(nFrontPanel sim_front);
-
-  void build_com_frontpanel(nGUI screen_gui, float ref_size) {
-    if (com_front == null) {
-      com_front = new nFrontPanel(screen_gui, sim.inter.taskpanel, "Community "+name);
-      nFrontTab tab = com_front.addTab("community");
+  abstract void comPanelBuild(nFrontPanel front);
+  
+  void build_custom_menu(nFrontPanel sheet_front) {
+    nFrontTab tab = sheet_front.addTab("Community");
       tab.getShelf()
-        .addDrawer(10, 0.75)
+        .addDrawer(10.25, 0.75)
         .addModel("Label-S4", "-"+name+" Community Control-").setFont(int(ref_size/1.4)).getShelf()
         .addSeparator(0.125)
         .addDrawerWatch(active_entity, 10, 1)
@@ -514,13 +541,10 @@ abstract class Community {
         .addSeparator(0.125)
         ;
       //build_Preset_Tab(com_front, sbloc);
-      comPanelBuild(com_front);
-    } else com_front.popUp();
+      comPanelBuild(sheet_front);
   }
 
   Simulation sim;
-  sValueBloc sbloc;
-  Macro_Sheet sheet;
   String name = "";
   String type;
 
@@ -536,36 +560,37 @@ abstract class Community {
   sStr type_value;
 
   nCursor adding_cursor;
+  
+  //void setup_load(sValueBloc bloc) {
+  //  if (bloc.getBloc(name) != null) { transfer_values(bloc.getBloc(name), sbloc); }
+  //}
 
   Community(Simulation _c, String n, String ty, int max) { 
+    super(_c.inter.macro_main, n, null);
     sim = _c; 
-    name = n;
+    name = value_bloc.ref;
     sim.list.add(this);
     type = ty;
+    
+    max_entity = value_bloc.newInt(500, "max_entity", "max_pop");
+    type_value = value_bloc.newStr(ty, "type", "type");
+    active_entity = value_bloc.newInt(0, "active_entity ", "active_pop");
+    adding_entity_nb = value_bloc.newInt(10, "adding_entity_nb ", "add nb");
+    adding_step = value_bloc.newInt(0, "adding_step ", "add stp");
+    show_entity = value_bloc.newBoo(true, "show_entity ", "show");
 
-    sheet = sim.inter.macro_main.addSheet("Community" + n);
-    //sheet.setPosition(0, -sim.ref_size*5);
-    sbloc = sheet.sheet_data;
-    max_entity = sheet.newLinkedInt(500, "max_entity", "max_pop");
-    type_value = sheet.newLinkedStr(ty, "type", "type");
-    active_entity = sheet.newLinkedInt(0, "active_entity ", "active_pop");
-    adding_entity_nb = sheet.newLinkedInt(10, "adding_entity_nb ", "add nb");
-    adding_step = sheet.newLinkedInt(0, "adding_step ", "add stp");
-    show_entity = sheet.newLinkedBoo(true, "show_entity ", "show");
-
-    //sim.inter.main_menu.addEntry(n, new Runnable() { public void run() { ; } });
-    adding_cursor = new nCursor(sim.cam_gui, sheet.sheet_data, sim.ref_size / 2, "addCursor "+n);
-    sheet.addLinkedValue(adding_cursor.show);
-    sheet.addLinkedValue(adding_cursor.sval);
+    adding_cursor = new nCursor(sim.cam_gui, value_bloc, "addCursor");
+    
     max_entity.set(max); 
 
-    srun_add = sheet.newLinkedRun("add_entity", "add_pop", new Runnable() { 
+    srun_add = value_bloc.newRun("add_entity", "add_pop", new Runnable() { 
       public void run() { 
         adding_pile += adding_entity_nb.get();
       }
     }
     );
-    sheet.reduc();
+    
+    //sheet.reduc();
 
     reset();
   }

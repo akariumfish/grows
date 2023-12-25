@@ -40,99 +40,103 @@
 class sInterface {
   
   void filesManagement() {
-    files_panel = new nWindowPanel(screen_gui, taskpanel, "Files");
-    files_panel.setSpace(0.25);
-    files_panel.getShelf()
-      .addDrawer(0.6)
-        .addModel("Label-S4", "Select File :                                   ").setPY(-0.2*ref_size).getShelf()
-      .addDrawer(0.75)
-        .addLinkedModel("Field-SS4", savepath).setLinkedValue(savepath_value).getShelf()
-      .addDrawer(1)
-        .addModel("Label-S4", "File datas :                                   ").getDrawer()
-        .addCtrlModel("Button_Outline-S2", "Save")
-          .setRunnable(new Runnable() { public void run() { file_explorer_save(); } } )
-          .setPX(ref_size*4)
-          .getDrawer()
-        .addCtrlModel("Button_Outline-S2", "Load")
-          .setRunnable(new Runnable() { public void run() { file_explorer_load(); } } )
-          .setPX(ref_size*7)
-          .getShelf()
-          ;
+    if (files_panel == null) {
+      files_panel = new nWindowPanel(screen_gui, taskpanel, "Files");
+      files_panel.setSpace(0.25);
+      files_panel.getShelf()
+        .addSeparator(0.125)
+        .addDrawer(0.6)
+          .addModel("Label-S4", "Select File :                                   ").setPY(-0.2*ref_size).getShelf()
+        .addDrawer(0.75)
+          .addLinkedModel("Field-SS4", savepath).setLinkedValue(savepath_value).getShelf()
+        .addDrawer(1)
+          .addModel("Label-S4", "File datas :                                   ").getDrawer()
+          .addCtrlModel("Button_Outline-S2", "Save")
+            .setRunnable(new Runnable() { public void run() { file_explorer_save(); } } )
+            .setPX(ref_size*4)
+            .getDrawer()
+          .addCtrlModel("Button_Outline-S2", "Load")
+            .setRunnable(new Runnable() { public void run() { file_explorer_load(); } } )
+            .setPX(ref_size*7)
+            .getShelf()
+            ;
+        
       
-    
-    files_panel.addShelf()
-      .addSeparator(0.125)
-      .addDrawer(1)
-        .addCtrlModel("Button_Small_Text_Outline-S3-P1", "close file")
-          .setRunnable(new Runnable() { public void run() { 
-            if (explored_bloc != null) explored_bloc.clear();
-            explored_bloc.clear(); explored_bloc = null;
-            file_explorer.setBloc(null);
-            file_explorer.update(); data_explorer.update(); update_list(); 
-          } } )
-          .getDrawer()
-        .addCtrlModel("Button_Small_Text_Outline-S3-P2", "go to /")
-          .setRunnable(new Runnable() { public void run() { 
-            data_explorer.setBloc(interface_bloc); 
-            data_explorer.update(); update_list(); 
-          } } )
-          .getShelf()
-      .addDrawer(10, 1)
-        .addCtrlModel("Button_Small_Text_Outline-S3-P1", "delete file bloc")
-          .setRunnable(new Runnable() { public void run() { 
-            if (file_explorer.selected_bloc != null) { file_explorer.selected_bloc.clear(); }
-            file_explorer.update();
-          } } )
-          .getDrawer()
-        .addCtrlModel("Button_Small_Text_Outline-S3-P2", "dump data")
-          .setRunnable(new Runnable() { public void run() { full_data_save(); } } ) //full_data_load();
-          .getShelf()
-      ;
-      
-    
-    files_panel.getShelf(0)
-      .addSeparator(0.0625)
-      .addDrawer(2)
-        .addCtrlModel("Button_Small_Text_Outline-S3", "COPY BLOC\nINTO DATA")
-          .setRunnable(new Runnable() { public void run() { copy_file_to_data(); } } )
-          .setPX(ref_size*0).setSY(ref_size*2)
-          .getDrawer()
-        .addCtrlModel("Button_Small_Text_Outline-S3", "TRANSFER\nFILE VALUES\nTO DATA")
-          .setRunnable(new Runnable() { public void run() { transfer_file_to_data(); } } )
-          .setPX(ref_size*4).setSY(ref_size*2)
-          ;
-          
-    match_flag = files_panel.getShelf(0)
-      .getLastDrawer()
-        .addModel("Label_DownLight_Back_Downlight_Outline-S3", "MATCHING\nBLOCS PRINT")
-          .setPX(ref_size*8).setSY(ref_size*2);
-    
-    files_panel.getShelf(0)
-      .getLastDrawer()
-        .addCtrlModel("Button_Small_Text_Outline-S3", "TRANSFER\nDATA VALUES\nTO FILE")
-          .setRunnable(new Runnable() { public void run() { transfer_data_to_file(); } } )
-          .setPX(ref_size*12).setSY(ref_size*2)
-          .getDrawer()
-        .addCtrlModel("Button_Small_Text_Outline-S3", "COPY BLOC\nINTO FILE")
-          .setRunnable(new Runnable() { public void run() { copy_data_to_file(); } } )
-          .setPX(ref_size*16).setSY(ref_size*2)
-          .getShelf()
-      ;
-      
-    file_explorer = files_panel.getShelf(0)
-      .addExplorer()
-        .addEventChange(new Runnable() { public void run() { update_list(); } } )
+      files_panel.addShelf()
+        .addSeparator(0.5)
+        .addDrawer(1)
+          .addCtrlModel("Button_Small_Text_Outline-S3-P1", "close file")
+            .setRunnable(new Runnable() { public void run() { 
+              if (explored_bloc != null) explored_bloc.clear();
+              explored_bloc.clear(); explored_bloc = null;
+              file_explorer.setBloc(null);
+              file_explorer.update(); data_explorer.update(); update_list(); 
+            } } )
+            .getDrawer()
+          .addCtrlModel("Button_Small_Text_Outline-S3-P2", "go to /")
+            .setRunnable(new Runnable() { public void run() { 
+              data_explorer.setBloc(interface_bloc); 
+              data_explorer.update(); update_list(); 
+            } } )
+            .getShelf()
+        .addDrawer(10, 1)
+          .addCtrlModel("Button_Small_Text_Outline-S3-P1", "delete file bloc")
+            .setRunnable(new Runnable() { public void run() { 
+              if (file_explorer.selected_bloc != null) { file_explorer.selected_bloc.clear(); }
+              file_explorer.update();
+            } } )
+            .getDrawer()
+          .addCtrlModel("Button_Small_Text_Outline-S3-P2", "dump data")
+            .setRunnable(new Runnable() { public void run() { full_data_save(); } } ) //full_data_load();
+            .getShelf()
         ;
         
-    data_explorer = files_panel.getShelf(1)
-      .addSeparator(2.25)
-      .addExplorer()
-        .setBloc(interface_bloc)
-        .addEventChange(new Runnable() { public void run() { update_list(); } } )
+      
+      files_panel.getShelf(0)
+        .addSeparator(0.25)
+        .addDrawer(2)
+          .addCtrlModel("Button_Small_Text_Outline-S3", "COPY BLOC\nINTO DATA")
+            .setRunnable(new Runnable() { public void run() { copy_file_to_data(); } } )
+            .setPX(ref_size*0).setSY(ref_size*2)
+            .getDrawer()
+          .addCtrlModel("Button_Small_Text_Outline-S3", "TRANSFER\nFILE VALUES\nTO DATA")
+            .setRunnable(new Runnable() { public void run() { transfer_file_to_data(); } } )
+            .setPX(ref_size*4).setSY(ref_size*2)
+            ;
+            
+      match_flag = files_panel.getShelf(0)
+        .getLastDrawer()
+          .addModel("Label_DownLight_Back_Downlight_Outline-S3", "MATCHING\nBLOCS PRINT")
+            .setPX(ref_size*8).setSY(ref_size*2);
+      
+      files_panel.getShelf(0)
+        .getLastDrawer()
+          .addCtrlModel("Button_Small_Text_Outline-S3", "TRANSFER\nDATA VALUES\nTO FILE")
+            .setRunnable(new Runnable() { public void run() { transfer_data_to_file(); } } )
+            .setPX(ref_size*12).setSY(ref_size*2)
+            .getDrawer()
+          .addCtrlModel("Button_Small_Text_Outline-S3", "COPY BLOC\nINTO FILE")
+            .setRunnable(new Runnable() { public void run() { copy_data_to_file(); } } )
+            .setPX(ref_size*16).setSY(ref_size*2)
+            .getShelf()
         ;
-    files_panel.collapse();
+        
+      file_explorer = files_panel.getShelf(0)
+        .addExplorer()
+          .addEventChange(new Runnable() { public void run() { update_list(); } } )
+          ;
+          
+      data_explorer = files_panel.getShelf(1)
+        .addSeparator(2.375)
+        .addExplorer()
+          .setBloc(interface_bloc)
+          .addEventChange(new Runnable() { public void run() { update_list(); } } )
+          ;
+      //files_panel.collapse();
+      files_panel.addEventClose(new Runnable(this) { public void run() { files_panel = null; }});
+      addEventSetup(new Runnable() { public void run() { data_explorer.update(); file_explorer.update(); } } );
+    } else files_panel.popUp();
   }
-  
   
   void copy_file_to_data() {
     if (data_explorer.selected_bloc != null && file_explorer.selected_bloc != null) {
@@ -152,7 +156,6 @@ class sInterface {
       //update_list();
     } 
   }
-  
   void transfer_file_to_data() {
     if (data_explorer.selected_bloc != null && file_explorer.selected_bloc != null &&
         file_explorer.selected_bloc.getHierarchy(true)
@@ -210,10 +213,33 @@ class sInterface {
     file_explorer.setBloc(explored_bloc);
   }
   
+  sInterface addEventSetupLoad(Runnable r) { eventsSetupLoad.add(r); return this; }
+  ArrayList<Runnable> eventsSetupLoad = new ArrayList<Runnable>();
+  void setup_load() {
+    file_savebloc.clear();
+    file_savebloc.load_from(savepath);
+    if (explored_bloc != null) explored_bloc.clear();
+    explored_bloc = interface_bloc.newBloc(file_savebloc, "setup");
+    if (explored_bloc.getValue("auto_load") == null || 
+        (explored_bloc.getValue("auto_load") != null && ((sBoo)explored_bloc.getValue("auto_load")).get())) {
+      for (Runnable r : eventsSetupLoad) r.builder = explored_bloc;
+      runEvents(eventsSetupLoad);
+      macro_main.setup_load(explored_bloc);
+      if (explored_bloc.getBloc("camera") != null) { 
+        transfer_values(explored_bloc.getBloc("camera"), cam.sbloc); }
+    }
+    if (explored_bloc.getValue("auto_load") != null) 
+      auto_load.set(((sBoo)explored_bloc.getValue("auto_load")).get());
+    explored_bloc.clear();
+  }
+  
+  
+  
   nWidget match_flag;
   nWindowPanel files_panel;
   String savepath = "save.sdata";
   sStr savepath_value;
+  sBoo auto_load;
   Save_Bloc file_savebloc;
   sValueBloc explored_bloc;
   nExplorer file_explorer, data_explorer;
@@ -224,7 +250,8 @@ class sInterface {
     taskpanel = new nTaskPanel(screen_gui, ref_size, 0.125);
     savepath_value = new sStr(interface_bloc, savepath, "savepath", "spath");
     file_savebloc = new Save_Bloc(savepath);
-    filesManagement();
+    auto_load = new sBoo(interface_bloc, false, "auto_load", "autoload");
+    //filesManagement();
   }
   
   
@@ -269,11 +296,13 @@ class sInterface {
     mySetup_MACRO(this);
   }
 
-//  sInterface addToCamDrawerPile(Drawable d) { d.setPile(cam_gui.drawing_pile); return this; }
-//  sInterface addToScreenDrawerPile(Drawable d) { d.setPile(screen_gui.drawing_pile); return this; }
+  sInterface addToCamDrawerPile(Drawable d) { d.setPile(cam_gui.drawing_pile); return this; }
+  sInterface addToScreenDrawerPile(Drawable d) { d.setPile(screen_gui.drawing_pile); return this; }
   
   sInterface addEventHoverNotFound(Runnable r) { eventsHoverNotFound.add(r); return this; }
   sInterface addEventFrame(Runnable r) { eventsFrame.add(r); return this; }
+  sInterface addEventNextFrame(Runnable r) { 
+    if (active_nxtfrm_pile) eventsNextFrame1.add(r); else eventsNextFrame2.add(r); return this; }
   sInterface addEventSetup(Runnable r) { eventsSetup.add(r); return this; }
   
   
@@ -281,6 +310,9 @@ class sInterface {
   
 
   ArrayList<Runnable> eventsFrame = new ArrayList<Runnable>();
+  ArrayList<Runnable> eventsNextFrame1 = new ArrayList<Runnable>();
+  ArrayList<Runnable> eventsNextFrame2 = new ArrayList<Runnable>();
+  boolean active_nxtfrm_pile = false;
   ArrayList<Runnable> eventsHoverNotFound = new ArrayList<Runnable>();
   ArrayList<Runnable> eventsSetup = new ArrayList<Runnable>();
   boolean is_starting = true;
@@ -294,7 +326,10 @@ class sInterface {
       runEvents(eventsSetup);
     }
     runEvents(eventsFrame); // << sim runs here
-
+    if (!active_nxtfrm_pile) { runEvents(eventsNextFrame1); eventsNextFrame1.clear(); } 
+    else { runEvents(eventsNextFrame2); eventsNextFrame2.clear(); } 
+    active_nxtfrm_pile = !active_nxtfrm_pile;
+    
     screen_gui.frame();
     cam.pushCam(); // matrice d'affichage
     cam_gui.frame();
