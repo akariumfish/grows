@@ -129,7 +129,7 @@ class sInterface {
       data_explorer = files_panel.getShelf(1)
         .addSeparator(2.375)
         .addExplorer()
-          .setBloc(interface_bloc)
+          .setBloc(data)
           .addEventChange(new Runnable() { public void run() { update_list(); } } )
           ;
       //files_panel.collapse();
@@ -209,7 +209,7 @@ class sInterface {
     file_savebloc.clear();
     file_savebloc.load_from(savepath);
     if (explored_bloc != null) explored_bloc.clear();
-    explored_bloc = interface_bloc.newBloc(file_savebloc, "file");
+    explored_bloc = data.newBloc(file_savebloc, "file");
     file_explorer.setBloc(explored_bloc);
   }
   
@@ -218,19 +218,19 @@ class sInterface {
   void setup_load() {
     file_savebloc.clear();
     file_savebloc.load_from(savepath);
-    if (explored_bloc != null) explored_bloc.clear();
-    explored_bloc = interface_bloc.newBloc(file_savebloc, "setup");
-    if (explored_bloc.getValue("auto_load") == null || 
-        (explored_bloc.getValue("auto_load") != null && ((sBoo)explored_bloc.getValue("auto_load")).get())) {
-      for (Runnable r : eventsSetupLoad) r.builder = explored_bloc;
+    if (setup_bloc != null) setup_bloc.clear();
+    setup_bloc = data.newBloc(file_savebloc, "setup");
+    if (setup_bloc.getValue("auto_load") == null || 
+        (setup_bloc.getValue("auto_load") != null && ((sBoo)setup_bloc.getValue("auto_load")).get())) {
+      for (Runnable r : eventsSetupLoad) r.builder = setup_bloc;
       runEvents(eventsSetupLoad);
-      macro_main.setup_load(explored_bloc);
-      if (explored_bloc.getBloc("camera") != null) { 
-        transfer_values(explored_bloc.getBloc("camera"), cam.sbloc); }
+      macro_main.setup_load(setup_bloc);
+      if (setup_bloc.getBloc("camera") != null) { 
+        transfer_values(setup_bloc.getBloc("camera"), cam.sbloc); }
     }
-    if (explored_bloc.getValue("auto_load") != null) 
-      auto_load.set(((sBoo)explored_bloc.getValue("auto_load")).get());
-    explored_bloc.clear();
+    if (setup_bloc.getValue("auto_load") != null) 
+      auto_load.set(((sBoo)setup_bloc.getValue("auto_load")).get());
+    //setup_bloc.clear();
   }
   
   
@@ -241,7 +241,7 @@ class sInterface {
   sStr savepath_value;
   sBoo auto_load;
   Save_Bloc file_savebloc;
-  sValueBloc explored_bloc;
+  sValueBloc explored_bloc, setup_bloc;
   nExplorer file_explorer, data_explorer;
   nTaskPanel taskpanel;
   float ref_size;
@@ -301,6 +301,7 @@ class sInterface {
   
   sInterface addEventHoverNotFound(Runnable r) { eventsHoverNotFound.add(r); return this; }
   sInterface addEventFrame(Runnable r) { eventsFrame.add(r); return this; }
+  sInterface removeEventFrame(Runnable r) { eventsFrame.remove(r); return this; }
   sInterface addEventNextFrame(Runnable r) { 
     if (active_nxtfrm_pile) eventsNextFrame1.add(r); else eventsNextFrame2.add(r); return this; }
   sInterface addEventSetup(Runnable r) { eventsSetup.add(r); return this; }

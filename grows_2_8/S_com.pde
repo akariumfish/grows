@@ -68,25 +68,30 @@ class GrowerComu extends Community {
       .addSeparator(0.125)
       ;
   }
+  
+  void selected_comu(Community c) { 
+    logln(c.name + c.type_value.get());
+    if (c != null && c.type_value.get().equals("floc")) fcom = (FlocComu)c;
+  }
 
   GrowerComu(Simulation _c, String n, String t) { 
-    super(_c, n, t, 500);
-    DEVIATION = new sFlt(value_bloc, 8, "dev", "dev");
-    L_MIN = new sFlt(value_bloc, 20, "lmin", "lmin");
-    L_MAX = new sFlt(value_bloc, 350, "lmax", "lmax");
-    L_DIFFICULTY = new sFlt(value_bloc, 180, "ldif", "ldif");
-    OLD_AGE = new sFlt(value_bloc, 666, "age", "age");
+    super(_c, n, t, 1000);
+    DEVIATION = new sFlt(value_bloc, 6, "dev", "dev");
+    L_MIN = new sFlt(value_bloc, 2.5, "lmin", "lmin");
+    L_MAX = new sFlt(value_bloc, 40, "lmax", "lmax");
+    L_DIFFICULTY = new sFlt(value_bloc, 1, "ldif", "ldif");
+    OLD_AGE = new sFlt(value_bloc, 100, "age", "age");
 
-    growP = new RandomTryParam(value_bloc, 0.5, true, "grow");
-    sproutP = new RandomTryParam(value_bloc, 2080, true, "sprout");
-    stopP = new RandomTryParam(value_bloc, 1.25, true, "stop");
-    leafP = new RandomTryParam(value_bloc, 2080, true, "leaf");
-    dieP = new RandomTryParam(value_bloc, 3.6, true, "die");
+    growP = new RandomTryParam(value_bloc, 0.2, true, "grow");
+    sproutP = new RandomTryParam(value_bloc, 3000, true, "sprout");
+    stopP = new RandomTryParam(value_bloc, 2, true, "stop");
+    leafP = new RandomTryParam(value_bloc, 5000, true, "leaf");
+    dieP = new RandomTryParam(value_bloc, 40, true, "die");
 
-    create_floc = new sBoo(value_bloc, true, "create floc", "create floc");
-    activeGrower = new sInt(value_bloc, 0, "activeGrower", "growers nb");
+    create_floc = new sBoo(value_bloc, true, "create_floc", "create floc");
+    activeGrower = new sInt(value_bloc, 0, "active_grower", "growers nb");
 
-    srun_killg = new sRun(value_bloc, name+"kill grower", "kill", new Runnable(list) { 
+    srun_killg = new sRun(value_bloc, "kill_grower", "kill", new Runnable(list) { 
       public void run() { 
         for (Entity e : ((ArrayList<Entity>)builder)) {
           Grower g = (Grower)e;
@@ -372,7 +377,7 @@ class FlocComu extends Community {
     tab.getShelf()
       .addDrawerDoubleButton(DRAWMODE_DEF, DRAWMODE_DEBUG, 10, 1)
       .addSeparator(0.125)
-      .addDrawerDoubleButton(point_to_mouse, point_to_center, 10, 1)
+      .addDrawerTripleButton(point_to_mouse, point_to_center, point_to_cursor, 10, 1)
       .addSeparator(0.125)
       .addDrawerDoubleButton(create_grower, null, 10, 1)
       .addSeparator(0.125)
@@ -392,12 +397,18 @@ class FlocComu extends Community {
       .addSeparator(0.125)
       .addDrawerFactValue(HALO_DENS, 2, 10, 1)
       .addSeparator(0.125)
+      .addDrawerFactValue(POINT_FORCE, 2, 10, 1)
+      .addSeparator(0.125)
       ;
   }
   
-  sFlt POURSUITE, FOLLOW, SPACING, SPEED, HALO_SIZE, HALO_DENS ;
+  void selected_comu(Community c) { 
+    if (c != null && c.type_value.get().equals("grow")) gcom = (GrowerComu)c;
+  }
+  
+  sFlt POURSUITE, FOLLOW, SPACING, SPEED, HALO_SIZE, HALO_DENS, POINT_FORCE ;
   sInt LIMIT, AGE ;
-  sBoo DRAWMODE_DEF, DRAWMODE_DEBUG, create_grower, point_to_mouse, point_to_center;
+  sBoo DRAWMODE_DEF, DRAWMODE_DEBUG, create_grower, point_to_mouse, point_to_center, point_to_cursor;
   
   int startbox = 400;
   
@@ -412,13 +423,15 @@ class FlocComu extends Community {
     AGE = new sInt(value_bloc, 2000, "age", "age");
     HALO_SIZE = new sFlt(value_bloc, 80, "HALO_SIZE", "Size");
     HALO_DENS = new sFlt(value_bloc, 0.15, "HALO_DENS", "Dens");
+    POINT_FORCE = new sFlt(value_bloc, 0.01, "POINT_FORCE", "point");
     
     DRAWMODE_DEF = new sBoo(value_bloc, true, "DRAWMODE_DEF", "draw1");
     DRAWMODE_DEBUG = new sBoo(value_bloc, false, "DRAWMODE_DEBUG", "draw2");
     
     create_grower = new sBoo(value_bloc, true, "create_grower", "create grow");
     point_to_mouse = new sBoo(value_bloc, false, "point_to_mouse", "to center");
-    point_to_center = new sBoo(value_bloc, true, "point_to_center", "to mouse");
+    point_to_center = new sBoo(value_bloc, false, "point_to_center", "to mouse");
+    point_to_cursor = new sBoo(value_bloc, false, "point_to_cursor", "to cursor");
     //init_canvas();
     
   }
@@ -522,9 +535,12 @@ class Floc extends Entity {
       destroy();
     }
     //point toward mouse
-    if (com().point_to_mouse.get()) headTo(com().sim.inter.cam.screen_to_cam(new PVector(mouseX, mouseY)), 0.01);
+    if (com().point_to_mouse.get()) headTo(com().sim.inter.cam.screen_to_cam(new PVector(mouseX, mouseY)), 
+                                           com().POINT_FORCE.get());
     //point toward center
-    if (com().point_to_center.get()) headTo(new PVector(0, 0), 0.01);
+    if (com().point_to_center.get()) headTo(new PVector(0, 0), com().POINT_FORCE.get());
+    //point toward cursor
+    if (com().point_to_cursor.get()) headTo(com().adding_cursor.pos(), com().POINT_FORCE.get());
     pos.add(mov);
     return this;
   }

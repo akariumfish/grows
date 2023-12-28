@@ -58,9 +58,10 @@ class nConstructor {
       .setClickedColor(color(120, 130, 120))
       );
     theme.addModel("Auto_Button", theme.newWidget("Button")
-      .setStandbyColor(color(25, 120, 20))
-      .setHoveredColor(color(30, 140, 25))
-      .setClickedColor(color(120, 180, 120))
+      .setFont(int(ref_size/1.9))
+      .setStandbyColor(color(20, 100, 15))
+      .setHoveredColor(color(120, 180, 120))
+      .setClickedColor(color(30, 150, 25))
       );
     theme.addModel("Auto_Ctrl_Button", theme.newWidget("Auto_Button")
       .setFont(int(ref_size/2.2))

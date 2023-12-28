@@ -78,21 +78,48 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
   }
 
   nWidget ref, lens, msg_view;
-  Macro_Element elem; Macro_Sheet sheet;
+  Macro_Element elem; Macro_Sheet sheet; sObj val_self;
   int type = INPUT;
-  Macro_Connexion(Macro_Element _elem, Macro_Sheet _sheet, int _type, String _info) {
+  String descr; boolean is_sheet_co = false;
+  Macro_Connexion(Macro_Element _elem, Macro_Sheet _sheet, int _type, String _info, boolean isc) {
     super(_elem.gui, _elem.ref_size); 
-    type = _type; elem = _elem; sheet = _sheet;
-    lens = addModel("MC_Connect_In_Passif")
+    type = _type; elem = _elem; sheet = _sheet; is_sheet_co = isc;
+    descr = elem.descr+"_co";
+    if      (!is_sheet_co && type == INPUT) descr += "_IN";
+    else if (!is_sheet_co && type == OUTPUT) descr += "_OUT";
+    else if (is_sheet_co && type == INPUT) descr += "_sheet_IN";
+    else if (is_sheet_co && type == OUTPUT) descr += "_sheet_OUT";
+    val_self = ((sObj)(elem.bloc.setting_bloc.getValue(descr))); 
+    if (val_self == null) val_self = elem.bloc.setting_bloc.newObj(descr, this);
+    else val_self.set(this);
+    lens = addModel("MC_Connect_Default").setTrigger()
       .setSize(ref_size*14/16, ref_size*14/16)
       .setPosition(-ref_size*5/16, -ref_size*5/16)
-      .addEventPress(new Runnable() { public void run() {
-        if (type == OUTPUT) {
-          buildingLine = true;
+      .addEventTrigger(new Runnable(this) { public void run() {
+        if (buildingLine) {
+          buildingLine = false; elem.bloc.mmain().buildingLine = false;
           for (Macro_Connexion i : sheet.child_connect) 
-            if (i.type == INPUT) i.lens.setTrigger().setLook(gui.theme.getLook("MC_Connect_In_Actif")); 
-            else if (i.type == OUTPUT) i.lens.setBackground()
-              .setLook(gui.theme.getLook("MC_Connect_Out_Passif")); 
+            i.lens.setLook(gui.theme.getLook("MC_Connect_Default")).setTrigger();  
+        }
+        else if (!elem.bloc.mmain().buildingLine && !buildingLine && sheet.mmain().selected_sheet == sheet) {
+          if (type == OUTPUT) {
+            buildingLine = true; elem.bloc.mmain().buildingLine = true;
+            for (Macro_Connexion i : sheet.child_connect) 
+              if (i.type == INPUT) i.lens.setLook(gui.theme.getLook("MC_Connect_In_Actif")).setTrigger(); 
+              else if (i.type == OUTPUT && i != (Macro_Connexion)builder) 
+                i.lens.setLook(gui.theme.getLook("MC_Connect_Out_Passif")).setBackground(); 
+              else if (i.type == OUTPUT && i == (Macro_Connexion)builder) 
+                i.lens.setLook(gui.theme.getLook("MC_Connect_Out_Passif")); 
+          }
+          else if (type == INPUT) {
+            buildingLine = true; elem.bloc.mmain().buildingLine = true;
+            for (Macro_Connexion i : sheet.child_connect) 
+              if (i.type == OUTPUT) i.lens.setLook(gui.theme.getLook("MC_Connect_Out_Actif")).setTrigger(); 
+              else if (i.type == INPUT && i != (Macro_Connexion)builder) 
+                i.lens.setLook(gui.theme.getLook("MC_Connect_In_Passif")).setBackground(); 
+              else if (i.type == INPUT && i == (Macro_Connexion)builder) 
+                i.lens.setLook(gui.theme.getLook("MC_Connect_In_Passif")); 
+          }
         }
       } } )
       .addEventFrame(new Runnable(this) { public void run() {
@@ -101,37 +128,38 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
           newLine.x = elem.bloc.mmain().gui.mouseVector.x;
           newLine.y = elem.bloc.mmain().gui.mouseVector.y;
           if (elem.bloc.mmain().gui.in.getClick("MouseRight")) { 
-            buildingLine = false; 
+            buildingLine = false; elem.bloc.mmain().buildingLine = false;
             for (Macro_Connexion i : sheet.child_connect) 
-              if (i.type == INPUT) i.lens.setBackground().setLook(gui.theme.getLook("MC_Connect_In_Passif")); 
-              else if (i.type == OUTPUT) i.lens.setTrigger()
-                .setLook(gui.theme.getLook("MC_Connect_Out_Actif")); 
+              i.lens.setLook(gui.theme.getLook("MC_Connect_Default")).setTrigger(); 
           }
           if (elem.bloc.mmain().gui.in.getClick("MouseLeft")) {
             boolean found = false;
-            for (Macro_Connexion m : sheet.child_connect) if (m.type == INPUT) {
-              for (Macro_Connexion n : connected_inputs)
-                if (m == n) found = true;
-              if (!found && m.lens.isHovered()) {
-                connect_to(m);
-                buildingLine = false;
-                for (Macro_Connexion i : sheet.child_connect) 
-                  if (i.type == INPUT) i.lens.setBackground().setLook(gui.theme.getLook("MC_Connect_In_Passif")); 
-                  else if (i.type == OUTPUT) i.lens.setTrigger()
-                    .setLook(gui.theme.getLook("MC_Connect_Out_Actif")); 
-                found = true;
+            for (Macro_Connexion m : sheet.child_connect) { 
+              if (type != m.type) {
+                //if (type == OUTPUT) for (Macro_Connexion n : connected_inputs)
+                //  if (m == n) found = true;
+                //if (type == INPUT) for (Macro_Connexion n : connected_outputs)
+                //  if (m == n) found = true;
+                //if (m.elem.bloc == elem.bloc) found = true;
+                if (!found && m.lens.isHovered()) {
+                  connect_to(m);
+                  buildingLine = false; 
+                  elem.bloc.mmain().inter.addEventNextFrame(new Runnable() { public void run() { 
+                    elem.bloc.mmain().buildingLine = false; }});
+                  for (Macro_Connexion i : sheet.child_connect) 
+                    i.lens.setLook(gui.theme.getLook("MC_Connect_Default")).setTrigger(); 
+                  found = true;
+                }
               }
             }
             if (!found && !lens.isHovered()) {
-              buildingLine = false;
+              buildingLine = false; elem.bloc.mmain().buildingLine = false;
               for (Macro_Connexion i : sheet.child_connect) 
-                if (i.type == INPUT) i.lens.setBackground().setLook(gui.theme.getLook("MC_Connect_In_Passif")); 
-                else if (i.type == OUTPUT) i.lens.setTrigger()
-                  .setLook(gui.theme.getLook("MC_Connect_Out_Actif")); 
+                i.lens.setLook(gui.theme.getLook("MC_Connect_Default")).setTrigger();  
             }
           }
         }
-        if (elem.bloc.mmain().gui.in.getClick("MouseRight")) for (Macro_Connexion m : connected_inputs) {
+        if (!buildingLine && elem.bloc.mmain().gui.in.getClick("MouseRight")) for (Macro_Connexion m : connected_inputs) {
           if (distancePointToLine(elem.bloc.mmain().gui.mouseVector.x, elem.bloc.mmain().gui.mouseVector.y, 
               getCenterX(), getCenterY(), m.getCenterX(), m.getCenterY()) < ref.look.outlineWeight) {
             disconnect_from(m);
@@ -145,71 +173,61 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
       .setPosition(-ref_size*6/16, ref_size*6/16)
       .setDrawable(new Drawable(gui.drawing_pile, 0) { 
       public void drawing() {
-        if (lens.isClicked) fill(ref.look.pressColor);
-        else if (lens.isHovered) fill(ref.look.hoveredColor);
-        else fill(ref.look.standbyColor);
-        noStroke(); ellipseMode(CORNER);
-        ellipse(ref.getX(), ref.getY(), ref.getSX(), ref.getSY());
-        if (lens.isClicked) stroke(ref.look.pressColor);
-        else if (lens.isHovered) stroke(ref.look.hoveredColor);
-        else noStroke();
-        noFill(); strokeWeight(ref.look.outlineWeight);
-        ellipse(ref.getX() - ref.look.outlineWeight, ref.getY() - ref.look.outlineWeight, 
-          ref.getSX() + ref.look.outlineWeight * 2, ref.getSY() + ref.look.outlineWeight * 2);
-          
-        if (type == OUTPUT) fill(0); else fill(255);
-        textFont(getFont(int(elem.bloc.ref_size/2.5)));
-        textAlign(CENTER, CENTER);
-        if (last_def != null) text(last_def, ref.getX()+ref.getSX()/2, ref.getY()+ref.getSY()/2);
-        if (filter != null) text(filter, ref.getX()+ref.getSX()/2, ref.getY()+ref.getSY()/2);
-        if (DEBUG) {
-          fill(255);
-          textFont(getFont(int(elem.bloc.ref_size/4)));
-          if (type == OUTPUT) text(""+index, ref.getX()+ref.getSX()*1.5 , ref.getY()+ref.getSY()/2);
-          else text(""+index, ref.getX()-ref.getSX()*0.5, ref.getY()+ref.getSY()/2);
-        }
-          
-        if (buildingLine) {
-          stroke(ref.look.outlineColor);
-          strokeWeight(ref.look.outlineWeight);
-          line(getCenterX(), getCenterY(), 
-               newLine.x, newLine.y);
-          fill(255);
-          ellipseMode(CENTER);
+        if (elem.bloc.openning.get() == OPEN || elem.bloc.openning.get() == REDUC || 
+            (is_sheet_co && sheet.openning.get() == DEPLOY) ) {
+          if (lens.isClicked) fill(ref.look.pressColor);
+          else if (lens.isHovered) fill(ref.look.hoveredColor);
+          else if (sending || hasSend > 0 || hasReceived > 0) fill(ref.look.outlineColor);
+          else fill(ref.look.standbyColor);
+          noStroke(); ellipseMode(CENTER);
+          ellipse(getCenterX(), getCenterY(), ref.getSX(), ref.getSY());
+          if (lens.isClicked) stroke(ref.look.pressColor);
+          else if (lens.isHovered) stroke(ref.look.hoveredColor);
+          else if (sending || hasSend > 0 || hasReceived > 0) stroke(ref.look.outlineColor);
+          else noStroke();
+          noFill(); strokeWeight(ref.look.outlineWeight/4);
           ellipse(getCenterX(), getCenterY(), 
-                  getSize(), getSize() );
-          fill(0);
-          ellipse(newLine.x, newLine.y, 
-                  getSize(), getSize() );
-        }
-        for (Macro_Connexion m : connected_inputs) {
-          if (distancePointToLine(elem.bloc.mmain().gui.mouseVector.x, elem.bloc.mmain().gui.mouseVector.y, 
-              getCenterX(), getCenterY(), m.getCenterX(), m.getCenterY()) < ref.look.outlineWeight ) { 
-            if (pack_info != null && hasSend > 0) elem.bloc.mmain().info.showText(pack_info);
-            fill(ref.look.outlineSelectedColor); stroke(ref.look.outlineSelectedColor); 
+            ref.getSX() + ref.look.outlineWeight * 2, ref.getSY() + ref.look.outlineWeight * 2);
+            
+          if (buildingLine) {
+            stroke(ref.look.outlineColor);
+            strokeWeight(ref.look.outlineWeight/2);
+            PVector l = new PVector(newLine.x - getCenterX(), newLine.y - getCenterY());
+            PVector lm = new PVector(l.x, l.y);
+            lm.setMag(getSize()/2);
+            line(getCenterX()+lm.x, getCenterY()+lm.y, 
+                 getCenterX()+l.x-lm.x, getCenterY()+l.y-lm.y);
+            fill(255, 0);
+            ellipseMode(CENTER);
+            ellipse(getCenterX(), getCenterY(), 
+                    getSize(), getSize() );
+            ellipse(newLine.x, newLine.y, 
+                    getSize(), getSize() );
           }
-          else 
-          if (sending || hasSend > 0)
-            { fill(ref.look.outlineColor); stroke(ref.look.outlineColor); }
-          else { fill(color(255, 120)); stroke(color(255, 120)); }
-          strokeWeight(ref.look.outlineWeight);
-          PVector l = new PVector(m.getCenterX() - getCenterX(), m.getCenterY() - getCenterY());
-          PVector lm = new PVector(l.x, l.y);
-          lm.setMag(getSize()/2);
-          line(getCenterX()+lm.x, getCenterY()+lm.y, 
-               getCenterX()+l.x-lm.x, getCenterY()+l.y-lm.y);
-          ellipseMode(CENTER);
-          fill(255, 0);
-          ellipse(m.getCenterX(), m.getCenterY(), 
-                  getSize(), getSize() );
-          fill(255, 0);
-          ellipse(getCenterX(), getCenterY(), 
-                  getSize(), getSize() );
+          for (Macro_Connexion m : connected_inputs) {
+            if (m.elem.bloc.openning.get() == OPEN || m.elem.bloc.openning.get() == REDUC || 
+            (m.is_sheet_co && m.sheet.openning.get() == DEPLOY) ) {
+              if (distancePointToLine(elem.bloc.mmain().gui.mouseVector.x, elem.bloc.mmain().gui.mouseVector.y, 
+                  getCenterX(), getCenterY(), m.getCenterX(), m.getCenterY()) < ref.look.outlineWeight ) { 
+                if (pack_info != null && hasSend > 0) elem.bloc.mmain().info.showText(pack_info);
+                fill(ref.look.outlineSelectedColor); stroke(ref.look.outlineSelectedColor); } 
+              else if (sending || hasSend > 0) { fill(ref.look.outlineColor); stroke(ref.look.outlineColor); }
+              else { fill(ref.look.standbyColor); stroke(ref.look.standbyColor); }
+              strokeWeight(ref.look.outlineWeight);
+              PVector l = new PVector(m.getCenterX() - getCenterX(), m.getCenterY() - getCenterY());
+              PVector lm = new PVector(l.x, l.y);
+              lm.setMag(getSize()/2);
+              line(getCenterX()+lm.x, getCenterY()+lm.y, 
+                   getCenterX()+l.x-lm.x, getCenterY()+l.y-lm.y);
+            }
+          }
+          if (hasSend > 0) hasSend--;
+          if (hasReceived > 0) hasReceived--;
         }
-        if (hasSend > 0) hasSend--;
       }
     });
     if (_info != null) lens.setInfo(_info);
+    infoText = copy(_info);
     ref.setParent(elem.back);
     msg_view = addModel("MC_Connect_View").clearParent();
     msg_view.setParent(ref);
@@ -217,33 +235,67 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
       msg_view.stackLeft();
       elem.back.setTextAlignment(LEFT, CENTER);
       ref.alignRight().setPX(-ref.getLocalX()); 
-      lens.setTrigger().setLook(gui.theme.getLook("MC_Connect_Out_Actif")); } 
+    } 
     else {
       msg_view.stackRight();
       elem.back.setTextAlignment(RIGHT, CENTER);
     }
     lens.setParent(ref);
-    int i = 0; boolean found = true;
-    while (found) {
-      found = false;
-      for (Macro_Connexion m : sheet.child_connect) if (m.index == i) found = true;
-      if (found) i++;
-    }
-    index = i;
     sheet.child_connect.add(this);
   }
-  float getCenterX() { return ref.getX()+ref.getSX()/2; }
-  float getCenterY() { return ref.getY()+ref.getSY()/2; }
-  float getSize() { return ref.getSY(); }
+  float getCenterX() { 
+    if (elem.bloc.openning.get() == OPEN) return ref.getX()+ref.getSX()/2;
+    //else if (is_sheet_co && sheet.openning.get() == OPEN) return lens.getX()+lens.getSX()/2;
+    else if (is_sheet_co && sheet.openning.get() == REDUC) return sheet.grabber.getX()+sheet.grabber.getSX()/2;
+    else return elem.bloc.grabber.getX()+elem.bloc.grabber.getSX()/2; }
+  float getCenterY() { 
+    if (elem.bloc.openning.get() == OPEN) return ref.getY()+ref.getSY()/2;
+    //else if (is_sheet_co && sheet.openning.get() == OPEN) return lens.getY()+lens.getSY()/2;
+    else if (is_sheet_co && sheet.openning.get() == REDUC) return sheet.grabber.getY()+sheet.grabber.getSY()/2;
+    else return elem.bloc.grabber.getY()+elem.bloc.grabber.getSY()/2; }
+  float getSize() { return ref.getSY() * 2; }
   
-  int index = -1;
+  String infoText = "";
   
-  void connect_to(Macro_Connexion m) {
-    connected_inputs.add(m);
-    m.connected_outputs.add(this); }
+  Macro_Connexion setInfo(String t) { 
+    infoText = t; lens.setInfo(infoText+" "+last_def+filter); return this; }
+  
+  Macro_Connexion clear() {
+    super.clear();
+    for (int i = connected_inputs.size() - 1 ; i >= 0 ; i--) disconnect_from(connected_inputs.get(i));
+    for (int i = connected_outputs.size() - 1 ; i >= 0 ; i--) disconnect_from(connected_outputs.get(i));
+    return this;
+  }
+  
+  
+  boolean connect_to(Macro_Connexion m) {
+    if (m != null) {
+      if (type == OUTPUT && m.type == INPUT && !connected_inputs.contains(m)) {
+        connected_inputs.add(m);
+        m.connected_outputs.add(this); 
+        sheet.add_link(descr, m.descr);
+        return true;
+      } else if (type == INPUT && m.type == OUTPUT && !connected_outputs.contains(m)) {
+        connected_outputs.add(m);
+        m.connected_inputs.add(this); 
+        sheet.add_link(m.descr, descr);
+        return true;
+      } 
+    }
+    return false;
+  }
   void disconnect_from(Macro_Connexion m) {
-    connected_inputs.remove(m);
-    m.connected_outputs.remove(this); }
+    if (m != null && connected_inputs.contains(m)) {
+      connected_inputs.remove(m);
+      m.connected_outputs.remove(this); 
+      sheet.remove_link(descr, m.descr);
+    } 
+    else if (m != null && connected_outputs.contains(m)) {
+      connected_outputs.remove(m);
+      m.connected_inputs.remove(this); 
+      sheet.remove_link(m.descr, descr);
+    }
+  }
   
   boolean buildingLine = false;
   PVector newLine = new PVector();
@@ -252,21 +304,34 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
   ArrayList<Macro_Connexion> connected_outputs = new ArrayList<Macro_Connexion>();
   
   boolean sending = false;
-  int hasSend = 0;
+  int hasSend = 0, hasReceived = 0;
   
-  String last_def = null;
+  String last_def = "";
   
   String pack_info = null;
   
   Macro_Connexion send(Macro_Packet p) {
     msg_view.setText(p.getText());
     last_def = copy(p.def);
+    lens.setInfo(infoText+" "+last_def);
     pack_info = copy(p.def);
     for (String m : p.messages) pack_info = pack_info + " " + m;
     sending = true;
-    hasSend = 5;
-    for (Macro_Connexion m : connected_inputs) m.receive(p);
+    hasSend = 15;
+    packet_to_send.add(p);
+    
+    if (direct_co != null && direct_co.type == OUTPUT) direct_co.send(p);
+    if (direct_co != null && direct_co.type == INPUT) direct_co.receive(p);
     return this;
+  }
+  ArrayList<Macro_Packet> packet_to_send = new ArrayList<Macro_Packet>();
+  
+  boolean process_send() {
+    boolean flag = packet_to_send.size() == 0;
+    for (Macro_Packet p : packet_to_send)
+      for (Macro_Connexion m : connected_inputs) m.receive(p);
+    packet_to_send.clear();
+    return flag;
   }
   
   Macro_Connexion sendBang() { send(newPacketBang()); return this; }
@@ -284,6 +349,12 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
   
   
   
+  Macro_Connexion setLastBang() { 
+    last_packet = newPacketBang(); msg_view.setText(last_packet.getText()); return this; }
+  Macro_Connexion setLastBool(boolean v) { 
+    last_packet = newPacketBool(v); msg_view.setText(last_packet.getText()); return this; }
+  Macro_Connexion setLastFloat(float v) { 
+    last_packet = newPacketFloat(v); msg_view.setText(last_packet.getText()); return this; }
   
 
   Macro_Packet last_packet = null;
@@ -295,53 +366,86 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
         (filter.equals("bin") && (p.def.equals("bool") || p.def.equals("bang"))) ||
         (filter.equals("num") && (p.def.equals("float") || p.def.equals("int"))) ||
         (filter.equals("val") && (p.def.equals("float") || p.def.equals("int") || p.def.equals("bool"))) ) {
+      packet_received.add(p);
+    }
+  }
+  ArrayList<Macro_Packet> packet_received = new ArrayList<Macro_Packet>();
+  
+  boolean process_receive() {
+    boolean flag = packet_received.size() == 0;
+    for (Macro_Packet p : packet_received) {
       last_packet = p;
       for (Runnable r : eventReceiveRun) r.run();
-      if (direct_out != null) direct_out.send(p);
+      if (direct_co != null && direct_co.type == OUTPUT) direct_co.send(p);
+      if (direct_co != null && direct_co.type == INPUT) direct_co.receive(p);
       msg_view.setText(p.getText());
+      hasReceived = 15;
     }
+    packet_received.clear();
+    //last_packet = null; //done by sheet after precessing all packets
+    return flag;
   }
   
   ArrayList<Runnable> eventReceiveRun = new ArrayList<Runnable>();
   Macro_Connexion addEventReceive(Runnable r)    { eventReceiveRun.add(r); return this; }
   Macro_Connexion removeEventReceive(Runnable r) { eventReceiveRun.remove(r); return this; }
   
-  Macro_Connexion direct_out = null;
-  void direct_connect(Macro_Connexion o) { direct_out = o; }
+  Macro_Connexion direct_co = null;
+  void direct_connect(Macro_Connexion o) { direct_co = o; }
   
   String filter = null;
   
   Macro_Connexion setFilter(String f) {
     filter = copy(f);
+    lens.setInfo(infoText+" "+filter);
     return this; }
   Macro_Connexion clearFilter() {
+    lens.setInfo(infoText);
     filter = null;
     return this; }
   Macro_Connexion setFilterBang() {
     filter = "bang";
+    lens.setInfo(infoText+" "+filter);
     return this; }
   Macro_Connexion setFilterInt() {
     filter = "int";
+    lens.setInfo(infoText+" "+filter);
     return this; }
   Macro_Connexion setFilterFloat() {
     filter = "float";
+    lens.setInfo(infoText+" "+filter);
     return this; }
   Macro_Connexion setFilterNumber() { //int and float
     filter = "num";
+    lens.setInfo(infoText+" "+filter);
     return this; }
   Macro_Connexion setFilterBool() {
     filter = "bool";
+    lens.setInfo(infoText+" "+filter);
     return this; }
   Macro_Connexion setFilterBin() {
     filter = "bin";
+    lens.setInfo(infoText+" "+filter);
     return this; }
   Macro_Connexion setFilterValue() { //bool int and float
     filter = "val";
+    lens.setInfo(infoText+" "+filter);
     return this; }
   Macro_Connexion setFilterVec() { //bool int and float
     filter = "vec";
+    lens.setInfo(infoText+" "+filter);
     return this; }
   
+  Macro_Connexion reduc() { 
+    ref.show(); lens.hide(); msg_view.hide();
+    return this;
+  }
+
+  Macro_Connexion show() { 
+    ref.show(); lens.show(); msg_view.show();
+    return this;
+  }
+
 }
 
 /*
@@ -364,46 +468,63 @@ class Macro_Element extends nDrawer implements Macro_Interf {
   Macro_Connexion connect = null, sheet_connect = null;
   Macro_Bloc bloc;
   boolean sheet_viewable = false;
+  String descr;
+  sObj val_self;
   Macro_Element(Macro_Bloc _bloc, String _ref, String _model, String _info, int co_side, int sco_side, boolean sheet_view) {
     super(_bloc.getShelf(), _bloc.ref_size*1.375, _bloc.ref_size);
     bloc = _bloc; sheet_viewable = sheet_view;
     back = addModel(_model).setText(_ref); 
+    descr = bloc.value_bloc.ref+"_elem_"+bloc.elements.size();
+    val_self = ((sObj)(bloc.setting_bloc.getValue(descr+"_self"))); 
+    if (val_self == null) val_self = bloc.setting_bloc.newObj(descr+"_self", this);
+    else val_self.set(this);
     back.addEventTrigger(new Runnable(this) { public void run() { 
           bloc.sheet.selecting_element((Macro_Element)builder); } });
     if (sheet_view) bloc.sheet.child_elements.add(this);
-    if (back != null && co_side != NO_CO) connect = new Macro_Connexion(this, bloc.sheet, co_side, _info); 
-    if (back != null && sco_side != NO_CO) sheet_connect = new Macro_Connexion(this, bloc.sheet.sheet, sco_side, _info); 
+    if (back != null && sco_side != NO_CO && bloc.sheet != bloc.mmain()) 
+      sheet_connect = new Macro_Connexion(this, bloc.sheet.sheet, sco_side, _info, true); //_info
+    if (back != null && co_side != NO_CO) 
+      connect = new Macro_Connexion(this, bloc.sheet, co_side, _info, false); //_info
   }
   void select(nWidget _spot) { 
     spot = _spot; spot.setLook("MC_Element_At_Spot"); back.setLook("MC_Element_At_Spot"); 
     sheet_viewable = false; }
-  
+    
   Macro_Element show() {
-    back.clearParent(); back.setParent(ref).toLayerTop(); 
+    back.clearParent(); back.setParent(ref); 
       back.setPX(-ref_size*0.5);
-      if (connect != null) { connect.ref.show(); connect.toLayerTop(); }
-      if (sheet_connect != null)  { sheet_connect.ref.hide(); }
+      if (sheet_connect != null)  { sheet_connect.show(); sheet_connect.toLayerTop(); }
+      if (connect != null) { connect.show(); connect.toLayerTop(); }
+    toLayerTop();
     return this;
   }
+  Macro_Element reduc() {
+    if (connect != null)  { connect.reduc(); sheet_connect.reduc(); }
+    return this;
+  }
+  
   Macro_Element hide() {
     if (bloc.sheet.openning.get() == OPEN && spot != null) {
-      back.clearParent(); back.setParent(spot).show().toLayerTop(); 
+      back.clearParent(); back.setParent(spot).show(); 
       back.setPX(0);
       if (connect != null)  { connect.ref.hide(); }
-      if (sheet_connect != null)  { sheet_connect.ref.show(); sheet_connect.toLayerTop(); }
+      if (sheet_connect != null)  { sheet_connect.show(); sheet_connect.toLayerTop(); }
+    toLayerTop();
     }
     return this;
   }
   
   Macro_Element toLayerTop() { 
     super.toLayerTop(); 
-    if (connect != null) connect.toLayerTop(); 
     if (sheet_connect != null) sheet_connect.toLayerTop(); 
+    if (connect != null) connect.toLayerTop(); 
     return this;
   }
   Macro_Element clear() { 
     super.clear(); 
+    if (connect != null) connect.clear(); if (sheet_connect != null) sheet_connect.clear(); 
     if (connect != null) bloc.sheet.child_connect.remove(connect);
+    if (sheet_connect != null) bloc.sheet.sheet.child_connect.remove(sheet_connect);
     bloc.sheet.child_elements.remove(this);
     return this;
   }

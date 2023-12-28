@@ -118,7 +118,7 @@ class nColorPanel extends nWindowPanel {
 class nCursor extends nWidget {
   float x() { return pval.x(); }
   float y() { return pval.y(); }
-  PVector dir() { if (dval.get().mag() > 0) return new PVector(dval.x(), dval.y()).setMag(1); 
+  PVector dir() { if (dval.get().mag() > ref_size) return new PVector(dval.x(), dval.y()).setMag(1); 
                   else return new PVector(1, 0).rotate(random(2*PI)); }
   PVector pos() { return new PVector(pval.x(), pval.y()); }
   nGUI gui;
@@ -127,7 +127,7 @@ class nCursor extends nWidget {
   sBoo show;
   String ref;
   nWidget refwidget, thiswidget, pointwidget;
-  nCursor(nGUI _g, sValueBloc bloc, String r) {
+  nCursor(nGUI _g, sValueBloc bloc, String r, String s) {
     super(_g);
     new nConstructor(_g.theme, _g.theme.ref_size);
     thiswidget = this;
@@ -139,22 +139,24 @@ class nCursor extends nWidget {
     setText(r).setFont(int(ref_size/2.0)).setTextAlignment(LEFT, CENTER);
     setGrabbable();
     addEventDrag(new Runnable() {public void run() {pval.set(refwidget.getX(), refwidget.getY());}});
-    pval = new sVec(bloc, r, "position");
+    pval = new sVec(bloc, s+"_cursor_position", s+"_pos");
     pval.addEventChange(new Runnable(pval) {public void run() {
       sVec v = ((sVec)builder);
       thiswidget.setPosition(v.x()-ref_size, v.y()-ref_size);}});
     
-    show = new sBoo(bloc, false, r, "show"); //!!!!! is hided by default
+    show = new sBoo(bloc, false, s+"_cursor_show", s+"_show"); //!!!!! is hided by default
    
     pointwidget = gui.theme.newWidget(gui, "Pointer").setPosition(-ref_size/4, -ref_size/4).setSize(ref_size/2, ref_size/2);
     pointwidget.setParent(refwidget).setGrabbable().setConstrainDistance(ref_size*2).toLayerTop();
-    dval = new sVec(bloc, r, "pointer");
+    dval = new sVec(bloc, s+"_cursor_pointer", s+"_dir");
     dval.addEventChange(new Runnable(dval) {public void run() {
       sVec v = ((sVec)builder);
       if (v.get().mag() > ref_size*2) v.set(v.get().setMag(ref_size*2));
       pointwidget.setPosition(v.x()-ref_size/4, v.y()-ref_size/4); }});
     pointwidget.addEventDrag(new Runnable() {public void run() {
       dval.set(pointwidget.getLocalX() + ref_size/4, pointwidget.getLocalY() + ref_size/4);}});
+    pointwidget.addEventLiberate(new Runnable() {public void run() {
+      if (dval.get().mag() < ref_size) dval.set(0, 0); }});
     
     if (show.get()) { thiswidget.show(); pointwidget.show(); } else { thiswidget.hide(); pointwidget.hide(); }
     show.addEventChange(new Runnable(show) {public void run() {
@@ -281,6 +283,8 @@ class nInfo {
     if (ref.getLocalX() + p + s > gui.view.pos.x + gui.view.size.x) 
       p -= ref.getLocalX() + p + s - (gui.view.pos.x + gui.view.size.x);
     if (ref.getLocalX() + p < gui.view.pos.x) p += gui.view.pos.x - (ref.getLocalX() + p);
+    if (invert) { ref.stackDown(); label.stackDown().setPY(0); }
+    else        { ref.stackUp(); label.stackUp().setPY(0); }
     label.setPX(p).setSX(s);
     label.setText(t); ref.show(); count = 3; toLayerTop();  }
   nInfo setLayer(int l) { label.setLayer(l); ref.setLayer(l); return this; }
@@ -302,10 +306,11 @@ class nInfo {
         if (count > 0) {
           count--; if (count == 0) ref.hide();
           ref.setPosition(gui.mouseVector.x, gui.mouseVector.y);
-          if (gui.mouseVector.y < ref.getLocalSY()*3 && !invert) { invert = true; ref.stackDown(); label.stackDown().setPY(0); } 
-          else if (gui.mouseVector.y > ref.getLocalSY()*6 && invert) { invert = false; ref.stackUp(); label.stackUp().setPY(0); } 
+          if (gui.mouseVector.y < ref.getLocalSY()*3 && !invert) invert = true;
+          else if (gui.mouseVector.y > ref.getLocalSY()*6 && invert) invert = false; 
         }
       } } );
+    ref.stackDown();
     label = new nWidget(gui, "", int(f*0.8), 0, -f, 0, f*1).setPassif()
       .setParent(ref)
       .stackDown()
@@ -314,7 +319,7 @@ class nInfo {
   }
   nWidget ref,label;
   nGUI gui;
-  int count = 0; boolean invert;
+  int count = 0; boolean invert = true;
 }
 
 
@@ -335,7 +340,7 @@ class nExplorer extends nDrawer {
   int selected_bloc_index = 0, selected_value_index = 0;
   nList explorer_list;
   
-  nExplorer setBloc(sValueBloc sb) { if (sb != explored_bloc) { starting_bloc = sb.parent; explored_bloc = sb; update(); } return this; }
+  nExplorer setBloc(sValueBloc sb) { if (sb != explored_bloc) { starting_bloc = sb; explored_bloc = sb; update(); } return this; }
   
   nShelf shelf;
   nWidget bloc_info, val_info;
@@ -360,7 +365,7 @@ class nExplorer extends nDrawer {
       .addEventChange_Builder(new Runnable() { 
       public void run() {
         int ind = ((nList)builder).last_choice_index;
-        if (ind == 0 && explored_bloc != null && explored_bloc.parent != starting_bloc) {
+        if (ind == 0 && explored_bloc != null && explored_bloc != starting_bloc) {
           explored_bloc = explored_bloc.parent;
           selected_bloc = null;
           selected_value = null;
@@ -427,7 +432,7 @@ class nExplorer extends nDrawer {
     explorer_values.clear();
     if (explored_bloc != null) {
       //println(); println(explored_bloc.getHierarchy(false));
-      if (explored_bloc.parent != starting_bloc) explorer_entry.add("..");
+      if (explored_bloc != starting_bloc) explorer_entry.add("..");
       else explorer_entry.add("");
       for (Map.Entry me : explored_bloc.blocs.entrySet()) {
         sValueBloc cvb = (sValueBloc)me.getValue();

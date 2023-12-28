@@ -5,14 +5,8 @@
 PATH TO THE END:
 
 new macro usable
-  save template value link
+  see top of sheet constructor for detailed notes
 
-old sim et commu with old but cleanned menu
-
-cursor direction
-
-startup folder: if in default file when loaded at startup auto load all > access by quick S/L
-  has 1 macro save for whole macros, saved with the rest so separation is invisible;
 
 
 
@@ -37,11 +31,14 @@ boolean DEBUG_NOFILL = false;
 boolean DEBUG_MACRO = true;
 
 boolean DEBUG = true;
+
+int global_frame_count = 0;
+
 void log(String s) {
   if (DEBUG) print(s);
 }
 void logln(String s) {
-  if (DEBUG) println(s);
+  if (DEBUG) println(global_frame_count+":"+s);
 }
 void mlog(String s) {
   if (DEBUG_MACRO) print(s);
@@ -102,6 +99,7 @@ void setup() {//executé au demarage
 
 void draw() {//executé once by frame
   interf.frame();
+  global_frame_count++;
 }
 
 

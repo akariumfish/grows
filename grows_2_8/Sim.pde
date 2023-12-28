@@ -67,7 +67,7 @@ class Simulation extends Macro_Sheet {
   sValueBloc com_bloc;
   
   Simulation(sInterface _int) {
-    super(_int.macro_main, "Simulation", null);
+    super(_int.macro_main, "Sim", null);
     inter = _int;
     ref_size = inter.ref_size;
     cam_gui = inter.cam_gui;
@@ -107,20 +107,21 @@ class Simulation extends Macro_Sheet {
       }
     } 
     );
-
-    srun_reset = value_bloc.newRun("sim reset", "reset", new Runnable() { 
+    
+    srun_tick = value_bloc.newRun("sim_tick", "tick", new Runnable() { public void run() { } } );
+    srun_reset = value_bloc.newRun("sim_reset", "reset", new Runnable() { 
       public void run() { 
         reset();
       }
     } 
     );
-    srun_rngr = value_bloc.newRun("sim rng reset", "rst rng", new Runnable() { 
+    srun_rngr = value_bloc.newRun("sim_rng_reset", "rst rng", new Runnable() { 
       public void run() { 
         resetRng();
       }
     } 
     );
-    srun_nxtt = value_bloc.newRun("sim next tick", "nxt tck", new Runnable() { 
+    srun_nxtt = value_bloc.newRun("sim_next_tick", "nxt tck", new Runnable() { 
       public void run() { 
         force_next_tick.add(1);
       }
@@ -169,7 +170,7 @@ class Simulation extends Macro_Sheet {
   sInt SEED; //seed pour l'aleatoire
   sBoo auto_reset, auto_reset_rng_seed, auto_reset_screenshot, show_com;
   sInt auto_reset_turn;
-  sRun srun_reset, srun_rngr, srun_nxtt;
+  sRun srun_reset, srun_rngr, srun_nxtt, srun_tick;
 
   float tick_pile = 0; //pile des tick a exec
 
@@ -250,6 +251,7 @@ class Simulation extends Macro_Sheet {
     }
 
     //ticking_pile.tick();
+    srun_tick.run();
 
     //tick communitys
     for (Community c : list) c.tick();
@@ -520,29 +522,81 @@ abstract class Community extends Macro_Sheet {
     super.clear();
     return this;
   }
+  
+  void setup_load(sValueBloc b) {
+    super.setup_load(b);
+    
+    if (b.getValue("selected_com") != null) 
+      selected_com.set(((sStr)b.getValue("selected_com")).get());
+    sim.inter.addEventNextFrame(new Runnable() {public void run() { 
+      for (Community c : sim.list) if (c.name.equals(selected_com.get())) selected_comu(c);
+    }});
+  }
 
   abstract void comPanelBuild(nFrontPanel front);
   
   void build_custom_menu(nFrontPanel sheet_front) {
     nFrontTab tab = sheet_front.addTab("Community");
-      tab.getShelf()
-        .addDrawer(10.25, 0.75)
-        .addModel("Label-S4", "-"+name+" Community Control-").setFont(int(ref_size/1.4)).getShelf()
-        .addSeparator(0.125)
-        .addDrawerWatch(active_entity, 10, 1)
-        .addSeparator(0.125)
-        .addDrawerIncrValue(max_entity, 100, 10, 1)
-        .addSeparator(0.125)
-        .addDrawerIncrValue(adding_entity_nb, 10, 10, 1)
-        .addSeparator(0.125)
-        .addDrawerIncrValue(adding_step, 10, 10, 1)
-        .addSeparator(0.125)
-        .addDrawerTripleButton(show_entity, srun_add, adding_cursor.show, 10, 1)
-        .addSeparator(0.125)
-        ;
-      //build_Preset_Tab(com_front, sbloc);
-      comPanelBuild(sheet_front);
+    tab.getShelf()
+      .addDrawer(10.25, 0.75)
+      .addModel("Label-S4", "-"+name+" Community Control-").setFont(int(ref_size/1.4)).getShelf()
+      .addSeparator(0.125)
+      .addDrawerWatch(active_entity, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerIncrValue(max_entity, 100, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerIncrValue(adding_entity_nb, 10, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerIncrValue(adding_step, 10, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerDoubleButton(show_entity, srun_add, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerDoubleButton(pulse_add, adding_cursor.show, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerIncrValue(pulse_add_delay, 10, 10, 1)
+      .addSeparator(0.125)
+      ;
+      
+    selector_list = tab.getShelf(0)
+      .addSeparator(0.25)
+      .addList(4, 10, 1);
+    selector_list.addEventChange_Builder(new Runnable() { public void run() {
+      nList sl = ((nList)builder); 
+      logln("a "+sl.last_choice_index +"  "+ sim.list.size());
+      if (sl.last_choice_index < sim.list.size()) 
+        selected_comu(sim.list.get(sl.last_choice_index));
+        selected_com.set(sim.list.get(sl.last_choice_index).name);
+    } } );
+        
+    selector_list.getShelf()
+      .addSeparator(0.0625)
+      ;
+    
+    selector_entry = new ArrayList<String>(); // mmain().data.getCountOfType("flt")
+    selector_value = new ArrayList<Community>(); // mmain().data.getCountOfType("flt")
+    
+    update_com_selector_list();
+    
+    comPanelBuild(sheet_front);
   }
+  void update_com_selector_list() {
+    selector_entry.clear();
+    selector_value.clear();
+    for (Community v : sim.list) { 
+      selector_entry.add(v.name); 
+      selector_value.add(v);
+    }
+    if (selector_list != null) selector_list.setEntrys(selector_entry);
+  }
+  
+  void selected_comu(Community c) {}
+
+  ArrayList<String> selector_entry;
+  ArrayList<Community> selector_value;
+  Community selected_value;
+  String selected_entry;
+  nList selector_list;
+
 
   Simulation sim;
   String name = "";
@@ -554,10 +608,14 @@ abstract class Community extends Macro_Sheet {
   sInt active_entity, adding_entity_nb, adding_step; // add one new object each adding_step turn
   int adding_pile = 0;
   int adding_counter = 0;
+  
+  sInt pulse_add_delay;
+  sBoo pulse_add;
+  int pulse_add_counter = 0;
 
   sBoo show_entity;
   sRun srun_add;
-  sStr type_value;
+  sStr type_value, selected_com;
 
   nCursor adding_cursor;
   
@@ -573,13 +631,16 @@ abstract class Community extends Macro_Sheet {
     type = ty;
     
     max_entity = value_bloc.newInt(500, "max_entity", "max_pop");
-    type_value = value_bloc.newStr(ty, "type", "type");
+    type_value = value_bloc.newStr("type", "type", ty);
+    selected_com = value_bloc.newStr("selected_com", "scom", "");
     active_entity = value_bloc.newInt(0, "active_entity ", "active_pop");
-    adding_entity_nb = value_bloc.newInt(10, "adding_entity_nb ", "add nb");
+    adding_entity_nb = value_bloc.newInt(0, "adding_entity_nb ", "add nb");
     adding_step = value_bloc.newInt(0, "adding_step ", "add stp");
     show_entity = value_bloc.newBoo(true, "show_entity ", "show");
+    pulse_add = value_bloc.newBoo(true, "pulse_add ", "pulse");
+    pulse_add_delay = value_bloc.newInt(100, "pulse_add_delay ", "pulseT");
 
-    adding_cursor = new nCursor(sim.cam_gui, value_bloc, "addCursor");
+    adding_cursor = new nCursor(sim.cam_gui, value_bloc, n, "add");
     
     max_entity.set(max); 
 
@@ -634,6 +695,10 @@ abstract class Community extends Macro_Sheet {
   }
 
   void tick() {
+    if (pulse_add.get()) {
+      pulse_add_counter++;
+      if (pulse_add_counter > pulse_add_delay.get()) { pulse_add_counter = 0; srun_add.run(); }
+    }
     if (adding_counter > 0) adding_counter--;
     while (adding_counter == 0 && adding_pile > 0) {
       adding_counter += adding_step.get();

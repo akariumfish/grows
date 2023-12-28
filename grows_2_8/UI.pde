@@ -771,8 +771,8 @@ class nWidget {
       else if (!DEBUG_NOFILL) rect(getX(), getY(), getSX(), getSY());
       
       noFill();
-      if (showOutline || (hoverOutline && isHovered)) stroke(look.outlineColor);
-      else if (isField && isSelected) stroke(look.outlineSelectedColor);
+      if (isField && isSelected) stroke(look.outlineSelectedColor);
+      else if (showOutline || (hoverOutline && isHovered)) stroke(look.outlineColor);
       else noStroke();
       float wf = 1;
       if (constantOutlineWeight) { wf = 1 / gui.scale; strokeWeight(look.outlineWeight / gui.scale); }
@@ -883,18 +883,15 @@ class nWidget {
       if (isHovered && gui.in.getClick("MouseLeft")) {
         isSelected = !isSelected;
         if (isSelected) {
-          //if (gui.selected_widget != null) gui.selected_widget.showOutline = false;
-          //gui.selected_widget = this;
+          prev_select_outline = showOutline;
           showOutline = true;
           if (isField) showCursor = true;
         } else {
-          //gui.selected_widget = null;
-          showOutline = false;
+          showOutline = prev_select_outline;
           if (isField) showCursor = false;
         }
       } else if (!isHovered && gui.in.getClick("MouseLeft") && isSelected) {
-        //gui.selected_widget = null;
-        showOutline = false;
+        showOutline = prev_select_outline;
         if (isField) showCursor = false;
         isSelected = false;
       }
@@ -920,6 +917,7 @@ class nWidget {
     }
     runEvents(eventFrameRun);
   }
+  private boolean prev_select_outline = false;
 }
 
 

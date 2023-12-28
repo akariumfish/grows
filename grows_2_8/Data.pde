@@ -78,7 +78,9 @@ abstract class sValue {
     bloc = b; 
     while (bloc.values.get(r) != null) r = r + "'";
     type = t; ref = r; shrt = s;
-    bloc.values.put(ref, this); if (bloc.doevent) runEvents(bloc.eventsAddVal); }
+    bloc.values.put(ref, this); 
+    if (bloc.doevent) bloc.last_created_value = this; 
+    if (bloc.doevent) runEvents(bloc.eventsAddVal); }
   void frame() { if (has_changed) { if (doevent) runEvents(eventsChange); } has_changed = false; }
   ArrayList<Runnable> eventsChange = new ArrayList<Runnable>();
   ArrayList<Runnable> eventsAllChange = new ArrayList<Runnable>();
@@ -230,20 +232,20 @@ class sObj extends sValue {
   void load_from_bloc(Save_Bloc svb) { super.load_from_bloc(svb); }
 }
 
-class sSvb extends sValue {
+class sBlc extends sValue {
   String getString() { return ref; }
   void clear() { super.clear(); }
-  private Save_Bloc val = new Save_Bloc("");
-  sSvb(sValueBloc b, String n, String s, Save_Bloc r) { super(b, "svb", n, s);  val.copy_from(r); }
-  void set(Save_Bloc r) { val.copy_from(r); }
-  Save_Bloc get() { Save_Bloc b = new Save_Bloc(""); b.copy_from(val); return b; }
+  private Save_Bloc val;
+  sBlc(sValueBloc b, String n, String s) { super(b, "blc", n, s); val = new Save_Bloc(n); }
+  void set(Save_Bloc r) { if (r != null) { val = new Save_Bloc(ref); val.copy_from(r); } }
+  Save_Bloc get() { Save_Bloc b = new Save_Bloc(""); if (val != null) b.copy_from(val); return b; }
   void save_to_bloc(Save_Bloc svb) { 
     super.save_to_bloc(svb); 
-    svb.newBloc("").copy_from(val);
+    if (val != null) svb.newBloc("bloc").copy_from(val);
   }
   void load_from_bloc(Save_Bloc svb) { 
     super.load_from_bloc(svb); 
-    val.copy_from(svb.blocs.get(0));
+    //if (svb.getBloc("bloc") != null) val.copy_from(svb.getBloc("bloc"));
   }
 }
 
@@ -284,6 +286,12 @@ class sValueBloc {
     for (Map.Entry me : blocs.entrySet()) {
       sValueBloc vb = ((sValueBloc)me.getValue());
       vb.runIterator(i);
+    }
+  }
+  void runValueIterator(Iterator<sValue> i) { 
+    for (Map.Entry mev : values.entrySet()) {
+      sValue v = ((sValue)mev.getValue());
+      i.run(v);
     }
   }
   void runBlocIterator(Iterator<sValueBloc> i) { 
@@ -374,20 +382,21 @@ class sValueBloc {
   sValueBloc getLastBloc() { return last_created_bloc; }
   sValue getValue(String r) { return values.get(r); }
   sValueBloc newBloc(String n) { return new sValueBloc(this, n); }
-  sInt newInt(String n, String s, int v)      { return new sInt(this, v, n, s); }
-  sFlt newFlt(String n, String s, float v)    { return new sFlt(this, v, n, s); }
-  sBoo newBoo(String n, String s, boolean v)  { return new sBoo(this, v, n, s); }
-  sInt newInt(int v, String n, String s)      { return new sInt(this, v, n, s); }
-  sFlt newFlt(float v, String n, String s)    { return new sFlt(this, v, n, s); }
-  sBoo newBoo(boolean v, String n, String s)  { return new sBoo(this, v, n, s); }
-  sStr newStr(String n, String s, String v)   { return new sStr(this, v, n, s); }
-  sVec newVec(String n, String s, PVector v)  { return new sVec(this, n, s).set(v); }
-  sVec newVec(String n, String s)             { return new sVec(this, n, s); }
-  sRun newRun(String n, String s, Runnable v) { return new sRun(this, n, s, v); }
-  sSvb newSvb(String n, String s, Save_Bloc v) { return new sSvb(this, n, s, v); }
+  sInt newInt(String n, String s, int v)       { return new sInt(this, v, n, s); }
+  sFlt newFlt(String n, String s, float v)     { return new sFlt(this, v, n, s); }
+  sBoo newBoo(String n, String s, boolean v)   { return new sBoo(this, v, n, s); }
+  sInt newInt(int v, String n, String s)       { return new sInt(this, v, n, s); }
+  sFlt newFlt(float v, String n, String s)     { return new sFlt(this, v, n, s); }
+  sBoo newBoo(boolean v, String n, String s)   { return new sBoo(this, v, n, s); }
+  sStr newStr(String n, String s, String v)    { return new sStr(this, v, n, s); }
+  sVec newVec(String n, String s, PVector v)   { return new sVec(this, n, s).set(v); }
+  sVec newVec(String n, String s)              { return new sVec(this, n, s); }
+  sRun newRun(String n, String s, Runnable v)  { return new sRun(this, n, s, v); }
+  sBlc newBlc(String n, String s) { return new sBlc(this, n, s); }
   sObj newObj(String n, Object v) { return new sObj(this, n, v); }
   
   DataHolder data; sValueBloc parent = null, last_created_bloc = null; 
+  sValue last_created_value = null;
   String ref, base_ref, type = "def", use = "";
   HashMap<String, sValue> values = new HashMap<String, sValue>();
   HashMap<String, sValueBloc> blocs = new HashMap<String, sValueBloc>();
@@ -527,7 +536,7 @@ class sValueBloc {
   
   sValue newValue(Save_Bloc sb) {
     sValue nv = null;
-    if (sb.getData("__bloc_type").equals("val")) {
+    if (sb.getData("__bloc_type") != null && sb.getData("__bloc_type").equals("val")) {
       String n = sb.getData("ref");
       String s = sb.getData("shr");
       String t = sb.getData("typ");
@@ -537,7 +546,7 @@ class sValueBloc {
       if (t.equals("str")) { nv = new sStr(this, "", n, s);     nv.load_from_bloc(sb); }
       if (t.equals("vec")) { nv = new sVec(this, n, s);         nv.load_from_bloc(sb); }
       if (t.equals("run")) { nv = new sRun(this, n, s, null);   nv.load_from_bloc(sb); }
-      if (t.equals("svb")) { nv = new sSvb(this, n, s, null);   nv.load_from_bloc(sb); }
+      if (t.equals("blc")) { nv = new sBlc(this, n, s);      nv.load_from_bloc(sb); }
       if (t.equals("obj")) { nv = new sObj(this, n, null);   nv.load_from_bloc(sb); }
     }
     return nv;
@@ -607,7 +616,7 @@ class DataHolder extends sValueBloc {
   DataHolder() {
     super(); ref = "data"; parent = this; 
   }
-  String[] types = {"flt", "int", "boo", "str", "vec", "run", "svb", "obj"};
+  String[] types = {"flt", "int", "boo", "str", "vec", "run", "blc", "obj"};
   
   int to_save_bloc(Save_Bloc sb) { 
     dlogln("DataHolder saving to savebloc");
@@ -625,12 +634,19 @@ void copy_bloc(sValueBloc from, sValueBloc to) {
     to.newBloc(b, from.base_ref);
   } 
 }
-void copy_bloc(sValueBloc from, sValueBloc to, String n) {
+sValueBloc copy_bloc(sValueBloc from, sValueBloc to, String n) {
   if (from != null && to != null) {
     Save_Bloc b = new Save_Bloc("");
     from.preset_to_save_bloc(b);
-    to.newBloc(b, n);
-  } 
+    return to.newBloc(b, n);
+  } return null;
+}
+sValue copy_value(sValue from, sValueBloc to) {
+  if (from != null && to != null) {
+    Save_Bloc b = new Save_Bloc(from.ref);
+    from.save_to_bloc(b);
+    return to.newValue(b);
+  } return null;
 }
 void transfer_values(sValueBloc from, sValueBloc to) {
   if (from != null && to != null &&
@@ -646,6 +662,13 @@ void copy_bloc_values(sValueBloc from, sValueBloc to) {
     Save_Bloc b = new Save_Bloc("");
     from.preset_value_to_save_bloc(b);
     to.newBloc(b, "copy");
+  } 
+}
+void copy_values(sValueBloc from, sValueBloc to) {
+  if (from != null && to != null) {
+    Save_Bloc b = new Save_Bloc("");
+    from.preset_value_to_save_bloc(b);
+    for (Save_Bloc bl : b.blocs) to.newValue(bl);
   } 
 }
 void transfer_bloc_values(sValueBloc from, sValueBloc to) {
