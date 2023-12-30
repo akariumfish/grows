@@ -1,43 +1,63 @@
 /*
- Interface(Inputs, DataHolding)
- class CameraView 
- name
- pos and scale as svalue
- map<name, CameraView> : views
- name of current view as svalue
- 
- drawing_pile screen_draw, cam_draw
- hover_pile screen and cam
- 
- event hoverpilesearch both no find
- 
- list<runnable> frameEvents
- 
- add widget methods
- frame()
- hover_pile.search() if screen found dont do cam
- run frameEvents
- update cam view from inputs
- clear screen
- draw grid if needed
- draw cam then screen from their pov
- to control when to screenshot maybe do it in a Drawer
- 
- Global GUI Theme 
- can be picked from by widgets 
- ? list of widgets to update when is changed ?
- map of color and name
- map of size and name
- map<name, widget> models
- methods to directly build a widget from models
+ Interface
+   Inputs, DataHolding
+   class CameraView 
+     name
+     pos and scale as svalue
+     map<name, CameraView> : views
+     name of current view as svalue
+   
+   drawing_pile screen_draw, cam_draw
+   hover_pile screen and cam
+   
+   event hoverpilesearch both no find
+   
+   list<runnable> frameEvents
+   
+   frame()
+     hover_pile.search() if screen found dont do cam
+     run frameEvents
+     update cam view from inputs
+     clear screen
+     draw grid if needed
+     draw cam then screen from their pov
+     to control when to screenshot maybe do it in a Drawer
  
  
  
  */
 
-
+class User {
+  String access = "admin";
+  User() {}
+  User(String a) { access = copy(a); }
+}
 
 class sInterface {
+  
+  nToolPanel toolpanel;
+  
+  void build_toolpanel() {
+    toolpanel = new nToolPanel(screen_gui, ref_size, 0.125, false, false);
+    toolpanel.addShelf()
+      .addDrawer(10, 1)
+        .addCtrlModel("Button-S3-P1", "Quick Save")
+          .setRunnable(new Runnable() { public void run() { full_data_save(); } } ).getDrawer()
+        .addCtrlModel("Button-S3-P2", "Quick Load")
+          .setRunnable(new Runnable() { public void run() { setup_load(); } } ).getDrawer().getShelf()
+      .addDrawer(10, 1)
+        .addLinkedModel("Button-S3-P1", "grid")
+          .setLinkedValue(cam.grid).getDrawer()
+        .addLinkedModel("Button-S3-P2", "auto load")
+          .setLinkedValue(auto_load).getShelf()
+      .addDrawer(10, 1)
+        .addCtrlModel("Button-S3-P2", "Files")
+          .setRunnable(new Runnable() { public void run() { filesManagement(); } } ).getDrawer()
+        .addWatcherModel("Label_Back-S3-P1")
+          .setLinkedValue(framerate.median_framerate).getDrawer()
+        .getShelfPanel()
+      ;
+  }
   
   void filesManagement() {
     if (files_panel == null) {
@@ -213,27 +233,13 @@ class sInterface {
     file_explorer.setBloc(explored_bloc);
   }
   
-  sInterface addEventSetupLoad(Runnable r) { eventsSetupLoad.add(r); return this; }
-  ArrayList<Runnable> eventsSetupLoad = new ArrayList<Runnable>();
-  void setup_load() {
-    file_savebloc.clear();
-    file_savebloc.load_from(savepath);
-    if (setup_bloc != null) setup_bloc.clear();
-    setup_bloc = data.newBloc(file_savebloc, "setup");
-    if (setup_bloc.getValue("auto_load") == null || 
-        (setup_bloc.getValue("auto_load") != null && ((sBoo)setup_bloc.getValue("auto_load")).get())) {
-      for (Runnable r : eventsSetupLoad) r.builder = setup_bloc;
-      runEvents(eventsSetupLoad);
-      macro_main.setup_load(setup_bloc);
-      if (setup_bloc.getBloc("camera") != null) { 
-        transfer_values(setup_bloc.getBloc("camera"), cam.sbloc); }
-    }
-    if (setup_bloc.getValue("auto_load") != null) 
-      auto_load.set(((sBoo)setup_bloc.getValue("auto_load")).get());
-    //setup_bloc.clear();
+  void build_default_ui(float ref_size) {
+    taskpanel = new nTaskPanel(screen_gui, ref_size, 0.125);
+    savepath_value = new sStr(interface_bloc, savepath, "savepath", "spath");
+    file_savebloc = new Save_Bloc(savepath);
+    auto_load = new sBoo(interface_bloc, false, "auto_load", "autoload");
+    //filesManagement();
   }
-  
-  
   
   nWidget match_flag;
   nWindowPanel files_panel;
@@ -246,13 +252,6 @@ class sInterface {
   nTaskPanel taskpanel;
   float ref_size;
   
-  void build_default_ui(float ref_size) {
-    taskpanel = new nTaskPanel(screen_gui, ref_size, 0.125);
-    savepath_value = new sStr(interface_bloc, savepath, "savepath", "spath");
-    file_savebloc = new Save_Bloc(savepath);
-    auto_load = new sBoo(interface_bloc, false, "auto_load", "autoload");
-    //filesManagement();
-  }
   
   
   
@@ -268,9 +267,22 @@ class sInterface {
   sFramerate framerate;
 
   Macro_Main macro_main;
+  
+  User user;
+  /*
+  method for sStr : pack unpack
+    get string list + token > convert to string
+    inversement
+  
+  all of the menus states should be saved has a big string :
+    property ref + value \t ...
+    property ref = object name (1_Grower_FrontPanel) + property (pos_x pos_y collapsed ...)
+  add camera framerate and other interface datas to the main sheet
+  */
 
   sInterface(float s) {
     ref_size = s;
+    user = new User("user");
     input = new sInput();
     data = new DataHolder();
     interface_bloc = new sValueBloc(data, "Interface");
@@ -293,7 +305,7 @@ class sInterface {
     
     macro_main = new Macro_Main(this);
     
-    mySetup_MACRO(this);
+    build_toolpanel();
   }
 
   sInterface addToCamDrawerPile(Drawable d) { d.setPile(cam_gui.drawing_pile); return this; }
@@ -306,9 +318,46 @@ class sInterface {
     if (active_nxtfrm_pile) eventsNextFrame1.add(r); else eventsNextFrame2.add(r); return this; }
   sInterface addEventSetup(Runnable r) { eventsSetup.add(r); return this; }
   
+  String getAccess() { return user.access; }
+  boolean canAccess(String a) { 
+    if (getAccess().equals("admin") || getAccess().equals(a) || a.equals("all")) return true; 
+    else return false; }
+  
+  sInterface addEventSetupLoad(Runnable r) { eventsSetupLoad.add(r); return this; }
+  ArrayList<Runnable> eventsSetupLoad = new ArrayList<Runnable>();
+  void setup_load() {
+    file_savebloc.clear();
+    file_savebloc.load_from(savepath);
+    if (setup_bloc != null) setup_bloc.clear();
+    setup_bloc = data.newBloc(file_savebloc, "setup");
+    if (setup_bloc.getValue("auto_load") == null || 
+        (setup_bloc.getValue("auto_load") != null && ((sBoo)setup_bloc.getValue("auto_load")).get())) {
+      for (Runnable r : eventsSetupLoad) r.builder = setup_bloc;
+      runEvents(eventsSetupLoad);
+      macro_main.setup_load(setup_bloc);
+      
+      if (setup_bloc.getBloc("camera") != null) { 
+        transfer_values(setup_bloc.getBloc("camera"), cam.sbloc); 
+      }
+      //transfer other interface data here
+      
+      
+    }
+    if (setup_bloc.getValue("auto_load") != null) 
+      auto_load.set(((sBoo)setup_bloc.getValue("auto_load")).get());
+    //setup_bloc.clear();
+  }
   
   
-  
+  void addSpecializedSheet(Sheet_Specialize s) {
+    macro_main.addSpecializedSheet(s); }
+  Macro_Sheet addUniqueSheet(Sheet_Specialize s) {
+    return macro_main.addUniqueSheet(s); }
+
+
+  sValueBloc getTempBloc() {
+    return new sValueBloc(data, "temp"); }
+
 
   ArrayList<Runnable> eventsFrame = new ArrayList<Runnable>();
   ArrayList<Runnable> eventsNextFrame1 = new ArrayList<Runnable>();

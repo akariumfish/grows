@@ -2,7 +2,15 @@
 
 /*
 
-
+Global GUI Theme 
+ can be picked from by widgets 
+ ? list of widgets to update when is changed ?
+ map of color and name
+ map of size and name
+ map<name, widget> models
+ methods to directly build a widget from models
+ 
+ 
 
 
 */
@@ -485,6 +493,7 @@ class nWidget {
   
   nGUI getGUI() { return gui; }
   Rect getRect() { return globalrect; }
+  Rect getPhantomRect() { return phantomrect; } //rect exist enven when hided ; for hided collisions
   int getLayer() { return layer; }
   String getText() { return label.substring(0, label.length()); }
   
@@ -504,6 +513,7 @@ class nWidget {
     switchState = false; 
     grabbable = false; 
     isField = false;
+    isClicked = false;
     if (hover != null) hover.active = false; 
     return this; }
   nWidget setBackground() { 
@@ -512,6 +522,7 @@ class nWidget {
     switchState = false; 
     grabbable = false; 
     isField = false; 
+    isClicked = false;
     if (hover != null) hover.active = true; 
     return this; }
   nWidget setTrigger() { 
@@ -666,6 +677,7 @@ class nWidget {
   nWidget() {   //only for theme model saving !!
     localrect = new Rect();
     globalrect = new Rect();
+    phantomrect = new Rect();
     hover = new Hoverable(null, null);
     hover.active = true;
     changePosition();
@@ -698,7 +710,7 @@ class nWidget {
   protected nGUI gui;
   private Drawable drawer;
   private Hoverable hover;
-  private Rect globalrect, localrect;
+  private Rect globalrect, localrect, phantomrect;
   private nWidget parent = null;
   private ArrayList<nWidget> childs = new ArrayList<nWidget>();
   private nLook look;
@@ -752,6 +764,7 @@ class nWidget {
     gui.addEventFrame(new Runnable() { public void run() { frame(); } } );
     localrect = new Rect();
     globalrect = new Rect();
+    phantomrect = new Rect();
     changePosition();
     hover = new Hoverable(g.hoverable_pile, globalrect);
     hover.active = true;
@@ -824,6 +837,10 @@ class nWidget {
     globalrect.pos.y = getY(); 
     globalrect.size.x = getSX(); 
     globalrect.size.y = getSY(); 
+    phantomrect.pos.x = getX(); 
+    phantomrect.pos.y = getY(); 
+    phantomrect.size.x = getLocalSX(); 
+    phantomrect.size.y = getLocalSY(); 
     runEvents(eventPositionChange); 
     for (nWidget w : childs) w.changePosition(); 
   }

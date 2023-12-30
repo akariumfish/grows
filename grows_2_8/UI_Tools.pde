@@ -127,7 +127,7 @@ class nCursor extends nWidget {
   sBoo show;
   String ref;
   nWidget refwidget, thiswidget, pointwidget;
-  nCursor(nGUI _g, sValueBloc bloc, String r, String s) {
+  nCursor(nGUI _g, Macro_Sheet sheet, String r, String s) {
     super(_g);
     new nConstructor(_g.theme, _g.theme.ref_size);
     thiswidget = this;
@@ -139,16 +139,16 @@ class nCursor extends nWidget {
     setText(r).setFont(int(ref_size/2.0)).setTextAlignment(LEFT, CENTER);
     setGrabbable();
     addEventDrag(new Runnable() {public void run() {pval.set(refwidget.getX(), refwidget.getY());}});
-    pval = new sVec(bloc, s+"_cursor_position", s+"_pos");
+    pval = sheet.newVec(s+"_cursor_position", s+"_pos");
     pval.addEventChange(new Runnable(pval) {public void run() {
       sVec v = ((sVec)builder);
       thiswidget.setPosition(v.x()-ref_size, v.y()-ref_size);}});
     
-    show = new sBoo(bloc, false, s+"_cursor_show", s+"_show"); //!!!!! is hided by default
+    show = sheet.newBoo(false, s+"_cursor_show", s+"_show"); //!!!!! is hided by default
    
     pointwidget = gui.theme.newWidget(gui, "Pointer").setPosition(-ref_size/4, -ref_size/4).setSize(ref_size/2, ref_size/2);
     pointwidget.setParent(refwidget).setGrabbable().setConstrainDistance(ref_size*2).toLayerTop();
-    dval = new sVec(bloc, s+"_cursor_pointer", s+"_dir");
+    dval = sheet.newVec(s+"_cursor_pointer", s+"_dir");
     dval.addEventChange(new Runnable(dval) {public void run() {
       sVec v = ((sVec)builder);
       if (v.get().mag() > ref_size*2) v.set(v.get().setMag(ref_size*2));
@@ -277,6 +277,8 @@ class nExcludeGroup {
 
 
 class nInfo {
+  //  A AMELIORER
+  //nInfo on cam react to object pos in cam space not on object pos on screen
   void showText(String t) { 
     float s = t.length()*(ref.getLocalSX() / 1.2);
     float p = -t.length()*(ref.getLocalSX() / 1.2) / 2;

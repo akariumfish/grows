@@ -269,6 +269,8 @@ class nConstructor {
   void make(String base) {
     
     do_sizes(base, "-S2/1", ref_size*2, ref_size);
+    do_sizes(base, "-S2/0.75", ref_size*2, ref_size*0.75);
+    do_sizes(base, "-S3/0.75", ref_size*3, ref_size*0.75);
     
     do_sizes(base, "-SS1", ref_size*0.75, ref_size*0.75);
     do_sizes(base, "-SS2", ref_size*2.5, ref_size*0.75);
@@ -684,8 +686,8 @@ class nShelf extends nBuilder {
   nShelf setMax(int m) { max_drawer = m; return this; }
   nDrawer addDrawer(float w, float h) { return insertDrawer(new nDrawer(this, w*ref_size, h*ref_size)); }
   nDrawer insertDrawer(nDrawer d) {
-    if (max_drawer == 0 || drawers.size() < max_drawer) {
-      if (drawers.size() == 0) { d.ref.setParent(ref); }
+    if (d != null && max_drawer == 0 || drawers.size() < max_drawer) {
+      if (drawers.size() == 0) { d.ref.setParent(ref).setPY(0); }
       else {
         nDrawer prev = drawers.get(drawers.size()-1);
         prev.drawer_height += ref_size*space_factor/2;
@@ -699,6 +701,24 @@ class nShelf extends nBuilder {
       if (max_width <= d.drawer_width) { max_width = d.drawer_width; if (eventWidth != null) eventWidth.run(); }
       return d;  }
     return null;
+  }
+  nShelf removeDrawer(nDrawer d) {
+    if (drawers.contains(d)) {
+      int d_i = 0;
+      for (nDrawer td : drawers) { if (td == d) break; else d_i++; }
+      if (drawers.size() == 1) { d.ref.setPY(0).clearParent(); drawers.remove(d); }
+      else if (d_i == 0) { 
+        drawers.get(1).ref.setPY(0).clearParent().setParent(ref); 
+        d.ref.clearParent(); drawers.remove(d); }
+      else if (d_i < drawers.size() - 1) { 
+        drawers.get(d_i+1).ref.setPY(0).clearParent().setParent(drawers.get(d_i-1).ref); 
+        d.ref.clearParent(); drawers.remove(d); }
+      else if (d_i == drawers.size() - 1) { d.ref.clearParent(); drawers.remove(d); }
+      total_height = 0;
+      for (nDrawer dr : drawers) total_height += dr.drawer_height;
+      if (eventHeight != null) eventHeight.run();
+    }
+    return this;
   }
   
   nList addList(int n, float wf, float hf) {

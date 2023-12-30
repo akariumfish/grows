@@ -52,8 +52,8 @@ sInterface interf;
 Simulation simul;
 
 ////BoxComu bcom;
-GrowerComu gcom;
-FlocComu fcom;
+//GrowerComu gcom;
+//FlocComu fcom;
 
 
 void setup() {//executé au demarage
@@ -64,28 +64,10 @@ void setup() {//executé au demarage
   
   interf = new sInterface(40);
   
+  Simulation simul = (Simulation)interf.addUniqueSheet(new SimPrint());
+  interf.addSpecializedSheet(new GrowerPrint(simul));
+  interf.addSpecializedSheet(new FlocPrint(simul));
   
-  //interf.filesManagement();
-  
-  
-  simul = new Simulation(interf);
-  
-  //gcom = 
-  new GrowerPrint(simul)
-  //.build("grow")
-  ;
-  //fcom = 
-  new FlocPrint(simul)
-  //.build("floc")
-  ;
-  new BoxPrint(simul);
-  //gcom.fcom = fcom;
-  //fcom.gcom = gcom;
-  
-  
-  //simul.toolpanel.reduc();
-  //interf.taskpanel.reduc();
-  //simul.pause.set(true);
   
   //logln("end models: "+interf.gui_theme.models.size());
   background(0);//fond noir

@@ -217,6 +217,7 @@ class sRun extends sValue {
   private Runnable val;
   sRun(sValueBloc b, String n, String s, Runnable r) { super(b, "run", n, s);  val = r; }
   sRun run() { val.run(); doChange(); return this; }
+  sRun set(Runnable v) { val = v; return this; }
   void save_to_bloc(Save_Bloc svb) { super.save_to_bloc(svb); }
   void load_from_bloc(Save_Bloc svb) { super.load_from_bloc(svb); }
 }
@@ -502,6 +503,19 @@ class sValueBloc {
     struct += ">>";
     return struct;
   }
+  String getValueHierarchy(boolean print_ref) {
+    String struct = "<bloc_"+type;
+    if (print_ref) struct += "_"+ref;
+    struct += ":"+"values<";
+    for (Map.Entry me : values.entrySet()) { 
+      sValue v = (sValue)me.getValue(); 
+      struct += "<val_"+v.type;
+      if (print_ref) struct += "_"+v.ref;
+      struct += ">";
+    } 
+    struct += ">>";
+    return struct;
+  }
   
   
   
@@ -625,6 +639,13 @@ class DataHolder extends sValueBloc {
     return cnt;
   }
 }
+
+boolean values_match(sValueBloc b1, sValueBloc b2) {
+  return b1.getValueHierarchy(true).equals(b2.getValueHierarchy(true)); }
+  
+
+boolean full_match(sValueBloc b1, sValueBloc b2) {
+  return b1.getHierarchy(true).equals(b2.getHierarchy(true)); }
 
 
 void copy_bloc(sValueBloc from, sValueBloc to) {

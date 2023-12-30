@@ -288,7 +288,16 @@ class nFrontPanel extends nWindowPanel {
     super.updateWidth(); 
     if (current_tab != null && current_tab.panel.getLocalSX() != grabber.getLocalSX()) 
     grabber.setSX(current_tab.panel.getLocalSX());
-    //panel.setSX(grabber.getLocalSX());
+    
+    //is tabs hhave different width verify tabs width follow correctly
+    if (grabber != null && tab_widgets != null) {
+      float new_width = grabber.getLocalSX() / (tab_widgets.size());
+      for (nWidget w : tab_widgets) w.setSX(new_width); 
+      float moy_leng = 0;
+      for (nWidget w : tab_widgets) moy_leng += w.getText().length();
+      moy_leng /= tab_widgets.size();
+      for (nWidget w : tab_widgets) w.setSX(w.getLocalSX() * w.getText().length() / moy_leng);
+    }
     //current_tab.updateWidth(); 
     //logln("frontpanel " + panel.getLocalSX()); 
     
