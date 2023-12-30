@@ -258,19 +258,10 @@ class Simulation extends Macro_Sheet {
       .addSeparator(0.25)
       .addDrawer(10, 1)
       .addCtrlModel("Button-S3-P1", "RESET")
-      .setRunnable(new Runnable() { 
-      public void run() { 
-        reset();
-      }
-    }
-    ).getDrawer()
-      .addCtrlModel("Button-S3-P2", "RESET RNG")
-      .setRunnable(new Runnable() { 
-      public void run() { 
-        resetRng();
-      }
-    }
-    ).getShelf()
+      .setRunnable(new Runnable() {  public void run() {  reset(); } } ).getDrawer()
+      //.addCtrlModel("Button-S3-P2", "RESET RNG")
+      //.setRunnable(new Runnable() { public void run() {  resetRng(); } } )
+      .getShelf()
       .addDrawer(10, 1)
       .addCtrlModel("Button-S3-P1", "Quick Save")
       .setRunnable(new Runnable() { 
@@ -617,10 +608,10 @@ abstract class Community extends Macro_Sheet {
       adding_pile--;
       addEntity();
     }
+    active_entity.set(active_Entity_Nb());
     custom_pre_tick();
     for (Entity e : list) if (e.active) e.tick();
     for (Entity e : list) if (e.active) e.age++;
-    active_entity.set(active_Entity_Nb());
     custom_post_tick();
   }
 

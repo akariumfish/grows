@@ -305,7 +305,7 @@ class sInterface {
     
     macro_main = new Macro_Main(this);
     
-    build_toolpanel();
+    //build_toolpanel();
   }
 
   sInterface addToCamDrawerPile(Drawable d) { d.setPile(cam_gui.drawing_pile); return this; }

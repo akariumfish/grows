@@ -1356,6 +1356,14 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
       redo_spot();
       
       runEvents(eventsSetupLoad);
+      
+      mmain().inter.addEventNextFrame(new Runnable() { public void run() { 
+        if (openning.get() == REDUC) { openning.set(OPEN); reduc(); }
+        else if (openning.get() == OPEN) { openning.set(REDUC); open(); }
+        else if (openning.get() == HIDE) { openning.set(openning_pre_hide.get()); hide(); }
+        else if (openning.get() == DEPLOY) { openning.set(OPEN); deploy(); }
+        if (!mmain().show_macro.get()) hide();
+      } } );
     }
   }
   
@@ -1628,9 +1636,9 @@ interface Macro_Interf {
   static final int HIDE = 0, REDUC = 1, OPEN = 2, DEPLOY = 3;
   static final String OBJ_TOKEN = "@", GROUP_TOKEN = "¤", INFO_TOKEN = "#", BLOC_TOKEN = "~";
   final String[] bloc_types1 = {"data", "in", "out", "switch", "trig", "gate", "not", "bin", 
-                               "bool", "var", "pulse", "calc", "comp", "chan", "com" };
+                               "bool", "var", "pulse", "calc", "comp", "chan" };
   final String[] bloc_types2 = {"graph", "vecPos", "vecDef", "frame", "vecCtrl", "tmpl", 
-                                "mouse", "keyb", "cursor", "slide", "valCtrl", "rng", "prst"};
+                                "mouse", "keyb", "cursor", "slide", "valCtrl", "rng", "prst", "com"};
 }
 
 

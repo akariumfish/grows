@@ -39,7 +39,11 @@ class MGraph extends Macro_Bloc {
 
 class MSlide extends Macro_Bloc { 
   MSlide(Macro_Sheet _sheet, sValueBloc _bloc) { 
-    super(_sheet, "slide", "slide", _bloc); 
+    super(_sheet, "slide", "slide", _bloc);
+    addEmptyL(0).addWidget(new nSlide(gui, ref_size*3.875, ref_size*0.75)
+      .addEventSlide(new Runnable() { public void run(float v) { 
+        ; } } )
+      .setPosition(ref_size*0.125, ref_size*0.125) );
   }
   MSlide clear() {
     super.clear(); return this; }

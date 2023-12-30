@@ -44,6 +44,7 @@ class Macro_Packet {
     else if (isInt()) return str(asInt());
     else if (isBool() && messages.get(0).equals("T")) return "true";
     else if (isBool() && !messages.get(0).equals("T")) return "false";
+    else if (isVec()) return trimStringFloat(asVec().x)+","+trimStringFloat(asVec().y);
     return "";
   }
 }
