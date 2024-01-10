@@ -183,8 +183,9 @@ class nWatcherWidget extends nWidget {
     if (b.type.equals("boo")) setLinkedValue((sBoo)b);
     if (b.type.equals("str")) setLinkedValue((sStr)b);
     if (b.type.equals("vec")) setLinkedValue((sVec)b);
+    if (b.type.equals("col")) setLinkedValue((sCol)b);
     return this; }
-  sBoo bval; sInt ival; sFlt fval; sStr sval; sVec vval;
+  sBoo bval; sInt ival; sFlt fval; sStr sval; sVec vval; sCol cval;
   nWatcherWidget(nGUI g) { super(g); }
   nWatcherWidget setLinkedValue(sInt b) { 
     ival = b; setText(str(ival.get()));
@@ -204,12 +205,17 @@ class nWatcherWidget extends nWidget {
       else ((nWatcherWidget)builder).setText("false"); } } );
     return this; }
   nWatcherWidget setLinkedValue(sStr b) { 
-    sval = b; setText(trimStringFloat(fval.get()));
+    sval = b; setText(sval.get());
     b.addEventChange(new Runnable(this) { public void run() { 
       ((nWatcherWidget)builder).setText(sval.get()); } } );
     return this; }
+  nWatcherWidget setLinkedValue(sCol b) { 
+    cval = b; setStandbyColor(cval.get());
+    b.addEventChange(new Runnable(this) { public void run() { 
+      ((nWatcherWidget)builder).setStandbyColor(cval.get()); } } );
+    return this; }
   nWatcherWidget setLinkedValue(sVec b) { 
-    vval = b; setText(trimStringFloat(fval.get()));
+    vval = b; 
     setText(trimStringFloat(vval.x()) + "," + trimStringFloat(vval.y()));
     b.addEventChange(new Runnable(this) { public void run() { 
       ((nWatcherWidget)builder).setText(trimStringFloat(vval.x()) + "," + trimStringFloat(vval.y())); } } );
@@ -292,8 +298,14 @@ class nLook {
 
 
 class nSlide extends nWidget {
-  nSlide setLinkedValue(sValue val) {
+  nSlide setLinkedValue(sValue v) {
     
+    return this;
+  }
+  nSlide setValue(float v) {
+    if (v < 0) v = 0; if (v > 1) v = 1;
+    curs.setPX(v * (bar.getLocalSX() - curs.getLocalSX()));
+    cursor_value = v;
     return this;
   }
   nWidget addEventSlide(Runnable r)   { eventSlide.add(r); return this; }
@@ -310,7 +322,7 @@ class nSlide extends nWidget {
     bar = new nWidget(gui, 0, scale_height * 3 / 8, _scale_width, scale_height * 1 / 4).setParent(this);
     curs = new nWidget(gui, 0, -scale_height * 3 / 8, scale_height * 1 / 4, scale_height)
       .setParent(bar)
-      .setStandbyColor(color(100))
+      .setStandbyColor(color(200))
       .setGrabbable().setConstrainY(true)
       .addEventDrag(new Runnable() { public void run() {
         if (curs.getLocalX() < 0) curs.setPX(0);
@@ -353,6 +365,7 @@ class nWidget {
   
   nWidget addEventGrab(Runnable r)       { eventGrabRun.add(r); return this; }
   nWidget addEventDrag(Runnable r)       { eventDragRun.add(r); return this; }
+  nWidget removeEventDrag(Runnable r)       { eventDragRun.remove(r); return this; }
   nWidget addEventLiberate(Runnable r)   { eventLiberateRun.add(r); return this; }
   
   nWidget addEventMouseEnter(Runnable r) { eventMouseEnterRun.add(r); return this; }
@@ -363,11 +376,14 @@ class nWidget {
   
   nWidget addEventTrigger(Runnable r)         { eventTriggerRun.add(r); return this; }
   nWidget removeEventTrigger(Runnable r)      { eventTriggerRun.remove(r); return this; }
+  nWidget clearEventTrigger()                 { eventTriggerRun.clear(); return this; }
   nWidget addEventTrigger_Builder(Runnable r) { eventTriggerRun.add(r); r.builder = this; return this; }
   
   nWidget addEventSwitchOn(Runnable r)   { eventSwitchOnRun.add(r); return this; }
   nWidget addEventSwitchOn_Builder(Runnable r)   { r.builder = this; eventSwitchOnRun.add(r); return this; }
   nWidget addEventSwitchOff(Runnable r)  { eventSwitchOffRun.add(r); return this; }
+  nWidget clearEventSwitchOn()   { eventSwitchOnRun.clear(); return this; }
+  nWidget clearEventSwitchOff()  { eventSwitchOffRun.clear(); return this; }
   
   nWidget addEventFieldChange(Runnable r) { eventFieldChangeRun.add(r); return this; }
   
@@ -402,7 +418,7 @@ class nWidget {
     if (parent != null) { parent.childs.remove(this); parent = null; changePosition(); } return this; }
   
   nWidget setText(String s) { if (s != null) { label = s; cursorPos = label.length(); } return this; }
-  nWidget changeText(String s) { label = s; return this; }
+  nWidget changeText(String s) { label = s; if (cursorPos > label.length()) cursorPos = label.length(); return this; }
   nWidget setFont(int s) { look.textFont = s; return this; }
   nWidget setTextAlignment(int sx, int sy) { textAlignX = sx; textAlignY = sy; return this; }
   nWidget setTextVisibility(boolean s) { show_text = s; return this; }
@@ -499,6 +515,7 @@ class nWidget {
   
   boolean isClicked() { return isClicked; }
   boolean isHovered() { return isHovered; }
+  boolean isGrabbed() { return isGrabbed; }
   boolean isField() { return isField; }
   boolean isHided() { return hide; }
   boolean isOn() { return switchState; }
@@ -514,7 +531,7 @@ class nWidget {
     grabbable = false; 
     isField = false;
     isClicked = false;
-    if (hover != null) hover.active = false; 
+    if (hover != null) { hover.active = false; hoverHideState = hover.active; }
     return this; }
   nWidget setBackground() { 
     triggerMode = false; 
@@ -523,26 +540,26 @@ class nWidget {
     grabbable = false; 
     isField = false; 
     isClicked = false;
-    if (hover != null) hover.active = true; 
+    if (hover != null) { hover.active = true; hoverHideState = hover.active; }
     return this; }
   nWidget setTrigger() { 
     triggerMode = true; switchMode = false; switchState = false; 
-    if (hover != null) hover.active = true; return this; }
+    if (hover != null) hover.active = true; hoverHideState = hover.active; return this; }
   nWidget setSwitch() { 
     triggerMode = false; switchMode = true; switchState = false; 
-    if (hover != null) hover.active = true; return this; }
+    if (hover != null) hover.active = true; hoverHideState = hover.active; return this; }
   
   //carefull!! dont work if excluded cleared before this
   private ArrayList<nWidget> excludes = new ArrayList<nWidget>();
   nWidget addExclude(nWidget b) { excludes.add(b); return this; }
   nWidget removeExclude(nWidget b) { excludes.remove(b); return this; }
   
-  nWidget setGrabbable() { triggerMode = true; grabbable = true; hover.active = true; return this; }
-  nWidget setFixed() { grabbable = false; hover.active = false; return this; }
+  nWidget setGrabbable() { triggerMode = true; grabbable = true; hover.active = true; hoverHideState = hover.active; return this; }
+  nWidget setFixed() { grabbable = false; hover.active = false; hoverHideState = hover.active; return this; }
   nWidget setConstrainX(boolean b) { constrainX = b; return this; }
   nWidget setConstrainY(boolean b) { constrainY = b; return this; }
   nWidget setConstrainDistance(float b) { if (b == 0) constrainD = false; else { constrainDlength = b; constrainD = true; } return this; }
-  nWidget setSelectable(boolean o) { isSelectable = o; hoverOutline = o; hover.active = true; return this; }
+  nWidget setSelectable(boolean o) { isSelectable = o; hoverOutline = o; hover.active = true; hoverHideState = hover.active; return this; }
   nWidget setField(boolean o) { isField = o; setSelectable(o); return this; }
   
   nWidget setOutline(boolean o) { showOutline = o; return this; }
@@ -680,6 +697,7 @@ class nWidget {
     phantomrect = new Rect();
     hover = new Hoverable(null, null);
     hover.active = true;
+    hoverHideState = hover.active; 
     changePosition();
     look = new nLook();
     label = new String();
@@ -768,6 +786,7 @@ class nWidget {
     changePosition();
     hover = new Hoverable(g.hoverable_pile, globalrect);
     hover.active = true;
+    hoverHideState = hover.active; 
     label = new String();
     look = new nLook();
     drawer = new Drawable(g.drawing_pile) { public void drawing() {

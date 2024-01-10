@@ -2,9 +2,6 @@
 
 
 
-PATH TO THE END:
-
-new macro usable
   see top of sheet constructor for detailed notes
 
 
@@ -65,6 +62,7 @@ void setup() {//executé au demarage
   interf = new sInterface(40);
   
   Simulation simul = (Simulation)interf.addUniqueSheet(new SimPrint());
+  interf.addSpecializedSheet(new OrganismPrint(simul));
   interf.addSpecializedSheet(new GrowerPrint(simul));
   interf.addSpecializedSheet(new FlocPrint(simul));
   
@@ -74,14 +72,17 @@ void setup() {//executé au demarage
   
   //File file = new File(sketchPath());
   //if (file.isDirectory()) { String names[] = file.list(); } // all files in sketch directory
+  interf.addEventNextFrame(new Runnable() { 
+    public void run() { interf.addEventNextFrame(new Runnable() { 
+      public void run() { interf.setup_load(); } } ); } } );
   
-  interf.setup_load();
 }
 
 
 void draw() {//executé once by frame
   interf.frame();
   global_frame_count++;
+  if (global_frame_count < 4) { fill(0); noStroke(); rect(0, 0, width, height); }
 }
 
 
@@ -119,7 +120,7 @@ void mouseMoved() {
 String copy(String s) { if (s != null) return s.substring(0, s.length()); else return null; }
 String str_copy(String s) { if (s != null) return s.substring(0, s.length()); else return null; }
 
-String trimStringFloat(float f) { return trimStringFloat(f, 2); }
+String trimStringFloat(float f) { return trimStringFloat(f, 3); }
 String trimStringFloat(float f, int p) {
   String s;
   if (f%1.0 == 0.0) s = nfc(int(f)); else s = str(f);

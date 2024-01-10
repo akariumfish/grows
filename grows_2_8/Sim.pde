@@ -1,5 +1,5 @@
 
-/*
+/*                          RENAME IT " TIME "
 
  Simulation(Input, Data, Interface)
  Build with interface
@@ -62,7 +62,7 @@
 
 class SimPrint extends Sheet_Specialize {
   SimPrint() { super("Sim"); }
-  Simulation get_new(Macro_Sheet s, String n, sValueBloc b) { return new Simulation(mmain.inter); }
+  Simulation get_new(Macro_Sheet s, String n, sValueBloc b) { return new Simulation(mmain.inter, b); }
 }
 
 class Simulation extends Macro_Sheet {
@@ -73,13 +73,13 @@ class Simulation extends Macro_Sheet {
     return this;
   }
   
-  Simulation(sInterface _int) {
-    super(_int.macro_main, "Sim", null);
+  Simulation(sInterface _int, sValueBloc b) {
+    super(_int.macro_main, "Sim", b);
     inter = _int;
     ref_size = inter.ref_size;
     cam_gui = inter.cam_gui;
     
-    setPosition(0, -ref_size*8);
+    //setPosition(0, -ref_size*8);
     val_descr.set("Control time, reset, random...");
     tick_counter = newInt(0, "tick_counter", "tick");
     tick_by_frame = newFlt(2, "tick by frame", "tck/frm");
@@ -157,6 +157,10 @@ class Simulation extends Macro_Sheet {
     eventsReset.add(r); 
     return this;
   }
+  Simulation removeEventReset(Runnable r) { 
+    eventsReset.remove(r); 
+    return this;
+  }
   Simulation addEventFrame(Runnable r) { 
     eventsFrame.add(r); 
     return this;
@@ -167,6 +171,10 @@ class Simulation extends Macro_Sheet {
   }
   Simulation addEventTick(Runnable r) { 
     eventsTick.add(r); 
+    return this;
+  }
+  Simulation removeEventTick(Runnable r) { 
+    eventsTick.remove(r); 
     return this;
   }
 
@@ -259,8 +267,8 @@ class Simulation extends Macro_Sheet {
       .addDrawer(10, 1)
       .addCtrlModel("Button-S3-P1", "RESET")
       .setRunnable(new Runnable() {  public void run() {  reset(); } } ).getDrawer()
-      //.addCtrlModel("Button-S3-P2", "RESET RNG")
-      //.setRunnable(new Runnable() { public void run() {  resetRng(); } } )
+      .addCtrlModel("Button-S3-P2", "RESET RNG")
+      .setRunnable(new Runnable() { public void run() {  resetRng(); } } )
       .getShelf()
       .addDrawer(10, 1)
       .addCtrlModel("Button-S3-P1", "Quick Save")
@@ -528,7 +536,7 @@ abstract class Community extends Macro_Sheet {
     sim.list.add(this);
     type = ty;
     
-    max_entity = newInt(500, "max_entity", "max_pop");
+    max_entity = newInt(max, "max_entity", "max_entity");
     type_value = newStr("type", "type", ty);
     selected_com = newStr("selected_com", "scom", "");
     active_entity = newInt(0, "active_entity ", "active_pop");
@@ -539,8 +547,6 @@ abstract class Community extends Macro_Sheet {
     pulse_add_delay = newInt(100, "pulse_add_delay ", "pulseT");
 
     adding_cursor = new nCursor(sim.cam_gui, this, n, "add");
-    
-    max_entity.set(max); 
 
     srun_add = newRun("add_entity", "add_pop", new Runnable() { 
       public void run() { 

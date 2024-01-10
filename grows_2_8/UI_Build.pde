@@ -117,95 +117,6 @@ class nConstructor {
       .setOutlineColor(color(100, 170, 210))
       );
       
-    
-    //theme.addModel("mc_ref", new nWidget()
-    //  //.setPassif()
-    //  .setLabelColor(color(200, 200, 200))
-    //  .setFont(int(ref_size/1.6))
-    //  );
-    //theme.addModel("MC_Hard_Back", theme.newWidget("mc_ref")
-    //  .setStandbyColor(color(50, 50))
-    //  .setOutlineColor(color(105))
-    //  .setOutlineWeight(ref_size * 2.0 / 16.0)
-    //  .setOutline(true)
-    //  );
-    //theme.addModel("MC_Label_Back", theme.newWidget("mc_ref")
-    //  .setStandbyColor(color(70))
-    //  .setOutlineColor(color(90))
-    //  .setOutlineWeight(ref_size / 16)
-    //  .setOutline(true)
-    //  );
-    //theme.addModel("MC_Hard_Back_Spot", theme.newWidget("mc_ref")
-    //  .setStandbyColor(color(50))
-    //  .setOutlineColor(color(90))
-    //  .setOutlineWeight(ref_size / 16)
-    //  .setSize(ref_size*3, ref_size*1.5)
-    //  .setOutline(true)
-    //  );
-    //theme.addModel("MC_Soft_Back", theme.newWidget("mc_ref")
-    //  .setStandbyColor(color(200, 50))
-    //  .setOutlineColor(color(200, 90))
-    //  .setOutlineWeight(ref_size / 16)
-    //  .setOutline(true)
-    //  );
-    //theme.addModel("MC_Grabber", theme.newWidget("mc_ref")
-    //  .setStandbyColor(color(70))
-    //  .setHoveredColor(color(100))
-    //  .setClickedColor(color(130))
-    //  .setOutlineWeight(ref_size / 6)
-    //  .setOutline(true)
-    //  .setOutlineColor(color(150))
-    //  .setSize(ref_size*1, ref_size*1.25)
-    //  );
-    //theme.addModel("MC_Widget", theme.newWidget("mc_ref")
-    //  .setStandbyColor(color(110))
-    //  .setHoveredColor(color(130))
-    //  .setClickedColor(color(150))
-    //  .setOutline(false)
-    //  .setLabelColor(color(200, 200, 200))
-    //  .setFont(int(ref_size/2.2))
-    //  .setSize(ref_size*1.75, ref_size*9/16)
-    //  .setTrigger()
-    //  );
-    //theme.addModel("MC_Widget_Solo", theme.newWidget("MC_Widget")
-    //  .setSize(ref_size*2.75, ref_size*8/16)
-    //  .setPosition(ref_size*2/16, ref_size*8.0/16.0)
-    //  );
-    //theme.addModel("MC_Widget_Duo1", theme.newWidget("MC_Widget")
-    //  .setSize(ref_size*2.75, ref_size*8/16)
-    //  .setPosition(ref_size*2/16, ref_size*3/16)
-    //  );
-    //theme.addModel("MC_Widget_Duo2", theme.newWidget("MC_Widget")
-    //  .setSize(ref_size*2.75, ref_size*8/16)
-    //  .setPosition(ref_size*2/16, ref_size*13/16)
-    //  );
-    //theme.addModel("MC_Widget_Quad1", theme.newWidget("MC_Widget")
-    //  .setSize(ref_size*20.0/16.0, ref_size*8/16)
-    //  .setPosition(ref_size*3/16, ref_size*3/16)
-    //  );
-    //theme.addModel("MC_Widget_Quad2", theme.newWidget("MC_Widget")
-    //  .setSize(ref_size*20/16, ref_size*8/16)
-    //  .setPosition(ref_size*3/16, ref_size*13/16)
-    //  );
-    //theme.addModel("MC_Widget_Quad3", theme.newWidget("MC_Widget")
-    //  .setSize(ref_size*20/16, ref_size*8/16)
-    //  .setPosition(ref_size*25/16, ref_size*3/16)
-    //  );
-    //theme.addModel("MC_Widget_Quad4", theme.newWidget("MC_Widget")
-    //  .setSize(ref_size*20/16, ref_size*8/16)
-    //  .setPosition(ref_size*25/16, ref_size*13/16)
-    //  );
-    //theme.addModel("MC_Connect", theme.newWidget("mc_ref")
-    //  .setStandbyColor(color(140, 140))
-    //  .setHoveredColor(color(180, 180))
-    //  .setClickedColor(color(180, 220))
-    //  .setOutlineWeight(ref_size / 12)
-    //  .setOutline(true)
-    //  .setOutlineColor(color(90))
-    //  .setRound(true)
-    //  .setSize(ref_size*14/16, ref_size*14/16)
-    //  );
-      
     make_outline("Button");
     make_outline("Menu_Button");
     make_outline("Head_Button");
@@ -270,7 +181,9 @@ class nConstructor {
     
     do_sizes(base, "-S2/1", ref_size*2, ref_size);
     do_sizes(base, "-S2/0.75", ref_size*2, ref_size*0.75);
+    do_sizes(base, "-S2.5/0.75", ref_size*2.5, ref_size*0.75);
     do_sizes(base, "-S3/0.75", ref_size*3, ref_size*0.75);
+    do_sizes(base, "-S6/1", ref_size*6, ref_size*1);
     
     do_sizes(base, "-SS1", ref_size*0.75, ref_size*0.75);
     do_sizes(base, "-SS2", ref_size*2.5, ref_size*0.75);

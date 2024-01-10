@@ -57,6 +57,11 @@ class sInterface {
           .setLinkedValue(framerate.median_framerate).getDrawer()
         .getShelfPanel()
       ;
+    
+    if (!show_toolpanel.get()) toolpanel.reduc();
+    toolpanel.addEventReduc(new Runnable() { public void run() { 
+      show_toolpanel.set(!toolpanel.hide); }});
+      
   }
   
   void filesManagement() {
@@ -235,9 +240,13 @@ class sInterface {
   
   void build_default_ui(float ref_size) {
     taskpanel = new nTaskPanel(screen_gui, ref_size, 0.125);
+    
+    if (!show_taskpanel.get()) taskpanel.reduc();
+    taskpanel.addEventReduc(new Runnable() { public void run() { 
+      show_taskpanel.set(!taskpanel.hide); }});
+      
     savepath_value = new sStr(interface_bloc, savepath, "savepath", "spath");
     file_savebloc = new Save_Bloc(savepath);
-    auto_load = new sBoo(interface_bloc, false, "auto_load", "autoload");
     //filesManagement();
   }
   
@@ -252,7 +261,7 @@ class sInterface {
   nTaskPanel taskpanel;
   float ref_size;
   
-  
+  sBoo show_toolpanel, show_taskpanel;
   
   
 
@@ -286,27 +295,53 @@ class sInterface {
     input = new sInput();
     data = new DataHolder();
     interface_bloc = new sValueBloc(data, "Interface");
-    framerate = new sFramerate(interface_bloc, 60);
-    cam = new Camera(input, interface_bloc)
-      .addEventZoom(new Runnable() { public void run() { cam_gui.updateView(); } } )
-      .addEventMove(new Runnable() { public void run() { cam_gui.updateView(); } } );
     gui_theme = new nTheme(ref_size);
-    screen_gui = new nGUI(input, gui_theme, ref_size)
-      .addEventFound(new Runnable() { public void run() { cam.GRAB = false; cam_gui.hoverpile_passif = true; } } )
-      .addEventNotFound(new Runnable() { public void run() { cam.GRAB = true; cam_gui.hoverpile_passif = false; } } );
-    cam_gui = new nGUI(input, gui_theme, ref_size)
-      .setMouse(cam.mouse).setpMouse(cam.pmouse)
-      .setView(cam.view)
-      .addEventFound(new Runnable() { public void run() { cam.GRAB = false; } } )
-      .addEventNotFound(new Runnable() { public void run() { 
-        if (!screen_gui.hoverable_pile.found) { cam.GRAB = true; runEvents(eventsHoverNotFound); } } } );
-
+    screen_gui = new nGUI(input, gui_theme, ref_size);
+    cam_gui = new nGUI(input, gui_theme, ref_size);
+    
+    show_toolpanel = interface_bloc.newBoo("show_toolpanel", "toolpanel", true);
+    show_toolpanel.addEventChange(new Runnable(this) { public void run() { 
+      if (toolpanel != null && toolpanel.hide == show_toolpanel.get()) toolpanel.reduc();
+    }});
+    show_taskpanel = interface_bloc.newBoo("show_taskpanel", "taskpanel", true);
+    show_taskpanel.addEventChange(new Runnable(this) { public void run() { 
+      if (taskpanel != null && taskpanel.hide == show_taskpanel.get()) taskpanel.reduc();
+    }});
+    
     build_default_ui(ref_size);
     
     macro_main = new Macro_Main(this);
     
-    //build_toolpanel();
+    framerate = new sFramerate(macro_main.value_bloc, 60);
+    
+    cam = new Camera(input, macro_main.value_bloc)
+      .addEventZoom(new Runnable() { public void run() { cam_gui.updateView(); } } )
+      .addEventMove(new Runnable() { public void run() { cam_gui.updateView(); } } );
+    
+    screen_gui.addEventFound(new Runnable() { public void run() { 
+      cam.GRAB = false; cam_gui.hoverpile_passif = true; } } )
+    .addEventNotFound(new Runnable() { public void run() { 
+      cam.GRAB = true; cam_gui.hoverpile_passif = false; } } );
+    
+    cam_gui.setMouse(cam.mouse).setpMouse(cam.pmouse)
+      .setView(cam.view)
+      .addEventFound(new Runnable() { public void run() { cam.GRAB = false; } } )
+      .addEventNotFound(new Runnable() { public void run() { 
+        if (!screen_gui.hoverable_pile.found) { cam.GRAB = true; runEvents(eventsHoverNotFound); } } } );
+    
+    auto_load = macro_main.newBoo(false, "auto_load", "autoload");
+    
+    quicksave_run = macro_main.newRun("quicksave", "qsave", 
+      new Runnable() { public void run() { full_data_save(); } } );
+    quickload_run = macro_main.newRun("quickload", "qload", 
+      new Runnable() { public void run() { addEventNextFrame(new Runnable() { 
+      public void run() { setup_load(); } } ); } } );
+    filesm_run = macro_main.newRun("files_management", "filesm", 
+      new Runnable() { public void run() { filesManagement(); } } );
+    
   }
+  
+  sRun quicksave_run, quickload_run, filesm_run;
 
   sInterface addToCamDrawerPile(Drawable d) { d.setPile(cam_gui.drawing_pile); return this; }
   sInterface addToScreenDrawerPile(Drawable d) { d.setPile(screen_gui.drawing_pile); return this; }
@@ -336,11 +371,10 @@ class sInterface {
       runEvents(eventsSetupLoad);
       macro_main.setup_load(setup_bloc);
       
-      if (setup_bloc.getBloc("camera") != null) { 
-        transfer_values(setup_bloc.getBloc("camera"), cam.sbloc); 
-      }
-      //transfer other interface data here
-      
+      if (setup_bloc.getValue("show_toolpanel") != null) 
+        show_toolpanel.set(((sBoo)setup_bloc.getValue("show_toolpanel")).get());
+      if (setup_bloc.getValue("show_taskpanel") != null) 
+        show_taskpanel.set(((sBoo)setup_bloc.getValue("show_taskpanel")).get());
       
     }
     if (setup_bloc.getValue("auto_load") != null) 
@@ -414,7 +448,6 @@ class sInterface {
 
 class Camera {
   sInput input;
-  sValueBloc sbloc;
   Rect view;
   sVec cam_pos; //position de la camera
   sFlt cam_scale; //facteur de grossicement
@@ -425,15 +458,14 @@ class Camera {
   boolean matrixPushed = false; //track if in or out of the cam matrix
 
   Camera(sInput i, sValueBloc d) { 
-    sbloc = new sValueBloc(d, "camera");
-    grid = new sBoo(sbloc, true, "show grid", "grid");
-    cam_scale = new sFlt(sbloc, 1.0, "cam scale", "scale");
+    grid = new sBoo(d, true, "show grid", "grid");
+    cam_scale = new sFlt(d, 1.0, "cam scale", "scale");
     cam_scale.addEventChange(new Runnable() { public void run() {
       view.pos.set(screen_to_cam(new PVector(0, 0)));
       view.size.set(screen_to_cam(new PVector(width, height)).sub(view.pos)); 
       runEvents(eventsZoom);
       runEvents(eventsMove); }});
-    cam_pos = new sVec(sbloc, "cam pos", "pos");
+    cam_pos = new sVec(d, "cam pos", "pos");
     cam_pos.addEventChange(new Runnable() { public void run() {
       view.pos.set(screen_to_cam(new PVector(0, 0)));
       view.size.set(screen_to_cam(new PVector(width, height)).sub(view.pos)); 
@@ -606,7 +638,6 @@ framerate
  */
 
 class sFramerate {
-  sValueBloc bloc;
   int frameRate_cible = 60;
   float[] frameR_history;
   int hist_it = 0;
@@ -639,12 +670,11 @@ class sFramerate {
     frameR_history = new float[frameRate_cible];
     for (int i = 0; i < frameR_history.length; i++) frameR_history[i] = 1000/frameRate_cible;
 
-    bloc = new sValueBloc(d, "framerate");
-    sec_since_reset = new sInt(bloc, 0, "sec_since_reset", "sec");
-    frame_since_reset = new sInt(bloc, 0, "frame_since_reset", "frsr");
-    median_framerate = new sFlt(bloc, 0, "median_framerate", "mfr");
-    current_framerate = new sFlt(bloc, 0, "current_framerate", "cfr");
-    frame_duration = new sFlt(bloc, 0, "frame_duration", "fdur");
+    sec_since_reset = new sInt(d, 0, "sec_since_reset", "sec");
+    frame_since_reset = new sInt(d, 0, "frame_since_reset", "frsr");
+    median_framerate = new sFlt(d, 0, "median_framerate", "mfr");
+    current_framerate = new sFlt(d, 0, "current_framerate", "cfr");
+    frame_duration = new sFlt(d, 0, "frame_duration", "fdur");
   }
   void reset() { 
     sec_since_reset.set(0); 

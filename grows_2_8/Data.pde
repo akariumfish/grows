@@ -68,6 +68,7 @@ abstract class sValue {
   sValue doEvent(boolean v) { doevent = v; return this; }
   sValue addEventDelete(Runnable r) { eventsDelete.add(r); return this; }
   sValue addEventChange(Runnable r) { eventsChange.add(r); return this; }
+  sValue removeEventChange(Runnable r) { eventsChange.remove(r); return this; }
   sValue addEventAllChange(Runnable r) { eventsAllChange.add(r); return this; }
   void doChange() { if (doevent) runEvents(eventsAllChange); has_changed = true; }
   sValueBloc bloc;
@@ -109,6 +110,7 @@ class sInt extends sValue {
   String getString() { return str(val); }
   void clear() { super.clear(); val = def; }
   int val = 0, def;
+  float ctrl_factor = 2;
   sInt(sValueBloc b, int v, String n, String s) { super(b, "int", n, s); val = v; def = val; }
   int get() { return val; }
   void set(int v) { 
@@ -124,13 +126,16 @@ class sInt extends sValue {
 }
 
 class sFlt extends sValue {
-  boolean limited_min = false, limited_max = false; int min, max;
-  sFlt set_limit(int mi, int ma) { limited_min = true; limited_max = true; min = mi; max = ma; return this; }
-  sFlt set_min(int mi) { limited_min = true; min = mi; return this; }
-  sFlt set_max(int ma) { limited_max = true; max = ma; return this; }
+  boolean limited_min = false, limited_max = false; float min, max;
+  sFlt set_limit(float mi, float ma) { limited_min = true; limited_max = true; min = mi; max = ma; return this; }
+  sFlt set_min(float mi) { limited_min = true; min = mi; return this; }
+  sFlt set_max(float ma) { limited_max = true; max = ma; return this; }
+  float getmin() { return min; }
+  float getmax() { return max; }
   String getString() { return trimStringFloat(val); }
   void clear() { super.clear(); val = def; }
   float val = 0, def;
+  float ctrl_factor = 2;
   sFlt(sValueBloc b, float v, String n, String s) { super(b, "flt", n, s); val = v; def = val; }
   float get() { return val; }
   void set(float v) { 
@@ -211,6 +216,34 @@ class sVec extends sValue {
     set(svb.getFloat("x"), svb.getFloat("y")); }
 }
 
+class sCol extends sValue {
+  String getString() { return trimStringFloat(red(val)) + "," + 
+                              trimStringFloat(green(val)) + "," + 
+                              trimStringFloat(blue(val)); }
+  void clear() { super.clear(); val = def; }
+  private color val = color(255), def = color(255);
+  sCol(sValueBloc b, String n, String s) { super(b, "col", n, s); }
+  float getred() { return red(val); }
+  float getgreen() { return green(val); }
+  float getblue() { return blue(val); }
+  color get() { return val; }
+  sCol set(color c) { 
+    if (c != val) {
+      val = c;  
+      doChange(); 
+    } 
+    return this;
+  }
+  sCol set(int r, int g, int b) { 
+    set(color(r,g,b));
+    return this;
+  }
+  void save_to_bloc(Save_Bloc svb) { super.save_to_bloc(svb);
+    svb.newData("c", val); }
+  void load_from_bloc(Save_Bloc svb) { super.load_from_bloc(svb);
+    set(svb.getInt("c")); }
+}
+
 class sRun extends sValue {
   String getString() { return ref; }
   void clear() { super.clear(); }
@@ -233,22 +266,22 @@ class sObj extends sValue {
   void load_from_bloc(Save_Bloc svb) { super.load_from_bloc(svb); }
 }
 
-class sBlc extends sValue {
-  String getString() { return ref; }
-  void clear() { super.clear(); }
-  private Save_Bloc val;
-  sBlc(sValueBloc b, String n, String s) { super(b, "blc", n, s); val = new Save_Bloc(n); }
-  void set(Save_Bloc r) { if (r != null) { val = new Save_Bloc(ref); val.copy_from(r); } }
-  Save_Bloc get() { Save_Bloc b = new Save_Bloc(""); if (val != null) b.copy_from(val); return b; }
-  void save_to_bloc(Save_Bloc svb) { 
-    super.save_to_bloc(svb); 
-    if (val != null) svb.newBloc("bloc").copy_from(val);
-  }
-  void load_from_bloc(Save_Bloc svb) { 
-    super.load_from_bloc(svb); 
-    //if (svb.getBloc("bloc") != null) val.copy_from(svb.getBloc("bloc"));
-  }
-}
+//class sBlc extends sValue {
+//  String getString() { return ref; }
+//  void clear() { super.clear(); }
+//  private Save_Bloc val;
+//  sBlc(sValueBloc b, String n, String s) { super(b, "blc", n, s); val = new Save_Bloc(n); }
+//  void set(Save_Bloc r) { if (r != null) { val = new Save_Bloc(ref); val.copy_from(r); } }
+//  Save_Bloc get() { Save_Bloc b = new Save_Bloc(""); if (val != null) b.copy_from(val); return b; }
+//  void save_to_bloc(Save_Bloc svb) { 
+//    super.save_to_bloc(svb); 
+//    if (val != null) svb.newBloc("bloc").copy_from(val);
+//  }
+//  void load_from_bloc(Save_Bloc svb) { 
+//    super.load_from_bloc(svb); 
+//    //if (svb.getBloc("bloc") != null) val.copy_from(svb.getBloc("bloc"));
+//  }
+//}
 
 
 /*
@@ -392,8 +425,10 @@ class sValueBloc {
   sStr newStr(String n, String s, String v)    { return new sStr(this, v, n, s); }
   sVec newVec(String n, String s, PVector v)   { return new sVec(this, n, s).set(v); }
   sVec newVec(String n, String s)              { return new sVec(this, n, s); }
+  sCol newCol(String n, String s, color v)     { return new sCol(this, n, s).set(v); }
+  sCol newCol(String n, String s)              { return new sCol(this, n, s); }
   sRun newRun(String n, String s, Runnable v)  { return new sRun(this, n, s, v); }
-  sBlc newBlc(String n, String s) { return new sBlc(this, n, s); }
+  //sBlc newBlc(String n, String s) { return new sBlc(this, n, s); }
   sObj newObj(String n, Object v) { return new sObj(this, n, v); }
   
   DataHolder data; sValueBloc parent = null, last_created_bloc = null; 
@@ -559,8 +594,9 @@ class sValueBloc {
       if (t.equals("boo")) { nv = new sBoo(this, false, n, s);  nv.load_from_bloc(sb); }
       if (t.equals("str")) { nv = new sStr(this, "", n, s);     nv.load_from_bloc(sb); }
       if (t.equals("vec")) { nv = new sVec(this, n, s);         nv.load_from_bloc(sb); }
+      if (t.equals("col")) { nv = new sCol(this, n, s);         nv.load_from_bloc(sb); }
       if (t.equals("run")) { nv = new sRun(this, n, s, null);   nv.load_from_bloc(sb); }
-      if (t.equals("blc")) { nv = new sBlc(this, n, s);      nv.load_from_bloc(sb); }
+      //if (t.equals("blc")) { nv = new sBlc(this, n, s);      nv.load_from_bloc(sb); }
       if (t.equals("obj")) { nv = new sObj(this, n, null);   nv.load_from_bloc(sb); }
     }
     return nv;
@@ -630,7 +666,7 @@ class DataHolder extends sValueBloc {
   DataHolder() {
     super(); ref = "data"; parent = this; 
   }
-  String[] types = {"flt", "int", "boo", "str", "vec", "run", "blc", "obj"};
+  String[] types = {"flt", "int", "boo", "str", "vec", "col", "run", "obj"};
   
   int to_save_bloc(Save_Bloc sb) { 
     dlogln("DataHolder saving to savebloc");

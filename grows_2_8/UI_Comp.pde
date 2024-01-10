@@ -8,12 +8,18 @@
 
 
 class nToolPanel extends nShelfPanel {
+  
+  ArrayList<Runnable> eventReducRun = new ArrayList<Runnable>();
+  nToolPanel addEventReduc(Runnable r)       { eventReducRun.add(r); return this; }
+  nToolPanel removeEventReduc(Runnable r)       { eventReducRun.remove(r); return this; }
+  
   void reduc() {
     if      (hide && !right)  { panel.show(); reduc.setText("<"); } 
     else if (hide && right)   { panel.show(); reduc.setText(">"); } 
     else if (!hide && !right) { panel.hide(); reduc.show().setText(">"); }
     else                      { panel.hide(); reduc.show().setText("<"); }
-    hide = !hide; }
+    hide = !hide; 
+    runEvents(eventReducRun); }
   nCtrlWidget reduc;
   boolean hide = false, right = true, top = true;
   nToolPanel(nGUI _g, float ref_size, float space_factor, boolean rgh, boolean tp) { 
@@ -38,7 +44,7 @@ class nToolPanel extends nShelfPanel {
 class nTaskPanel extends nToolPanel {
   ArrayList<nWindowPanel> windowPanels = new ArrayList<nWindowPanel>();
   ArrayList<nWidget> window_buttons = new ArrayList<nWidget>();
-  int used_spot = 0, max_spot = 6;
+  int used_spot = 0, max_spot = 4;
   int row = 1, col = 4;
   float adding_pos;
   nWidget getWindowPanelButton(nWindowPanel w) {
@@ -87,7 +93,9 @@ class nWindowPanel extends nShelfPanel {
   void collapse() { 
     collapsed = true;
     grabber.hide(); 
-    if (taskpanel_button != null) taskpanel_button.setStandbyColor(color(90)); }
+    if (taskpanel_button != null) taskpanel_button.setStandbyColor(color(90));
+    runEvents(eventCollapseRun);
+  }
   void popUp() { 
     
     collapsed = false;
@@ -95,9 +103,15 @@ class nWindowPanel extends nShelfPanel {
     grabber.show(); 
     taskpanel_button.setStandbyColor(color(70)); 
     toLayerTop();
+    runEvents(eventCollapseRun);
   }
   ArrayList<Runnable> eventCloseRun = new ArrayList<Runnable>();
   nWindowPanel addEventClose(Runnable r)       { eventCloseRun.add(r); return this; }
+  nWindowPanel removeEventClose(Runnable r)       { eventCloseRun.remove(r); return this; }
+  
+  ArrayList<Runnable> eventCollapseRun = new ArrayList<Runnable>();
+  nWindowPanel addEventCollapse(Runnable r)       { eventCollapseRun.add(r); return this; }
+  nWindowPanel removeEventCollapse(Runnable r)       { eventCollapseRun.remove(r); return this; }
   
   nTaskPanel task;
   nWidget grabber, closer, reduc, collapse, taskpanel_button;
@@ -123,7 +137,6 @@ class nWindowPanel extends nShelfPanel {
     closer = addModel("Head_Button_Small_Outline-SS1").setText("X")
       .setTrigger()
       .addEventTrigger(new Runnable() { public void run() { 
-        runEvents(eventCloseRun); 
         clear(); } } )
       .setParent(grabber)
       .alignRight()
@@ -135,13 +148,16 @@ class nWindowPanel extends nShelfPanel {
       .stackLeft()
       ;
     panel.setParent(grabber).stackDown();
-    addShelf().addDrawer(10, 0);
+    addShelf()
+      //.addDrawer(10, 0)
+      ;
     taskpanel_button = task.getWindowPanelButton(this);
     run_show = new Runnable() { public void run() { 
       if (collapsed) popUp(); else collapse(); } };
     if (taskpanel_button != null) taskpanel_button.addEventTrigger(run_show);
   } 
   nWindowPanel clear() { 
+    runEvents(eventCloseRun); 
     task.used_spot--;
     if (taskpanel_button != null) 
       taskpanel_button.removeEventTrigger(run_show).setText("").setPassif().setStandbyColor(color(60));
@@ -235,6 +251,7 @@ class nFrontPanel extends nWindowPanel {
     nWidget tabbutton = addModel("Button-SS3");
     tabbutton.setSwitch().setText(n)
       .setSX(new_width)
+      .setFont(int(ref_size/2))
       .addEventSwitchOn(new Runnable(tab) { public void run() {
         for (nFrontTab t : tabs) t.hide();
         current_tab = ((nFrontTab)builder);

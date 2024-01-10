@@ -25,14 +25,14 @@ class GrowerComu extends Community {
   RandomTryParam stopP;
   RandomTryParam leafP;
   RandomTryParam dieP;
-  float MAX_LINE_WIDTH = 1.5; //epaisseur max des ligne, diminuer par l'age, un peut, se vois pas
-  float MIN_LINE_WIDTH = 0.2; //epaisseur min des ligne
+  sFlt MAX_LINE_WIDTH; //epaisseur max des ligne, diminuer par l'age, un peut, se vois pas
+  sFlt MIN_LINE_WIDTH; //epaisseur min des ligne
 
   sBoo create_floc;
   sInt activeGrower;
   sRun srun_killg;
 
-  //sGraph graph = new sGraph();
+  sCol val_col_live, val_col_leaf;
   
   FlocComu fcom;
 
@@ -40,6 +40,7 @@ class GrowerComu extends Community {
     nFrontTab tab = sim_front.addTab(name);
     tab.getShelf()
       .addDrawerWatch(activeGrower, 10, 0.7)
+      .addDrawer(10.25, 0).getShelf()
       .addSeparator(0.125)
       .addDrawerDoubleButton(create_floc, srun_killg, 10, 0.9)
       .addSeparator(0.125)
@@ -87,7 +88,13 @@ class GrowerComu extends Community {
 
     create_floc = newBoo(true, "create_floc", "create floc");
     activeGrower = newInt(0, "active_grower", "growers nb");
-
+    
+    val_col_live = menuColor(color(220), "val_col_live");
+    val_col_leaf = menuColor(color(0, 220, 0), "val_col_leaf");
+    
+    MAX_LINE_WIDTH = menuFltSlide(1.5, 0.1, 3, "max_line_width");
+    MIN_LINE_WIDTH = menuFltSlide(0.2, 0.1, 3, "min_line_width");
+    
     srun_killg = newRun("kill_grower", "kill", new Runnable(list) { 
       public void run() { 
         for (Entity e : ((ArrayList<Entity>)builder)) {
@@ -152,11 +159,11 @@ class RandomTryParam {// extends Callable
   //sFlt test_by_tick;
   int count = 0;
   RandomTryParam(Macro_Sheet sheet, float d, boolean b, String n) { 
-    DIFFICULTY = sheet.newFlt(4, n+"_dif", "dif");
-    ON = sheet.newBoo(true, n+"_on", "on");
+    DIFFICULTY = sheet.newFlt(d, n+"_dif", "dif");
+    ON = sheet.newBoo(b, n+"_on", "on");
     //test_by_tick = new sFlt(sbloc, 0);
-    DIFFICULTY.set(d); 
-    ON.set(b); 
+    //DIFFICULTY.set(d); 
+    //ON.set(b); 
     //addChannel(frameend_chan);
   }
   boolean test() { 
@@ -287,14 +294,20 @@ class Grower extends Entity {
     if (age > com().OLD_AGE.get() / 2) ca = (int)constrain(255 + int(com().OLD_AGE.get()/2) - int(age/1.2), 90, 255);
     //if (!end && sprouts == 0) { stroke(255, 0, 0); strokeWeight(param.MAX_LINE_WIDTH+1 / cam_scale); } //BIG red head
     if (!end && sprouts == 0) { 
-      stroke(255); 
-      strokeWeight((com().MAX_LINE_WIDTH+1) / com.sim.inter.cam.cam_scale.get());
+      stroke(com().val_col_live.get()); 
+      strokeWeight((com().MAX_LINE_WIDTH.get()+1) / com.sim.inter.cam.cam_scale.get());
     } else if (end) { 
-      stroke(0, ca, 0); 
-      strokeWeight((com().MAX_LINE_WIDTH+1) / com.sim.inter.cam.cam_scale.get());
+      color res = color(com().val_col_leaf.getred() * (float(ca) / 255.0), 
+                        com().val_col_leaf.getgreen() * (float(ca) / 255.0), 
+                        com().val_col_leaf.getblue() * (float(ca) / 255.0) );
+      stroke(res); 
+      strokeWeight((com().MAX_LINE_WIDTH.get()+1) / com.sim.inter.cam.cam_scale.get());
     } else { 
-      stroke(ca, ca, ca); 
-      strokeWeight(((float)com().MIN_LINE_WIDTH + ((float)com().MAX_LINE_WIDTH * (float)ca / 255.0)) / com.sim.inter.cam.cam_scale.get());
+      color res = color(com().val_col_live.getred() * (float(ca) / 255.0), 
+                        com().val_col_live.getgreen() * (float(ca) / 255.0), 
+                        com().val_col_live.getblue() * (float(ca) / 255.0) );
+      stroke(res); 
+      strokeWeight(((float)com().MIN_LINE_WIDTH.get() + ((float)com().MAX_LINE_WIDTH.get() * (float)ca / 255.0)) / com.sim.inter.cam.cam_scale.get());
     }              
 
     PVector e = new PVector(dir.x, dir.y);
@@ -372,7 +385,7 @@ class FlocComu extends Community {
   void comPanelBuild(nFrontPanel sim_front) {
     nFrontTab tab = sim_front.addTab(name);
     tab.getShelf()
-      .addDrawerDoubleButton(DRAWMODE_DEF, DRAWMODE_DEBUG, 10, 1)
+      .addDrawerDoubleButton(DRAWMODE_DEF, DRAWMODE_DEBUG, 10.25, 1)
       .addSeparator(0.125)
       .addDrawerTripleButton(point_to_mouse, point_to_center, point_to_cursor, 10, 1)
       .addSeparator(0.125)
@@ -407,6 +420,9 @@ class FlocComu extends Community {
   sInt LIMIT, AGE ;
   sBoo DRAWMODE_DEF, DRAWMODE_DEBUG, create_grower, point_to_mouse, point_to_center, point_to_cursor;
   
+  sCol val_col_def, val_col_deb;
+  sFlt scale;
+  
   int startbox = 400;
   
   GrowerComu gcom;
@@ -431,6 +447,9 @@ class FlocComu extends Community {
     point_to_cursor = newBoo(false, "point_to_cursor", "to cursor");
     //init_canvas();
     
+    val_col_def = menuColor(color(220), "val_col_live");
+    val_col_deb = menuColor(color(255, 0, 0), "val_col_leaf");
+    scale = menuFltSlide(10, 5, 100, "length");
   }
   
   void custom_pre_tick() {
@@ -508,7 +527,7 @@ class Floc extends Entity {
   
   Floc init() {
     age = 0;
-    max_age = com().AGE.get();
+    max_age = int(random(0.5, 1) * com().AGE.get());
     halo_size = com().HALO_SIZE.get();
     halo_density = com().HALO_DENS.get();
     halo_size += random(com().HALO_SIZE.get());
@@ -542,19 +561,20 @@ class Floc extends Entity {
     return this;
   }
   Floc draw() {
-    fill(255);
-    stroke(255);
+    fill(com().val_col_def.get());
+    stroke(com().val_col_def.get());
     strokeWeight(4/com.sim.cam_gui.scale);
     pushMatrix();
     translate(pos.x, pos.y);
     rotate(mov.heading());
     if (com().DRAWMODE_DEF.get()) {
-      line(0, 0, -10, -10);
-      line(2, 0, -10, 0);
-      line(0, 0, -10, 10);
+      line(0, 0, -com().scale.get(), -com().scale.get());
+      line(2, 0, -com().scale.get(), 0);
+      line(0, 0, -com().scale.get(), com().scale.get());
     }
-    stroke(255, 0, 0);
-    if (com().DRAWMODE_DEBUG.get()) ellipse(0, 0, 1, 1);
+    fill(com().val_col_deb.get());
+    stroke(com().val_col_deb.get());
+    if (com().DRAWMODE_DEBUG.get()) ellipse(0, 0, com().scale.get() / 5, com().scale.get() / 5);
     popMatrix();
     return this;
   }

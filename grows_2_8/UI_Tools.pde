@@ -59,46 +59,53 @@
 
 
 class nColorPanel extends nWindowPanel {
-  nColorPanel setOkEvent_Builder(Runnable r) { ok_run = r; ok_run.builder = this; return this; }
-  
+  //nColorPanel setOkEvent_Builder(Runnable r) { ok_run = r; ok_run.builder = this; return this; }
   nWidget color_widget, red_widget, gre_widget, blu_widget;
   float red, gre, blu;
-  Runnable ok_run;
-  nColorPanel(nGUI _g, nTaskPanel _task) { 
+  //Runnable ok_run;
+  sCol cval;
+  nColorPanel(nGUI _g, nTaskPanel _task, sCol _cv) { 
     super(_g, _task, "color"); 
-    addShelf()
-      .addDrawer(1)
-        .addWidget(new nSlide(gui, ref_size, ref_size*7.375)
+    cval = _cv;
+    red = cval.getred(); gre = cval.getgreen(); blu = cval.getblue(); 
+    getShelf()
+      .addDrawer(10.25, 1)
+        .addWidget(new nSlide(gui, ref_size*7.375, ref_size).setValue(cval.getred() / 255)
           .addEventSlide(new Runnable() { public void run(float v) { 
             red = v*255; update(); red_widget.setText(trimStringFloat(red)); } } )
           .setPosition(0, 0) ).getShelf()
-      .addDrawer(1)
-        .addWidget(new nSlide(gui, ref_size, ref_size*7.375)
+      .addDrawer(10.25, 1)
+        .addWidget(new nSlide(gui, ref_size*7.375, ref_size).setValue(cval.getgreen() / 255)
           .addEventSlide(new Runnable() { public void run(float v) { 
             gre = v*255; update(); gre_widget.setText(trimStringFloat(gre)); } } )
           .setPosition(0, 0) ).getShelf()
-      .addDrawer(1)
-        .addWidget(new nSlide(gui, ref_size, ref_size*7.375)
+      .addDrawer(10.25, 1)
+        .addWidget(new nSlide(gui, ref_size*7.375, ref_size).setValue(cval.getblue() / 255)
           .addEventSlide(new Runnable() { public void run(float v) { 
             blu = v*255; update(); blu_widget.setText(trimStringFloat(blu)); } } )
           .setPosition(0, 0) ).getShelf()
-      .addDrawer(1)
+      .addDrawer(10.25, 1)
         .addCtrlModel("Button-S2-P3", "OK")
-          .setRunnable(new Runnable() { public void run() { clear();  } }).getDrawer()
+          .setRunnable(new Runnable() { public void run() { clear(); } }).getDrawer()
           ;
         
-    color_widget = getDrawer(0,4).addModel("Label-S3-P1")
+    color_widget = getDrawer(0,3).addModel("Label-S3-P1")
           .setStandbyColor(color(red, gre, blu));
-    red_widget = getDrawer(0,1)
-        .addModel("Label_Small_Outline-S2", "0.0").setPX(7.5*ref_size);
-    gre_widget = getDrawer(0,2)
-        .addModel("Label_Small_Outline-S2", "0.0").setPX(7.5*ref_size);
-    blu_widget = getDrawer(0,3)
-        .addModel("Label_Small_Outline-S2", "0.0").setPX(7.5*ref_size);
+    red_widget = getDrawer(0,0)
+        .addModel("Label_Small_Outline-S2", str(red)).setPX(7.5*ref_size);
+    gre_widget = getDrawer(0,1)
+        .addModel("Label_Small_Outline-S2", str(gre)).setPX(7.5*ref_size);
+    blu_widget = getDrawer(0,2)
+        .addModel("Label_Small_Outline-S2", str(blu)).setPX(7.5*ref_size);
+    
+    if (cval == null) clear();
   } 
-  void update() { color_widget.setStandbyColor(color(red, gre, blu)); }
+  void update() { 
+    if (cval != null) {
+      color_widget.setStandbyColor(color(red, gre, blu)); 
+      cval.set(color(red, gre, blu)); }
+    else clear(); }
   nWindowPanel clear() { 
-    //taskpanel_button.removeEventTrigger(run_show).setText("").setPassif().setStandbyColor(color(60));
     super.clear(); return this; }
   nWindowPanel updateHeight() { 
     super.updateHeight(); return this; }
@@ -162,9 +169,10 @@ class nCursor extends nWidget {
     show.addEventChange(new Runnable(show) {public void run() {
     sBoo v = ((sBoo)builder);
       if (v.get()) { thiswidget.show(); pointwidget.show(); } else { thiswidget.hide(); pointwidget.hide(); } }});
-    
-    
   }
+  void clear() { 
+    refwidget.clear(); pointwidget.clear(); super.clear(); 
+    show.clear(); pval.clear(); dval.clear(); }
 }
 
 
