@@ -346,6 +346,23 @@ class nDrawer extends nBuilder {
 
 
 class nShelf extends nBuilder {
+  nShelf addDrawerButton(sValue val1, float w, float h) {
+    nDrawer d = addDrawer(w, h);
+    if (val1 != null) {
+    d.addLinkedModel("Auto_Button-S3-P2")
+      .setLinkedValue(val1)
+      .setSY(h*ref_size*0.75)
+      .setPY(h*ref_size*0.125)
+      .setText(val1.shrt)
+      ;
+    d.addModel("Label_Small_Text-S1")
+      .setText(val1.ref)
+      .setPosition(ref_size*0, 0)
+      .setTextAlignment(LEFT, CENTER)
+      ;
+    }
+    return this;
+  }
   nShelf addDrawerDoubleButton(sValue val1, sValue val2, float w, float h) {
     nDrawer d = addDrawer(w, h);
     if (val1 != null) {

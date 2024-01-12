@@ -42,9 +42,9 @@ void mlogln(String s) {
 sInterface interf;
 
 void setup() {//executé au demarage
-  size(1600, 900);//taille de l'ecran
-  surface.setLocation(200, 40);
-  //fullScreen();
+  //size(1600, 900);//taille de l'ecran
+  //surface.setLocation(200, 40);
+  fullScreen();
   noSmooth();//pas d'antialiasing
   //smooth();//anti aliasing
   surface.setResizable(true);

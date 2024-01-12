@@ -1,24 +1,16 @@
 
+
+//#######################################################################
+//##                              CANVAS                               ##
+//#######################################################################
+
 class CanvasPrint extends Sheet_Specialize {
   Simulation sim;
   CanvasPrint(Simulation s) { super("Canvas"); sim = s; }
   Canvas get_new(Macro_Sheet s, String n, sValueBloc b) { return new Canvas(sim, b); }
 }
 
-
-//#######################################################################
-//##                              CANVAS                               ##
-//#######################################################################
-
-
-//Canvas can;
-
-//void init_canvas() {
-//  can = new Canvas(0, 0, int((width) / cam.cam_scale.get()), int((height) / cam.cam_scale.get()), 4);
-//}
-
 class Canvas extends Macro_Sheet {
-  
   
   void build_custom_menu(nFrontPanel sheet_front) {
     nFrontTab tab = sheet_front.addTab("Community");
@@ -198,7 +190,7 @@ class Canvas extends Macro_Sheet {
   void drawCanvas() {
     if (val_show_bound.get()) {
 
-      stroke(255);
+      stroke(180);
       strokeWeight(ref_size / (10 * mmain().gui.scale) );
       noFill();
       rect(val_pos.get().x, val_pos.get().y, val_w.get() * val_scale.get(), val_h.get() * val_scale.get());

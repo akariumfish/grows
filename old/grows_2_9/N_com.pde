@@ -107,7 +107,7 @@ class Organism extends Macro_Sheet {
 
   sInt max_entity, active_entity;
   
-  sFlt larg, lon, dev, shrt, branch;
+  sFlt blarg, larg, lon, dev, shrt, branch;
   
   sCol val_fill1, val_fill2, val_stroke;
   
@@ -118,11 +118,13 @@ class Organism extends Macro_Sheet {
   Organism(Simulation _s, String n, sValueBloc b) { 
     super(_s.inter.macro_main, n, b);
     sim = _s;
+    sim.organ = this;
     
     branch = menuFltFact(500, 2, "branch");
     shrt = menuFltFact(0.95, 1.02, "shortening");
     dev = menuFltFact(4, 2, "deviation");
-    lon = menuFltSlide(40, 5, 200, "length");
+    lon = menuFltSlide(40, 5, 400, "length");
+    blarg = menuFltSlide(0.3, 0.05, 3, "base larg");
     larg = menuFltFact(1, 1.02, "large");
     
     val_stroke = menuColor(color(10, 190, 40), "val_stroke");
@@ -142,7 +144,8 @@ class Organism extends Macro_Sheet {
     branch = menuFltFact(b.branch.get(), 2, "branch");
     shrt = menuFltFact(b.shrt.get(), 1.02, "shortening");
     dev = menuFltFact(b.dev.get(), 2, "deviation");
-    lon = menuFltSlide(b.lon.get(), 5, 200, "length");
+    lon = menuFltSlide(b.lon.get(), 5, 400, "length");
+    blarg = menuFltSlide(b.blarg.get(), 5, 400, "base larg");
     larg = menuFltFact(b.larg.get(), 1.02, "large");
     
     val_stroke = menuColor(b.val_stroke.get(), "val_stroke");
@@ -323,6 +326,11 @@ class Cell {
       age = 0; 
       state = 0;
       shape = new nBase();
+      
+      shape.face.p1.set(1, 0);
+      shape.face.p2.set(0, com().blarg.get());
+      shape.face.p3.set(-1, -com().blarg.get());
+    
       shape.dir.setMag(com().lon.get());
       float inf = float(com().active_entity.get()) / float(com().max_entity.get());
       float inf2 = (float(com().max_entity.get()) - float(com().active_entity.get())) / 

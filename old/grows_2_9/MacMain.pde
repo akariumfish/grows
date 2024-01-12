@@ -1061,97 +1061,6 @@ class Macro_Sheet extends Macro_Abstract {
   //two add spot button > add_spot(side)
    
    
-   
-  /*
-  access system :
-    sheet can only be deployed if you have access to them, a low access score can even hide a sheet to you
-    introduce the "user" consept (just a keyword for now)
-    each sheet have a str with keywords for complete and restricted access
-      complete mean can deploy restricted mean can see it
-  */
-  String see_access = "all", deploy_access = "all";
-  Macro_Sheet setSeeAccess(String a) {
-    see_access = a;
-    if (!mmain().canAccess(a) && openning.get() != HIDE) hide();
-    return this;
-  }
-  Macro_Sheet setDeployAccess(String a) {
-    deploy_access = a;
-    if (!mmain().canAccess(a) && openning.get() == DEPLOY) open();
-    return this;
-  }
-  
-  sStr links;
-  sStr spots;
-  nWidget right_spot_add, left_spot_add;
-  boolean building_spot = false;
-  String new_spot_side = "";
-  Runnable new_spot_run;
-  nDrawer right_spot_drawer, left_spot_drawer;
-  
-  ArrayList<Macro_Connexion> child_connect = new ArrayList<Macro_Connexion>(0);
-  ArrayList<Macro_Element> child_elements = new ArrayList<Macro_Element>(0);
-  ArrayList<Macro_Abstract> child_macro = new ArrayList<Macro_Abstract>(0);
-  ArrayList<Macro_Sheet> child_sheet = new ArrayList<Macro_Sheet>(0);
-  
-  nWidget back_front, deployer;
-  Runnable szone_run;
-  
-  sStr specialize;
-  Sheet_Specialize sheet_specialize = null;
-  
-  
-  
-  
- 
-  /*
-  
-                  TO DO
-  
-  develop cursor
-    auto size
-    dif shape / look
-    constrain (dir pos mag ..)
-    registered and accessible for
-      new comus start
-      global effect field
-      multi comu objectif
-    auto follow / point to objects, instent or chasing
-  
-  following widgets: > cursors and such
-    two widget of different gui will stay at the same relative position
-    
-  infrastructure :
-    structural model switchable (patch structure)
-    need used value to be present
-  
-  link copy when group template
-  
-  MRamp
-    in tick, in reset, out flt, out end
-    field for float start, finish ; int length
-    driven by tick ramp out from strt to finish
-    option : repeat(dents de scie), invert(dents de scie decroissante), loop (aller retour)
-  
-
-                    R & D
-  
-  mtemplate
-  sheet selector : select sheet choosen by name on bang
-  pack / unpack > build complex packet
-  setreset, counter, sequance, multigate 
-  
-  when selecting a preset a flag widget tell if the values structure is compatible
-    auto hide uncompatible widget ? > need to redo explorer < no just filter at list update
-  
-  mvar should be able to send string packet / should save given value > used for user set val
-  
-  
-  
-    
-  */
-  
-    
   /*macro turn:
     no tick anywhere > simulation gives tick
     no frame loop, works only by reacting to gui or input event (for keyboard create a keypress/release event)
@@ -1225,6 +1134,103 @@ class Macro_Sheet extends Macro_Abstract {
   }
   
   
+   
+  /*
+  access system :
+    sheet can only be deployed if you have access to them, a low access score can even hide a sheet to you
+    introduce the "user" consept (just a keyword for now)
+    each sheet have a str with keywords for complete and restricted access
+      complete mean can deploy restricted mean can see it
+  */
+  String see_access = "all", deploy_access = "all";
+  Macro_Sheet setSeeAccess(String a) {
+    see_access = a;
+    if (!mmain().canAccess(a) && openning.get() != HIDE) hide();
+    return this;
+  }
+  Macro_Sheet setDeployAccess(String a) {
+    deploy_access = a;
+    if (!mmain().canAccess(a) && openning.get() == DEPLOY) open();
+    return this;
+  }
+  
+  sStr links;
+  sStr spots;
+  nWidget right_spot_add, left_spot_add;
+  boolean building_spot = false;
+  String new_spot_side = "";
+  Runnable new_spot_run;
+  nDrawer right_spot_drawer, left_spot_drawer;
+  
+  ArrayList<Macro_Connexion> child_connect = new ArrayList<Macro_Connexion>(0);
+  ArrayList<Macro_Element> child_elements = new ArrayList<Macro_Element>(0);
+  ArrayList<Macro_Abstract> child_macro = new ArrayList<Macro_Abstract>(0);
+  ArrayList<Macro_Sheet> child_sheet = new ArrayList<Macro_Sheet>(0);
+  
+  nWidget back_front, deployer;
+  Runnable szone_run;
+  
+  sStr specialize;
+  Sheet_Specialize sheet_specialize = null;
+  
+  
+  
+  
+ 
+  /*
+  
+                  TO DO
+  
+  develop cursor
+    auto size
+      no, different view depending on zoom, switch widget
+    svec pos in cam_gui ref, follow a cursor in screen_gui
+      custom addlinkedwidget.setlinkedvalue(svec)
+    dif shape / look
+    constrain (dir pos mag ..)
+    registered and accessible for
+      new comus start
+      global effect field
+      multi comu objectif
+    auto follow / point to objects, instent or chasing
+  
+  following widgets: > cursors and such
+    two widget of different gui will stay at the same relative position
+    
+  infrastructure :
+    structural model switchable (patch structure)
+    need used value to be present
+  
+  link copy when group template
+  
+  MRamp
+    in tick, in reset, out flt, out end
+    field for float start, finish ; int length
+    driven by tick ramp out from strt to finish
+    option : repeat(dents de scie), invert(dents de scie decroissante), loop (aller retour)
+  
+
+                    R & D
+  
+  change access
+    low access hide certain sheet
+    gain access by meeting enigmatic condition ??
+  
+  mtemplate
+  sheet selector : select sheet choosen by name on bang
+  pack / unpack > build complex packet
+  setreset, counter, sequance, multigate 
+  
+  when selecting a preset a flag widget tell if the values structure is compatible
+    auto hide uncompatible widget ? > need to redo explorer < no just filter at list update
+  
+  mvar should be able to send string packet / should save given value > used for user set val
+  
+  
+    
+  */
+  
+    
 Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) { 
     super(p, "sheet", n, _bloc); init(); 
     if (_bloc == null) mmain().inter.addEventNextFrame(new Runnable(this) { public void run() { select(); } });
@@ -1952,14 +1958,17 @@ class Macro_Main extends Macro_Sheet {
           .setInfo("Paste selected template in selected sheet").setFont(int(ref_size/1.9)).getDrawer()
         .addCtrlModel("Menu_Button_Small_Outline-S1-P2", "M")
           .setRunnable(new Runnable() { public void run() { build_sheet_menu(); }})
-          .setInfo("Template management and sheets overview").setFont(int(ref_size/1.7)).getShelfPanel()
-      .addShelf().addDrawer(2.125, 1)
+          .setInfo("Open macro main sheet menu").setFont(int(ref_size/1.7)).getShelfPanel()
+      .addShelf().addDrawer(3.25, 1)
         .addCtrlModel("Menu_Button_Small_Outline-S1-P1", "QS")
           .setRunnable(new Runnable() { public void run() { inter.full_data_save(); }})
           .setInfo("Quick Save").setFont(int(ref_size/1.9)).getDrawer()
         .addCtrlModel("Menu_Button_Small_Outline-S1-P2", "QL")
           .setRunnable(new Runnable() { public void run() { inter.setup_load(); }})
-          .setInfo("Quick Load").setFont(int(ref_size/1.9));
+          .setInfo("Quick Load").setFont(int(ref_size/1.9)).getDrawer()
+        .addCtrlModel("Menu_Button_Small_Outline-S1-P3", "FS")
+          .setRunnable(new Runnable() { public void run() { inter.full_screen_run.run(); }})
+          .setInfo("Switch Fullscreen").setFont(int(ref_size/1.9));
     if (!show_macro_tool.get()) macro_tool.reduc();
     macro_tool.addEventReduc(new Runnable() { public void run() { 
       show_macro_tool.set(!macro_tool.hide); }});
@@ -1981,7 +1990,7 @@ class Macro_Main extends Macro_Sheet {
     if (!show_build_tool.get()) build_tool.reduc();
     build_tool.addEventReduc(new Runnable() { public void run() { 
       show_build_tool.set(!build_tool.hide); }});
-    build_tool.panel.setPY(ref_size*1.625);
+    build_tool.panel.setPY(ref_size*1.25);
     
     if (sheet_tool != null) sheet_tool.clear();
     sheet_tool = new nToolPanel(screen_gui, ref_size, 0.125, true, true);
@@ -1997,7 +2006,7 @@ class Macro_Main extends Macro_Sheet {
     if (!show_sheet_tool.get()) sheet_tool.reduc();
     sheet_tool.addEventReduc(new Runnable() { public void run() { 
       show_sheet_tool.set(!sheet_tool.hide); }});
-    sheet_tool.panel.setPY(ref_size*16.75);
+    sheet_tool.panel.setPY(ref_size*16);
   }
   void build_custom_menu(nFrontPanel sheet_front) {
     nFrontTab tab = sheet_front.addTab("Interface");
@@ -2073,7 +2082,7 @@ class Macro_Main extends Macro_Sheet {
     load corresponding gui property
   
   */
-  void setup_load(sValueBloc b) {
+  void setup_load(sValueBloc b) { 
     if (b.getBloc("Template") != null) {
       saved_template.clean();
       b.getBloc("Template").runBlocIterator(new Iterator<sValueBloc>() { public void run(sValueBloc bloc) { 
@@ -2106,7 +2115,7 @@ class Macro_Main extends Macro_Sheet {
       inter.addEventNextFrame(new Runnable() { public void run() { select(); } } ); } } );
   }
   
-  sBoo show_gui, show_macro, show_build_tool, show_sheet_tool, show_macro_tool;
+  sBoo show_gui, show_macro, show_build_tool, show_sheet_tool, show_macro_tool, no_save;
   //sInt val_scale;
   sInterface inter;
   sValueBloc saved_template, saved_preset;
@@ -2159,6 +2168,11 @@ Macro_Main(sInterface _int) {
     show_gui.addEventChange(new Runnable(this) { public void run() { 
       screen_gui.isShown = show_gui.get();
       inter.show_info = show_gui.get();
+    }});
+    
+    no_save = newBoo(false, "no_save", "no_save");
+    no_save.addEventChange(new Runnable(this) { public void run() { 
+      //if (!no_save.get()) 
     }});
     
     szone = new nSelectZone(gui);

@@ -788,9 +788,12 @@ class Save_List {
     slog("put " + log + " " + index + " " + s); 
     index++; }
   String get(String log) { 
+    if (index < list.length && index >= 0) {
     slog("get " + log + " " + index + " " + list[index]); 
     index++; 
     return list[index-1]; }
+    else return "";
+  }
   int getInt(String log) { return int(get(log)); }
   
   void init(int size) { list = new String[size]; index = 0; }

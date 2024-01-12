@@ -62,13 +62,14 @@ class nGUI {
   
   nGUI setMouse(PVector v) { mouseVector = v; return this; }
   nGUI setpMouse(PVector v) { pmouseVector = v; return this; }
-  nGUI setView(Rect v) { view = v; scale = width / view.size.x; return this; }
-  nGUI updateView() { scale = width / view.size.x; return this; }
+  nGUI setView(Rect v) { view = v; scale = base_width / view.size.x; return this; }
+  nGUI updateView() { scale = base_width / view.size.x; return this; }
   nGUI setTheme(nTheme v) { theme = v; return this; }
   nGUI addEventFrame(Runnable r) { eventsFrame.add(r); return this; }
+  nGUI addEventsFullScreen(Runnable r) { eventsFullScreen.add(r); return this; }
   nGUI addEventFound(Runnable r) { hoverable_pile.addEventFound(r); return this; }
   nGUI addEventNotFound(Runnable r) { hoverable_pile.addEventNotFound(r); return this; }
-  nGUI addEventSetup(Runnable r) {  eventsSetup.add(r);  return this; }
+  nGUI addEventSetup(Runnable r) { eventsSetup.add(r);  return this; }
   
   nGUI(sInput _i, nTheme _t, float _ref_size) {
     in = _i; theme = _t; if (theme == null) theme = new nTheme(_ref_size);
@@ -76,6 +77,9 @@ class nGUI {
     ref_size = _ref_size;
     view = new Rect(0, 0, width, height);
     info = new nInfo(this, ref_size*0.75);
+    addEventsFullScreen(new Runnable(this) { public void run() { 
+      view.size.set(width, height); updateView();
+    } } );
   }
   
   sInput in;
@@ -90,6 +94,7 @@ class nGUI {
   Hoverable_pile hoverable_pile = new Hoverable_pile();
   
   ArrayList<Runnable> eventsFrame = new ArrayList<Runnable>();
+  ArrayList<Runnable> eventsFullScreen = new ArrayList<Runnable>();
   ArrayList<Runnable> eventsSetup = new ArrayList<Runnable>();
   boolean is_starting = true;
   PVector mouseVector = null, pmouseVector = null;
@@ -189,6 +194,7 @@ class nWatcherWidget extends nWidget {
     if (b.type.equals("col")) setLinkedValue((sCol)b);
     return this; }
   sBoo bval; sInt ival; sFlt fval; sStr sval; sVec vval; sCol cval;
+  String base_text = "";
   nWatcherWidget(nGUI g) { super(g); }
   nWatcherWidget setLinkedValue(sInt b) { 
     ival = b; setText(str(ival.get()));
@@ -208,9 +214,11 @@ class nWatcherWidget extends nWidget {
       else ((nWatcherWidget)builder).setText("false"); } } );
     return this; }
   nWatcherWidget setLinkedValue(sStr b) { 
-    sval = b; setText(sval.get());
+    if (sval == null) base_text = getText();
+    sval = b;
+    setText(base_text + sval.get());
     b.addEventChange(new Runnable(this) { public void run() { 
-      ((nWatcherWidget)builder).setText(sval.get()); } } );
+      ((nWatcherWidget)builder).changeText(base_text + sval.get()); } } );
     return this; }
   nWatcherWidget setLinkedValue(sCol b) { 
     cval = b; setStandbyColor(cval.get());
@@ -848,7 +856,7 @@ class nWidget {
         if (textAlignY == CENTER)         
           ty += (getLocalSY() / 2.0)
                 - (look.textFont / 6.0)
-                //- (line * look.textFont / 3)
+                  //- (line * look.textFont / 3)
                 ;
         else if (textAlignY == BOTTOM) 
           ty += getLocalSY() - (look.textFont / 10);
@@ -950,7 +958,14 @@ class nWidget {
         cursorPos--;
         runEvents(eventFieldChangeRun);
       }
-      else if (gui.in.getClick("Enter") || gui.in.getClick("Backspace")) {}
+      else if (gui.in.getClick("Enter")) {
+        String str = label.substring(0, cursorPos);
+        String end = label.substring(cursorPos, label.length());
+        label = str + '\n' + end;
+        cursorPos++;
+        runEvents(eventFieldChangeRun);
+      }
+      else if (gui.in.getClick("Backspace")) {}
       else if (gui.in.getClick("All")) {
         String str = label.substring(0, cursorPos);
         String end = label.substring(cursorPos, label.length());

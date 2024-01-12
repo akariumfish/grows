@@ -7,7 +7,7 @@ https://github.com/akariumfish/grows/
 Using Processing 3.5.4  -  https://www.processing.org/
 
 see previews for sample results
-last relatively stable : grows2.8.exe in bin/grows2.8		( full screen )
+last relatively stable : grows2.9.exe in bin/grows2.9		( full screen )
 in image/ there is screenshots of the developement of this phase
 
 -Quick lauch : 
@@ -21,7 +21,7 @@ in image/ there is screenshots of the developement of this phase
 -click on the three dots top right then copy path
 -go to https://download-directory.github.io/
 -paste then download
---or simply download the whole thing (around 400Mb at ver2.8)
+--or simply download the whole thing (simplest way, around 320Mb at ver2.9)
 -go to https://github.com/akariumfish/grows/
 -click the green button top right "<> code" then download ZIP
 

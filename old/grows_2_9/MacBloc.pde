@@ -747,12 +747,12 @@ class MPanGrph extends MPanTool {
     if (front_panel != null) {
       
       nDrawer dr = front_panel.getShelf()
-        .addSeparator(0.125)
-        .addDrawer(10.25, 10.25);
+        //.addSeparator(0.125)
+        .addDrawer(10.25, 3.625);
       
       graph = dr.addModel("Field");
       graph.setPosition(ref_size * 2 / 16, ref_size * 2 / 16)
-        .setSize(ref_size * 10, ref_size * 10);
+        .setSize(ref_size * 10, ref_size * 3.5);
         
       larg = int(graph.getLocalSX());
       graph_data = new float[larg];
@@ -771,19 +771,19 @@ class MPanGrph extends MPanTool {
         for (int i = 1; i < larg; i++) if (i != gc) {
           //stroke(255);
           line( graph.getX() + (i-1), 
-                graph.getY() + graph.getSY() - ref_size / 4 - (graph_data[(i-1)] * (graph.getSY()-ref_size*5/4) / max), 
+                graph.getY() + graph.getSY() - ref_size / 4 - (graph_data[(i-1)] * (graph.getSY()-ref_size*3/4) / max), 
                 graph.getX() + i, 
-                graph.getY() + graph.getSY() - ref_size / 4 - (graph_data[i] * (graph.getSY()-ref_size*5/4) / max) );
+                graph.getY() + graph.getSY() - ref_size / 4 - (graph_data[i] * (graph.getSY()-ref_size*3/4) / max) );
         }
         stroke(255, 0, 0);
         strokeWeight(ref_size / 6);
         if (gc != 0) {
-          point(graph.getX() + gc-1, graph.getY() + graph.getSY() - ref_size / 4 - (graph_data[gc-1] * (graph.getSY()-ref_size*5/4) / max) );
+          point(graph.getX() + gc-1, graph.getY() + graph.getSY() - ref_size / 4 - (graph_data[gc-1] * (graph.getSY()-ref_size*3/4) / max) );
         }
       } });
       
       pan_label = dr.addWatcherModel("Label-S3").setLinkedValue(val_label);
-      pan_label.setTextAlignment(LEFT, CENTER).getShelf()
+      pan_label.setTextAlignment(LEFT, CENTER).setSY(ref_size*0.6).setFont(int(ref_size/2.0)).getShelf()
         .addSeparator()
         ;
       front_panel.addEventClose(new Runnable(this) { public void run() { 
@@ -1827,20 +1827,31 @@ class MMouse extends Macro_Bloc {
     super.clear(); return this; }
 }
 class MComment extends Macro_Bloc { 
+  sBoo vtop;
   sStr val_com, val_screen; 
-  nLinkedWidget com_field, screen_field; 
+  nLinkedWidget com_field, screen_field, vline; 
   nWatcherWidget screen_txt;
   MComment(Macro_Sheet _sheet, sValueBloc _bloc) { 
     super(_sheet, "com", "com", _bloc); 
     val_com = newStr("val_com", "val_com", "");
     val_screen = newStr("screen_field", "screen_field", "");
+    vtop = newBoo("vtop", "vtop", true);
+    
     com_field = addEmptyL(0).addLinkedModel("MC_Element_Field").setLinkedValue(val_com);
-    screen_field = addEmptyL(0).addLinkedModel("MC_Element_Field").setLinkedValue(val_screen);
+    Macro_Element e = addEmptyL(0);
+    screen_field = e.addLinkedModel("MC_Element_Field").setLinkedValue(val_screen);
+    vline = e.addLinkedModel("MC_Element_MiniButton").setLinkedValue(vtop);
     screen_txt = mmain().screen_gui.theme.newWatcherWidget(mmain().screen_gui, "Label-S1")
       .setLinkedValue(val_screen);
     screen_txt.setFont(int(ref_size/1.4))
-      .setTextAlignment(CENTER, CENTER).setPX(mmain()
-      .screen_gui.view.size.x/2);
+      .setTextAlignment(CENTER, CENTER);
+    if (vtop.get()) screen_txt.setPY(0);
+    else screen_txt.setPY(ref_size*2);
+    vtop.addEventChange(new Runnable() { public void run() { 
+      if (vtop.get()) screen_txt.setPY(0);
+      else screen_txt.setPY(ref_size);
+    } });
+    screen_txt.setPX(mmain().screen_gui.view.size.x/2.2);
     addEmpty(1); 
   }
   MComment clear() {

@@ -185,9 +185,11 @@ class sInterface {
   }
   
   void full_data_save() {
-    file_savebloc.clear(); 
-    interface_bloc.preset_to_save_bloc(file_savebloc); 
-    file_savebloc.save_to(savepath); }
+    if (!savepath.equals("default.sdata") && !macro_main.no_save.get()) {
+      file_savebloc.clear(); 
+      interface_bloc.preset_to_save_bloc(file_savebloc); 
+      file_savebloc.save_to(savepath);
+    } }
   void full_data_load() {
     file_savebloc.clear();
     file_savebloc.load_from(savepath);
@@ -195,7 +197,7 @@ class sInterface {
     file_explorer.update(); data_explorer.update(); }
   
   void file_explorer_save() {
-    if (explored_bloc != null) {
+    if (explored_bloc != null && !savepath.equals("default.sdata")) {
       file_savebloc.clear();
       explored_bloc.preset_to_save_bloc(file_savebloc);
       file_savebloc.save_to(savepath);
@@ -301,15 +303,21 @@ class sInterface {
       public void run() { setup_load(); } } ); } } );
     filesm_run = macro_main.newRun("files_management", "filesm", 
       new Runnable() { public void run() { filesManagement(); } } );
+    full_screen_run = macro_main.newRun("full_screen_run", "fulls", new Runnable() { public void run() { 
+      fs_switch(); 
+      runEvents(screen_gui.eventsFullScreen); 
+      runEvents(screen_gui.eventsFullScreen); 
+      runEvents(eventsFullS); } } );
     
   }
   
-  sRun quicksave_run, quickload_run, filesm_run;
+  sRun quicksave_run, quickload_run, filesm_run, full_screen_run;
 
   sInterface addToCamDrawerPile(Drawable d) { d.setPile(cam_gui.drawing_pile); return this; }
   sInterface addToScreenDrawerPile(Drawable d) { d.setPile(screen_gui.drawing_pile); return this; }
   
   sInterface addEventHoverNotFound(Runnable r) { eventsHoverNotFound.add(r); return this; }
+  sInterface addEventFullS(Runnable r) { eventsFullS.add(r); return this; }
   sInterface addEventFrame(Runnable r) { eventsFrame.add(r); return this; }
   sInterface removeEventFrame(Runnable r) { eventsFrame.remove(r); return this; }
   sInterface addEventNextFrame(Runnable r) { 
@@ -354,6 +362,7 @@ class sInterface {
     return new sValueBloc(data, "temp"); }
 
 
+  ArrayList<Runnable> eventsFullS = new ArrayList<Runnable>();
   ArrayList<Runnable> eventsFrame = new ArrayList<Runnable>();
   ArrayList<Runnable> eventsNextFrame1 = new ArrayList<Runnable>();
   ArrayList<Runnable> eventsNextFrame2 = new ArrayList<Runnable>();
