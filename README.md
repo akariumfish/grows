@@ -1,11 +1,9 @@
 # grows
- Generating growing structures
+					-- GROWS --
+ 	- Trying To Simulate A Very Small Environment -
 
- see preview.bmp
+ see previews for sample results
 
- image are sample results
-
- quick lauch : run grows1.1.exe in bin/grows1.1
+ quick lauch : run grows2.8.exe in bin/grows2.8
 
  processing 3.5.4
- library : ControlP5
