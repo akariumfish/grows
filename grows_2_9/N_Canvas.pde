@@ -198,7 +198,7 @@ class Canvas extends Macro_Sheet {
   void drawCanvas() {
     if (val_show_bound.get()) {
 
-      stroke(255);
+      stroke(180);
       strokeWeight(ref_size / (10 * mmain().gui.scale) );
       noFill();
       rect(val_pos.get().x, val_pos.get().y, val_w.get() * val_scale.get(), val_h.get() * val_scale.get());

@@ -1,13 +1,6 @@
 /*
 
 
-
-  see top of sheet constructor for detailed notes
-
-
-
-
-
 PApplet
   Log
     DEBUG_SAVE
@@ -18,6 +11,7 @@ PApplet
   void setup()
     Interface
     Simulation(Interface)
+    Prints
 
   void draw()
     Interface.frame  >  frame events, drawing
@@ -46,23 +40,6 @@ void mlogln(String s) {
 
 sInterface interf;
 
-int base_width=1600; //non fullscreen width
-int base_height=900; //non fullscreen height
-boolean fullscreen=false;
-void fs_switch() {
-  if (fullscreen) {
-    surface.setSize(base_width,base_height); 
-    surface.setLocation(200, 40);
-    fullscreen=false;
-    surface.setAlwaysOnTop(false);
-  } else {
-    surface.setSize(displayWidth,displayHeight);
-    fullscreen=true;
-    surface.setLocation(0, 0);
-    //surface.setFocus(true);
-    surface.setAlwaysOnTop(true);
-  }
-}
 void setup() {//executé au demarage
   size(1600, 900);//taille de l'ecran
   surface.setLocation(200, 40);
@@ -74,7 +51,8 @@ void setup() {//executé au demarage
   interf = new sInterface(40);
   
   Simulation simul = (Simulation)interf.addUniqueSheet(new SimPrint());
-  Canvas canv = (Canvas)interf.addUniqueSheet(new CanvasPrint(simul));
+  //Canvas canv = (Canvas)
+  interf.addUniqueSheet(new CanvasPrint(simul));
   interf.addSpecializedSheet(new OrganismPrint(simul));
   interf.addSpecializedSheet(new GrowerPrint(simul));
   interf.addSpecializedSheet(new FlocPrint(simul));
@@ -93,13 +71,30 @@ void setup() {//executé au demarage
 }
 
 
-void draw() {//executé once by frame
-  if (interf.input.keyAll.trigClick) fs_switch();
+void draw() {//execute once by frame
   
   interf.frame();
   global_frame_count++;
-  if (global_frame_count < 4) { fill(0); noStroke(); rect(0, 0, width, height); }
+  if (global_frame_count < 5) { fill(0); noStroke(); rect(0, 0, width, height); }
   
+}
+
+int base_width=1600; //non fullscreen width
+int base_height=900; //non fullscreen height
+boolean fullscreen=false;
+void fs_switch() {
+  if (fullscreen) {
+    surface.setSize(base_width,base_height); 
+    surface.setLocation(200, 40);
+    fullscreen=false;
+    surface.setAlwaysOnTop(false);
+  } else {
+    surface.setSize(displayWidth,displayHeight);
+    fullscreen=true;
+    surface.setLocation(0, 0);
+    //surface.setFocus(true);
+    surface.setAlwaysOnTop(true);
+  }
 }
 
 
