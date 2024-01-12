@@ -185,7 +185,7 @@ class sInterface {
   }
   
   void full_data_save() {
-    if (!savepath.equals("default.sdata")) {
+    if (!savepath.equals("default.sdata") && !macro_main.no_save.get()) {
       file_savebloc.clear(); 
       interface_bloc.preset_to_save_bloc(file_savebloc); 
       file_savebloc.save_to(savepath);
@@ -303,7 +303,7 @@ class sInterface {
       public void run() { setup_load(); } } ); } } );
     filesm_run = macro_main.newRun("files_management", "filesm", 
       new Runnable() { public void run() { filesManagement(); } } );
-    full_screen_run = macro_main.newRun("files_management", "filesm", new Runnable() { public void run() { 
+    full_screen_run = macro_main.newRun("full_screen_run", "fulls", new Runnable() { public void run() { 
       fs_switch(); 
       runEvents(screen_gui.eventsFullScreen); 
       runEvents(screen_gui.eventsFullScreen); 

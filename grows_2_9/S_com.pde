@@ -29,7 +29,7 @@ class GrowerComu extends Community {
   sFlt MIN_LINE_WIDTH; //epaisseur min des ligne
   sFlt floc_prob;
   
-  sBoo create_floc;
+  sBoo create_floc, use_organ;
   sInt activeGrower;
   sRun srun_killg;
 
@@ -70,6 +70,7 @@ class GrowerComu extends Community {
       .addDrawerFactValue(L_DIFFICULTY, 2, 10, 1)
       .addSeparator(0.125)
       ;
+      
   }
   
   void selected_comu(Community c) { 
@@ -93,6 +94,7 @@ class GrowerComu extends Community {
     dieP = new RandomTryParam(this, 40, true, "die");
 
     create_floc = newBoo(true, "create_floc", "create floc");
+    use_organ = newBoo(true, "use_organ", "use_organ");
     activeGrower = newInt(0, "active_grower", "growers nb");
     
     val_col_live = menuColor(color(220), "val_col_live");
@@ -128,9 +130,23 @@ class GrowerComu extends Community {
   Grower build() { 
     return new Grower(this);
   }
+  boolean first_reset = true;
   Grower addEntity() {
     Grower ng = newEntity();
     if (ng != null) ng.define(adding_cursor.pos(), adding_cursor.dir());
+    int cost = 5;
+    if (ng != null && sim.organ != null) {
+      if (sim.organ.active_entity.get() > cost - 1 && 
+          sim.organ.active_entity.get() <= sim.organ.list.size()) {
+        for (int i = 0 ; i < cost ; i ++) {
+          sim.organ.list.get(sim.organ.active_entity.get() - 1).destroy();
+          sim.organ.active_entity.add(-1);
+        }
+      }
+      if (first_reset && sim.organ.active_entity.get() <= cost + 1) sim.reset();
+      if (!first_reset && sim.organ.active_entity.get() <= cost + 1) { mmain().no_save.set(true); sim.resetRng(); }
+      first_reset = false;
+    }
     return ng;
   }
   Grower newEntity() {
@@ -931,6 +947,8 @@ class Box extends Entity {
       Grower f = (Grower)e;
       if (rectCollide(f.pos, rect)) {
         f.destroy();
+        //lose hp ^^
+        generation--;
       }
     }
     
@@ -1039,8 +1057,8 @@ class Box extends Entity {
           fill(red(c3), green(c3), blue(c3), c);
           ellipseMode(CENTER);
           ellipse(i, j, point_size/2, point_size/2);
-          c+=(generation*point_size);
-          if (c > 255) c -= 255;
+          c+=(generation*int(point_size));
+          c %= 255;
         }
     }
     fill(lining);

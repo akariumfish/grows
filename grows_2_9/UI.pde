@@ -856,7 +856,7 @@ class nWidget {
         if (textAlignY == CENTER)         
           ty += (getLocalSY() / 2.0)
                 - (look.textFont / 6.0)
-                //- (line * look.textFont / 3)
+                  //- (line * look.textFont / 3)
                 ;
         else if (textAlignY == BOTTOM) 
           ty += getLocalSY() - (look.textFont / 10);
@@ -958,7 +958,14 @@ class nWidget {
         cursorPos--;
         runEvents(eventFieldChangeRun);
       }
-      else if (gui.in.getClick("Enter") || gui.in.getClick("Backspace")) {}
+      else if (gui.in.getClick("Enter")) {
+        String str = label.substring(0, cursorPos);
+        String end = label.substring(cursorPos, label.length());
+        label = str + '\n' + end;
+        cursorPos++;
+        runEvents(eventFieldChangeRun);
+      }
+      else if (gui.in.getClick("Backspace")) {}
       else if (gui.in.getClick("All")) {
         String str = label.substring(0, cursorPos);
         String end = label.substring(cursorPos, label.length());

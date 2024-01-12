@@ -392,6 +392,7 @@ class Simulation extends Macro_Sheet {
   Tickable macromain_tickable;
 
   ArrayList<Community> list = new ArrayList<Community>();
+  Organism organ;
   
 }
 

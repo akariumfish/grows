@@ -118,6 +118,7 @@ class Organism extends Macro_Sheet {
   Organism(Simulation _s, String n, sValueBloc b) { 
     super(_s.inter.macro_main, n, b);
     sim = _s;
+    sim.organ = this;
     
     branch = menuFltFact(500, 2, "branch");
     shrt = menuFltFact(0.95, 1.02, "shortening");

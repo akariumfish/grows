@@ -1827,20 +1827,31 @@ class MMouse extends Macro_Bloc {
     super.clear(); return this; }
 }
 class MComment extends Macro_Bloc { 
+  sBoo vtop;
   sStr val_com, val_screen; 
-  nLinkedWidget com_field, screen_field; 
+  nLinkedWidget com_field, screen_field, vline; 
   nWatcherWidget screen_txt;
   MComment(Macro_Sheet _sheet, sValueBloc _bloc) { 
     super(_sheet, "com", "com", _bloc); 
     val_com = newStr("val_com", "val_com", "");
     val_screen = newStr("screen_field", "screen_field", "");
+    vtop = newBoo("vtop", "vtop", true);
+    
     com_field = addEmptyL(0).addLinkedModel("MC_Element_Field").setLinkedValue(val_com);
-    screen_field = addEmptyL(0).addLinkedModel("MC_Element_Field").setLinkedValue(val_screen);
+    Macro_Element e = addEmptyL(0);
+    screen_field = e.addLinkedModel("MC_Element_Field").setLinkedValue(val_screen);
+    vline = e.addLinkedModel("MC_Element_MiniButton").setLinkedValue(vtop);
     screen_txt = mmain().screen_gui.theme.newWatcherWidget(mmain().screen_gui, "Label-S1")
       .setLinkedValue(val_screen);
     screen_txt.setFont(int(ref_size/1.4))
-      .setTextAlignment(CENTER, CENTER).setPX(mmain()
-      .screen_gui.view.size.x/2);
+      .setTextAlignment(CENTER, CENTER);
+    if (vtop.get()) screen_txt.setPY(0);
+    else screen_txt.setPY(ref_size*2);
+    vtop.addEventChange(new Runnable() { public void run() { 
+      if (vtop.get()) screen_txt.setPY(0);
+      else screen_txt.setPY(ref_size);
+    } });
+    screen_txt.setPX(mmain().screen_gui.view.size.x/2.2);
     addEmpty(1); 
   }
   MComment clear() {
