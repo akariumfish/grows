@@ -40,4 +40,13 @@ IN CASE OF FREEZING (or simply to exit) : left click anywhere then hit ESC
 
 thanks for trying, no doc yet, good luck ... 	( sorry )
 
+New in 2.9:
+        Box Community is back with all colors accessibles,
+        Some needed parameters for floc grow and box interaction,
+        Some others minor parameters,
+        smaller graph,
+        fullscreen switchable, 
+        auto reposition toolpanels, 
+        screenshots at will
+
 contact growsDev@gmail.com
