@@ -747,12 +747,12 @@ class MPanGrph extends MPanTool {
     if (front_panel != null) {
       
       nDrawer dr = front_panel.getShelf()
-        .addSeparator(0.125)
-        .addDrawer(10.25, 10.25);
+        //.addSeparator(0.125)
+        .addDrawer(10.25, 3.625);
       
       graph = dr.addModel("Field");
       graph.setPosition(ref_size * 2 / 16, ref_size * 2 / 16)
-        .setSize(ref_size * 10, ref_size * 10);
+        .setSize(ref_size * 10, ref_size * 3.5);
         
       larg = int(graph.getLocalSX());
       graph_data = new float[larg];
@@ -771,19 +771,19 @@ class MPanGrph extends MPanTool {
         for (int i = 1; i < larg; i++) if (i != gc) {
           //stroke(255);
           line( graph.getX() + (i-1), 
-                graph.getY() + graph.getSY() - ref_size / 4 - (graph_data[(i-1)] * (graph.getSY()-ref_size*5/4) / max), 
+                graph.getY() + graph.getSY() - ref_size / 4 - (graph_data[(i-1)] * (graph.getSY()-ref_size*3/4) / max), 
                 graph.getX() + i, 
-                graph.getY() + graph.getSY() - ref_size / 4 - (graph_data[i] * (graph.getSY()-ref_size*5/4) / max) );
+                graph.getY() + graph.getSY() - ref_size / 4 - (graph_data[i] * (graph.getSY()-ref_size*3/4) / max) );
         }
         stroke(255, 0, 0);
         strokeWeight(ref_size / 6);
         if (gc != 0) {
-          point(graph.getX() + gc-1, graph.getY() + graph.getSY() - ref_size / 4 - (graph_data[gc-1] * (graph.getSY()-ref_size*5/4) / max) );
+          point(graph.getX() + gc-1, graph.getY() + graph.getSY() - ref_size / 4 - (graph_data[gc-1] * (graph.getSY()-ref_size*3/4) / max) );
         }
       } });
       
       pan_label = dr.addWatcherModel("Label-S3").setLinkedValue(val_label);
-      pan_label.setTextAlignment(LEFT, CENTER).getShelf()
+      pan_label.setTextAlignment(LEFT, CENTER).setSY(ref_size*0.6).setFont(int(ref_size/2.0)).getShelf()
         .addSeparator()
         ;
       front_panel.addEventClose(new Runnable(this) { public void run() { 

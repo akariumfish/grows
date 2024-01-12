@@ -1952,14 +1952,17 @@ class Macro_Main extends Macro_Sheet {
           .setInfo("Paste selected template in selected sheet").setFont(int(ref_size/1.9)).getDrawer()
         .addCtrlModel("Menu_Button_Small_Outline-S1-P2", "M")
           .setRunnable(new Runnable() { public void run() { build_sheet_menu(); }})
-          .setInfo("Template management and sheets overview").setFont(int(ref_size/1.7)).getShelfPanel()
-      .addShelf().addDrawer(2.125, 1)
+          .setInfo("Open macro main sheet menu").setFont(int(ref_size/1.7)).getShelfPanel()
+      .addShelf().addDrawer(3.25, 1)
         .addCtrlModel("Menu_Button_Small_Outline-S1-P1", "QS")
           .setRunnable(new Runnable() { public void run() { inter.full_data_save(); }})
           .setInfo("Quick Save").setFont(int(ref_size/1.9)).getDrawer()
         .addCtrlModel("Menu_Button_Small_Outline-S1-P2", "QL")
           .setRunnable(new Runnable() { public void run() { inter.setup_load(); }})
-          .setInfo("Quick Load").setFont(int(ref_size/1.9));
+          .setInfo("Quick Load").setFont(int(ref_size/1.9)).getDrawer()
+        .addCtrlModel("Menu_Button_Small_Outline-S1-P3", "FS")
+          .setRunnable(new Runnable() { public void run() { inter.full_screen_run.run(); }})
+          .setInfo("Switch Fullscreen").setFont(int(ref_size/1.9));
     if (!show_macro_tool.get()) macro_tool.reduc();
     macro_tool.addEventReduc(new Runnable() { public void run() { 
       show_macro_tool.set(!macro_tool.hide); }});
@@ -1981,7 +1984,7 @@ class Macro_Main extends Macro_Sheet {
     if (!show_build_tool.get()) build_tool.reduc();
     build_tool.addEventReduc(new Runnable() { public void run() { 
       show_build_tool.set(!build_tool.hide); }});
-    build_tool.panel.setPY(ref_size*1.625);
+    build_tool.panel.setPY(ref_size*1.25);
     
     if (sheet_tool != null) sheet_tool.clear();
     sheet_tool = new nToolPanel(screen_gui, ref_size, 0.125, true, true);
@@ -1997,7 +2000,7 @@ class Macro_Main extends Macro_Sheet {
     if (!show_sheet_tool.get()) sheet_tool.reduc();
     sheet_tool.addEventReduc(new Runnable() { public void run() { 
       show_sheet_tool.set(!sheet_tool.hide); }});
-    sheet_tool.panel.setPY(ref_size*16.75);
+    sheet_tool.panel.setPY(ref_size*16);
   }
   void build_custom_menu(nFrontPanel sheet_front) {
     nFrontTab tab = sheet_front.addTab("Interface");

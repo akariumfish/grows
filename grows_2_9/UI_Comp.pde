@@ -33,6 +33,13 @@ class nToolPanel extends nShelfPanel {
     else    { panel.setPY(gui.view.pos.y + gui.view.size.y).stackUp(); reduc.alignDown(); }
     if (!rgh) panel.setPX(gui.view.pos.x).stackRight(); 
     else    { panel.setPX(gui.view.pos.x + gui.view.size.x).stackLeft(); reduc.setText(">").stackLeft(); }
+    gui.addEventsFullScreen(new Runnable(this) { public void run() { 
+      //if (top)    { panel.setPY(gui.view.pos.y); reduc.alignUp(); }
+      //else        { panel.setPY(gui.view.pos.y + gui.view.size.y).stackUp(); reduc.alignDown(); }
+      //if (!right)   panel.setPX(gui.view.pos.x).stackRight(); 
+      //else 
+      if (right) { panel.setPX(gui.view.pos.x + gui.view.size.x); }
+    } } );
   } 
   nToolPanel updateHeight() { 
     super.updateHeight(); if (reduc != null) reduc.setSY(panel.getLocalSY()); return this; }

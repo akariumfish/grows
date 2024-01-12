@@ -83,6 +83,7 @@ class Simulation extends Macro_Sheet {
     val_descr.set("Control time, reset, random...");
     tick_counter = newInt(0, "tick_counter", "tick");
     tick_by_frame = newFlt(2, "tick by frame", "tck/frm");
+    tick_sec = newFlt(0, "tick seconde", "tps");
     pause = newBoo(false, "pause", "pause");
     force_next_tick = newInt(0, "force_next_tick", "nxt tick");
     auto_reset = newBoo(true, "auto_reset", "auto reset");
@@ -107,9 +108,12 @@ class Simulation extends Macro_Sheet {
       public void run() { force_next_tick.add(1); } } );
     srun_nxtf = newRun("sim_next_frame", "nxt frm", new Runnable() { 
       public void run() { force_next_tick.set(int(tick_by_frame.get())); } } );
+    srun_scrsht = newRun("screen_shot", "impr", new Runnable() { 
+      public void run() { inter.cam.screenshot = true; } } );
     
-    addEventSetupLoad(new Runnable() { 
-      public void run() { reset(); } } );
+    mmain().addEventSetupLoad(new Runnable() { 
+      public void run() { mmain().inter.addEventNextFrame(new Runnable() { 
+      public void run() { reset(); } } ); } } );
       
     show_toolpanel = newBoo("show_toolpanel", "toolpanel", true);
     show_toolpanel.addEventChange(new Runnable(this) { public void run() { 
@@ -124,10 +128,11 @@ class Simulation extends Macro_Sheet {
   sBoo pause; //permet d'interompre le defilement des tour
   sInt force_next_tick; 
   sFlt tick_by_frame; //nombre de tour a executé par frame
+  sFlt tick_sec;
   sInt SEED; //seed pour l'aleatoire
   sBoo auto_reset, auto_reset_rng_seed, auto_reset_screenshot, show_com;
   sInt auto_reset_turn;
-  sRun srun_reset, srun_rngr, srun_nxtt, srun_nxtf, srun_tick;
+  sRun srun_reset, srun_rngr, srun_nxtt, srun_nxtf, srun_tick, srun_scrsht;
   sBoo show_toolpanel;
 
   float tick_pile = 0; //pile des tick a exec
@@ -160,6 +165,8 @@ class Simulation extends Macro_Sheet {
 
   void frame() {
     if (!pause.get()) {
+      tick_sec.set(inter.framerate.median_framerate.get() * tick_by_frame.get());
+      
       tick_pile += tick_by_frame.get();
 
       //auto screenshot before reset
@@ -175,7 +182,7 @@ class Simulation extends Macro_Sheet {
 
       //run_each_unpaused_frame
       runEvents(eventsUnpausedFrame);
-    }
+    } else tick_sec.set(0);
 
     // tick by tick control
     if (pause.get() && force_next_tick.get() > 0) { 
@@ -328,7 +335,9 @@ class Simulation extends Macro_Sheet {
         .addSeparator(0.125)
         .addDrawerIncrValue(auto_reset_turn, 1000, 10, 1)
         .addSeparator(0.125)
-        .addDrawerTripleButton(auto_reset, auto_reset_rng_seed, auto_reset_screenshot, 10, 1)
+        .addDrawerDoubleButton(auto_reset, auto_reset_rng_seed, 10, 1)
+        .addSeparator(0.125)
+        .addDrawerDoubleButton(srun_scrsht, auto_reset_screenshot, 10, 1)
         .addSeparator(0.125)
         .addDrawerTripleButton(srun_reset, srun_rngr, srun_nxtt, 10, 1)
         .addSeparator(0.125)
@@ -417,6 +426,8 @@ abstract class Community extends Macro_Sheet {
       .addDrawerDoubleButton(pulse_add, adding_cursor.show, 10, 1)
       .addSeparator(0.125)
       .addDrawerIncrValue(pulse_add_delay, 10, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerIncrValue(pulse_add_delay, 1000, 10, 1)
       .addSeparator(0.125)
       ;
       
