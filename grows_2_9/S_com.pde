@@ -658,7 +658,9 @@ class BoxComu extends Community {
     nFrontTab tab = sim_front.addTab(name);
     tab.getShelf()
       .addSeparator(0.125)
-      .addDrawerTripleButton(draw_dot, kill_grow, floc_kill, 10.25, 1)
+      .addDrawerDoubleButton(draw_dot, val_const_line, 10.25, 1)
+      .addSeparator(0.25)
+      .addDrawerDoubleButton(kill_grow, floc_kill, 10, 1)
       .addSeparator(0.25)
       .addDrawerFactValue(spacing_min, 2, 10, 1)
       .addSeparator(0.125)
@@ -722,14 +724,14 @@ class BoxComu extends Community {
   nList selector_list2;
   
   sFlt spacing_min , spacing_max, spacing_diff, spacing_max_dist, box_size_min, 
-    box_size_max, duplicate_prob, corner_space, box_point_size;
+    box_size_max, duplicate_prob, corner_space, box_point_size, val_line_w;
   
   sInt max_age;
   
   sCol val_col1, val_col2, val_col3;
   sStr selected_com2;
   
-  sBoo draw_dot, kill_grow, floc_kill;
+  sBoo draw_dot, val_const_line, kill_grow, floc_kill;
   
   int cnt = 0;
   FlocComu fcom;
@@ -745,6 +747,7 @@ class BoxComu extends Community {
     spacing_min = newFlt(50, "box_spacing_min", "sp min");
     spacing_max = newFlt(200, "box_spacing_max", "sp max");
     spacing_diff = newFlt(1, "box_spacing_diff", "sp dif");
+    val_line_w = menuFltSlide(5, 0.5, 20, "line_w");
     spacing_max_dist = newFlt(10000, "normal_spacing_dist", "norm sp");
     box_size_min = newFlt(100, "box_size_min", "sz min");
     box_size_max = newFlt(400, "box_size_max", "sz max");
@@ -752,6 +755,7 @@ class BoxComu extends Community {
     corner_space = newFlt(40, "box_corner_space", "corner");
     max_age = newInt(2000, "max_age", "age");
     draw_dot = newBoo(true, "draw_dot", "draw_dot");
+    val_const_line = newBoo(true, "val_const_line", "val_const_line");
     kill_grow = newBoo(true, "kill_grow", "kill_grow");
     floc_kill = newBoo(true, "floc_kill", "floc_kill");
     selected_com2 = newStr("selected_com2", "scom2", "");
@@ -989,23 +993,30 @@ class Box extends Entity {
                            com().val_col2.getgreen()*fc, 
                            com().val_col2.getblue()*fc );
     //println(lining);
+    boolean constent_w = com().val_const_line.get();
+    float line_factor = com().val_line_w.get();
+    
     noFill();
     stroke(lining);
-    strokeWeight(max(2/com.sim.cam_gui.scale, connect_bubble_size/1.3));
+    if (constent_w) strokeWeight(max(2/com.sim.cam_gui.scale, connect_bubble_size/1.3));
+    else strokeWeight(max(line_factor*2, connect_bubble_size/1.3));
     line(connect1.x, connect1.y, connect2.x, connect2.y);
     if (connect_bubble_size*com.sim.cam_gui.scale > 3) {
       fill(filling);
       stroke(lining);
-      strokeWeight(4/com.sim.cam_gui.scale);
+      if (constent_w) strokeWeight(4/com.sim.cam_gui.scale);
+      else strokeWeight(4*line_factor);
       ellipse(connect1.x, connect1.y, connect_bubble_size, connect_bubble_size);
       ellipse(connect2.x, connect2.y, connect_bubble_size, connect_bubble_size); }
     fill(filling);
     stroke(lining);
-    strokeWeight(2/com.sim.cam_gui.scale);
+    if (constent_w) strokeWeight(2/com.sim.cam_gui.scale);
+    else strokeWeight(2*line_factor);
     rect.draw();
     noFill();
     stroke(0, 255, 0);
-    strokeWeight(3/com.sim.cam_gui.scale);
+    if (constent_w) strokeWeight(3/com.sim.cam_gui.scale);
+    else strokeWeight(3*line_factor);
     //rect(rect.pos.x - space/2, rect.pos.y - space/2, rect.size.x + space, rect.size.y + space);
     if (connect_bubble_size*com.sim.cam_gui.scale > 3) {
       fill(filling);
@@ -1014,7 +1025,8 @@ class Box extends Entity {
       ellipse(connect2.x, connect2.y, connect_bubble_size, connect_bubble_size); }
     noFill();
     stroke(filling);
-    strokeWeight(max(0, connect_bubble_size/1.3 - 4/com.sim.cam_gui.scale));
+    if (constent_w) strokeWeight(max(0, connect_bubble_size/1.3 - 4/com.sim.cam_gui.scale));
+    else strokeWeight(max(0, connect_bubble_size/1.3 - 4*line_factor));
     line(connect1.x, connect1.y, connect2.x, connect2.y);
     if (com().draw_dot.get()) {
       int point_size = int(com().box_point_size.get());
