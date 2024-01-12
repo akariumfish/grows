@@ -8,6 +8,7 @@ Using Processing 3.5.4  -  https://www.processing.org/
 
 see previews for sample results
 last relatively stable : grows2.8.exe in bin/grows2.8		( full screen )
+in image/ there is screenshots of the developement of this phase
 
 -Quick lauch : 
 --download :
