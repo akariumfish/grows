@@ -316,8 +316,8 @@ class nInfo {
         if (count > 0) {
           count--; if (count == 0) ref.hide();
           ref.setPosition(gui.mouseVector.x, gui.mouseVector.y);
-          if (gui.mouseVector.y < ref.getLocalSY()*3 && !invert) invert = true;
-          else if (gui.mouseVector.y > ref.getLocalSY()*6 && invert) invert = false; 
+          if (gui.mouseVector.y < ref.getLocalSY()*8 && !invert) invert = true;
+          else if (gui.mouseVector.y > ref.getLocalSY()*12 && invert) invert = false; 
         }
       } } );
     ref.stackDown();
