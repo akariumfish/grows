@@ -29,18 +29,19 @@ class nToolPanel extends nShelfPanel {
     reduc = addCtrlModel("Menu_Button_Small_Outline", "<")
       .setRunnable(new Runnable(this) { public void run() { reduc(); } } );
     reduc.setSize(ref_size/1.7, panel.getSY()).stackRight().show().setLabelColor(color(180));
-    if (tp) { panel.setPY(gui.view.pos.y); reduc.alignUp(); }
-    else    { panel.setPY(gui.view.pos.y + gui.view.size.y).stackUp(); reduc.alignDown(); }
-    if (!rgh) panel.setPX(gui.view.pos.x).stackRight(); 
-    else    { panel.setPX(gui.view.pos.x + gui.view.size.x).stackLeft(); reduc.setText(">").stackLeft(); }
+    up_pos();
     gui.addEventsFullScreen(new Runnable(this) { public void run() { 
-      //if (top)    { panel.setPY(gui.view.pos.y); reduc.alignUp(); }
-      //else        { panel.setPY(gui.view.pos.y + gui.view.size.y).stackUp(); reduc.alignDown(); }
-      //if (!right)   panel.setPX(gui.view.pos.x).stackRight(); 
-      //else 
-      if (right) { panel.setPX(gui.view.pos.x + gui.view.size.x); }
+      up_pos();
     } } );
   } 
+  float py = 0;
+  nToolPanel setPos(float y) { py = y; up_pos(); return this; }
+  void up_pos() {
+    if (top)    { panel.setPY(py + gui.view.pos.y).stackDown(); reduc.alignUp(); }
+    else        { panel.setPY(py + gui.view.pos.y + gui.view.size.y).stackUp(); reduc.alignDown(); }
+    if (!right) { panel.setPX(gui.view.pos.x).stackRight(); reduc.setText("<").stackRight(); }
+    else        { panel.setPX(gui.view.pos.x + gui.view.size.x).stackLeft(); reduc.setText(">").stackLeft(); }
+  }
   nToolPanel updateHeight() { 
     super.updateHeight(); if (reduc != null) reduc.setSY(panel.getLocalSY()); return this; }
 }

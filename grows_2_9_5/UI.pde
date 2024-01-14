@@ -387,7 +387,7 @@ class nWidget {
   nWidget addEventMouseEnter(Runnable r) { eventMouseEnterRun.add(r); return this; }
   nWidget addEventMouseLeave(Runnable r) { eventMouseLeaveRun.add(r); return this; }
   
-  nWidget addEventPress(Runnable r)      { eventPressRun.add(r); return this; }
+  nWidget addEventPressed(Runnable r)      { eventPressRun.add(r); return this; }
   nWidget addEventRelease(Runnable r)    { eventReleaseRun.add(r); return this; }
   
   nWidget addEventTrigger(Runnable r)         { eventTriggerRun.add(r); return this; }
@@ -638,7 +638,7 @@ class nWidget {
   nWidget centerX()    { alignX = false; stackX = false; placeLeft = false; placeRight = false; centerX = true;  changePosition(); return this; }
   nWidget centerY()    { alignX = false; stackX = false; placeLeft = false; placeRight = false; centerY = true;  changePosition(); return this; }
   
-  void setSwitchState(boolean s) { if (s) setOn(); else setOff(); }
+  nWidget setSwitchState(boolean s) { if (s) setOn(); else setOff(); return this; }
   void setOn() {
     if (!switchState) {
       switchState = true;
@@ -895,13 +895,14 @@ class nWidget {
         isClicked = false;
       }
       if (gui.in.getClick("MouseLeft") && isHovered && !isClicked) {
-        runEvents(eventPressRun);
+        
         isClicked = true;
         if (triggerMode) runEvents(eventTriggerRun); 
         if (switchMode) { if (switchState) { setOff(); } else { setOn(); } }
       }
       
     }
+    if (isClicked) runEvents(eventPressRun);
     if (grabbable) {
       if (isHovered) {
         if (gui.in.getClick("MouseLeft")) {

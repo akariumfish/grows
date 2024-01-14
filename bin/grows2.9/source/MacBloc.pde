@@ -319,7 +319,7 @@ class MToolBin extends MToolRow {
         .addSeparator()
         ;
       
-      trig2 = dr.addModel("Button-S2-P2").setSwitch()
+      trig2 = dr.addModel("Button-S2-P2").setSwitch().setSwitchState(b2)
         .addEventSwitchOn(trig2_run)
         .addEventSwitchOff(trig2_run);
       if (val_txt2 != null && trig2 != null) trig2.setText(val_txt2.get());
@@ -331,6 +331,7 @@ class MToolBin extends MToolRow {
   nLinkedWidget widgWTRIG1, widgWTRIG2; 
   sBoo          valTRIG1,   valTRIG2;
   Macro_Connexion in1, in2, in3, out1, out2, out3;
+  boolean b1, b2, b3;
   
   sStr val_lbl1, val_txt1, val_txt2, val_txt3; 
   String msg = "";
@@ -371,15 +372,15 @@ class MToolBin extends MToolRow {
         val_lbl1.set(val_txt1.get() + " " + msg); 
         if (trig1 != null) trig1.setText(val_txt1.get()); } 
       if (in1.getLastPacket() != null && in1.getLastPacket().isBool() && trig1 != null) { 
-        trig1.setSwitchState(in1.getLastPacket().asBool()); }
+        trig1.setSwitchState(in1.getLastPacket().asBool()); b1 = in1.getLastPacket().asBool(); }
     } });
     in2 = addInput(0, "in2").addEventReceive(new Runnable(this) { public void run() { 
       if (in2.getLastPacket() != null && in2.getLastPacket().isBool() && trig2 != null) { 
-        trig2.setSwitchState(in2.getLastPacket().asBool()); }
+        trig2.setSwitchState(in2.getLastPacket().asBool()); b2 = in1.getLastPacket().asBool(); }
     } });
     in3 = addInput(0, "in3").addEventReceive(new Runnable(this) { public void run() { 
       if (in3.getLastPacket() != null && in3.getLastPacket().isBool() && trig3 != null) { 
-        trig3.setSwitchState(in3.getLastPacket().asBool()); }
+        trig3.setSwitchState(in3.getLastPacket().asBool()); b3 = in1.getLastPacket().asBool(); }
     } });
     
     Macro_Element e2 = addEmptyS(2);
@@ -413,11 +414,11 @@ class MToolBin extends MToolRow {
       if (trig2 != null) trig2.show();
       if (trig1 != null) trig1.clear();
       if (trig3 != null) trig3.clear();
-      if (dr != null) trig1 = dr.addModel("Button-S2-P1").setSwitch()
+      if (dr != null) trig1 = dr.addModel("Button-S2-P1").setSwitch().setSwitchState(b1)
         .addEventSwitchOn(trig1_run)
         .addEventSwitchOff(trig1_run);
       if (val_txt1 != null && trig1 != null) trig1.setText(val_lbl1.get());
-      if (dr != null) trig3 = dr.addModel("Button-S2-P3").setSwitch()
+      if (dr != null) trig3 = dr.addModel("Button-S2-P3").setSwitch().setSwitchState(b3)
         .addEventSwitchOn(trig3_run)
         .addEventSwitchOff(trig3_run);
       if (val_txt3 != null && trig3 != null) trig3.setText(val_txt3.get());
@@ -715,14 +716,16 @@ class MTool extends Macro_Bloc {
   }
   void open_menu() {
     if (front_panel == null) {
-      front_panel = new nToolPanel(mmain().screen_gui, mmain().ref_size, 0.125, false, true);
+      front_panel = new nToolPanel(mmain().screen_gui, mmain().ref_size, 0.125, false, menu_top.get());
       
       front_panel.addShelf().addDrawer(4, 0);
       
       for (MToolRow m : tool_macros) m.build_front_panel(front_panel);
       
-      if (menu_top.get()) front_panel.panel.setPY(ref_size*menu_pos.get());
-      else front_panel.panel.setPY(front_panel.gui.view.pos.y + front_panel.gui.view.size.y - (front_panel.panel.getLocalSY() + ref_size*menu_pos.get()) );
+      front_panel.setPos(ref_size*menu_pos.get());
+      
+      //if (menu_top.get()) front_panel.setPos(ref_size*menu_pos.get());
+      //else front_panel.setPos(front_panel.gui.view.pos.y + front_panel.gui.view.size.y - (front_panel.panel.getLocalSY() + ref_size*menu_pos.get()) );
       
       if (menu_reduc.get()) front_panel.closeit();
       else front_panel.openit();
@@ -1472,6 +1475,7 @@ class MData extends Macro_Bloc {
     } };
     v.addEventChange(val_run);
     in.addEventReceive(in_run);
+    mmain().inter.addEventNextFrame(val_run); 
   }
   void setValue(sInt v) {
     ival = v;
@@ -1483,6 +1487,7 @@ class MData extends Macro_Bloc {
     } };
     v.addEventChange(val_run);
     in.addEventReceive(in_run);
+    mmain().inter.addEventNextFrame(val_run); 
   }
   void setValue(sBoo v) {
     bval = v;
@@ -1494,6 +1499,7 @@ class MData extends Macro_Bloc {
     } };
     v.addEventChange(val_run);
     in.addEventReceive(in_run);
+    mmain().inter.addEventNextFrame(val_run); 
   }
   void setValue(sStr v) {
     sval = v;
@@ -1505,6 +1511,7 @@ class MData extends Macro_Bloc {
     } };
     v.addEventChange(val_run);
     in.addEventReceive(in_run);
+    mmain().inter.addEventNextFrame(val_run); 
   }
   void setValue(sRun v) {
     rval = v;
@@ -1530,6 +1537,7 @@ class MData extends Macro_Bloc {
     } };
     v.addEventChange(val_run);
     in.addEventReceive(in_run);
+    mmain().inter.addEventNextFrame(val_run); 
   }
   Runnable val_run, in_run;
   sBoo bval; sInt ival; sFlt fval; sStr sval; sVec vval; sRun rval;
@@ -1845,11 +1853,11 @@ class MComment extends Macro_Bloc {
       .setLinkedValue(val_screen);
     screen_txt.setFont(int(ref_size/1.4))
       .setTextAlignment(CENTER, CENTER);
-    if (vtop.get()) screen_txt.setPY(0);
-    else screen_txt.setPY(ref_size*2);
+    if (vtop.get()) screen_txt.setPY(window_head);
+    else screen_txt.setPY(window_head + ref_size*2);
     vtop.addEventChange(new Runnable() { public void run() { 
-      if (vtop.get()) screen_txt.setPY(0);
-      else screen_txt.setPY(ref_size);
+      if (vtop.get()) screen_txt.setPY(window_head);
+      else screen_txt.setPY(window_head + ref_size);
     } });
     screen_txt.setPX(mmain().screen_gui.view.size.x/2.2);
     addEmpty(1); 

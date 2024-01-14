@@ -1970,6 +1970,7 @@ class Macro_Main extends Macro_Sheet {
           .setRunnable(new Runnable() { public void run() { inter.full_screen_run.run(); }})
           .setInfo("Switch Fullscreen").setFont(int(ref_size/1.9));
     if (!show_macro_tool.get()) macro_tool.reduc();
+    macro_tool.setPos(window_head);
     macro_tool.addEventReduc(new Runnable() { public void run() { 
       show_macro_tool.set(!macro_tool.hide); }});
     
@@ -1990,7 +1991,7 @@ class Macro_Main extends Macro_Sheet {
     if (!show_build_tool.get()) build_tool.reduc();
     build_tool.addEventReduc(new Runnable() { public void run() { 
       show_build_tool.set(!build_tool.hide); }});
-    build_tool.panel.setPY(ref_size*1.25);
+    build_tool.setPos(window_head + ref_size*1.25);
     
     if (sheet_tool != null) sheet_tool.clear();
     sheet_tool = new nToolPanel(screen_gui, ref_size, 0.125, true, true);
@@ -2006,7 +2007,7 @@ class Macro_Main extends Macro_Sheet {
     if (!show_sheet_tool.get()) sheet_tool.reduc();
     sheet_tool.addEventReduc(new Runnable() { public void run() { 
       show_sheet_tool.set(!sheet_tool.hide); }});
-    sheet_tool.panel.setPY(ref_size*16);
+    sheet_tool.setPos(window_head + ref_size*16);
   }
   void build_custom_menu(nFrontPanel sheet_front) {
     nFrontTab tab = sheet_front.addTab("Interface");

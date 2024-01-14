@@ -398,9 +398,9 @@ class sInterface {
       textSize(18); 
       textAlign(LEFT);
       text(framerate.get() + " C " + trimStringFloat(cam.mouse.x) + 
-        "," + trimStringFloat(cam.mouse.y), 10, 24 );
+        "," + trimStringFloat(cam.mouse.y), 10, window_head + 24 );
       text("S " + trimStringFloat(input.mouse.x) + 
-        "," + trimStringFloat(input.mouse.y), 250, 24 );
+        "," + trimStringFloat(input.mouse.y), 250, window_head + 24 );
     }
     
     data.frame(); // reset flags
@@ -471,7 +471,7 @@ class Camera {
 
   void pushCam() {
     pushMatrix();
-    translate(width / 2, height / 2);
+    translate(width / 2, (height) / 2);
     scale(cam_scale.get());
     translate((cam_pos.x() / cam_scale.get()), (cam_pos.y() / cam_scale.get()));
     matrixPushed = true;

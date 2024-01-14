@@ -69,11 +69,30 @@ void setup() {//executé au demarage
     public void run() { interf.addEventNextFrame(new Runnable() { 
       public void run() { interf.setup_load(); } } ); } } );
   
+  app_grab = new nWidget(interf.screen_gui, "Grows 2.9.5", 28, 0, 0, base_width - 40, 40)
+    .setTrigger()
+    .addEventTrigger(new Runnable() { 
+    public void run() { mx = mouseX; my = mouseY; } } )
+    .addEventPressed(new Runnable() { 
+    public void run() { 
+      sx = int(mouseX + sx - mx);
+      sy = int(mouseY + sy - my);
+      surface.setLocation(sx, sy); 
+    } } );
+  app_close = new nWidget(interf.screen_gui, "X", 28, base_width - 40, 0, 40, 40)
+    .setTrigger()
+    .addEventTrigger(new Runnable() { 
+    public void run() { exit(); } } );
+  interf.full_screen_run.run();
 }
 
+nWidget app_grab, app_close;
+float window_head = 40;
+float mx, my;
+int sx, sy;
 
 void draw() {//execute once by frame
-  
+  //translate(0, 40);
   interf.frame();
   global_frame_count++;
   if (global_frame_count < 5) { fill(0); noStroke(); rect(0, 0, width, height); }
@@ -81,19 +100,24 @@ void draw() {//execute once by frame
 }
 
 int base_width=1600; //non fullscreen width
-int base_height=900; //non fullscreen height
-boolean fullscreen=false;
+int base_height=940; //non fullscreen height
+boolean fullscreen=true;
 void fs_switch() {
   if (fullscreen) {
+    app_grab.show();
+    app_close.show();
     surface.setSize(base_width,base_height); 
     surface.setLocation(200, 40);
+    sx = 200; sy = 40;
     fullscreen=false;
     surface.setAlwaysOnTop(false);
   } else {
-    surface.setSize(displayWidth,displayHeight);
+    app_grab.hide();
+    app_close.hide();
+    surface.setSize(displayWidth,displayHeight + int(window_head));
     fullscreen=true;
-    surface.setLocation(0, 0);
-    //surface.setFocus(true);
+    surface.setLocation(0, -int(window_head));
+    sx = 0; sy = -int(window_head);
     surface.setAlwaysOnTop(true);
   }
 }
