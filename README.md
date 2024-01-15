@@ -5,6 +5,7 @@ Trying To Simulate A Very Small Environment
 https://github.com/akariumfish/grows/
 
 Using Processing 3.5.4  -  https://www.processing.org/
+Library : The MidiBus 8 Severin Smith http://smallbutdigital.com/projects/themidibus/
 
 see previews for sample results
 last relatively stable : grows2.9.exe in bin/grows2.9		( full screen )
@@ -35,18 +36,27 @@ in image/ there is screenshots of the developement of this phase
 -double click on any .pde files
 -once processing is launched click on the play button top left
 
+-you can go to https://github.com/akariumfish/Grows_Old_Bin for old executable
+
 Please be aware that im not a pro and its certainly not done efficiently, 
 IN CASE OF FREEZING (or simply to exit) : left click anywhere then hit ESC
 
 thanks for trying, no doc yet, good luck ... 	( sorry )
 
 New in 2.9:
-        Box Community is back with all colors accessibles,
-        Some needed parameters for floc grow and box interaction,
-        Some others minor parameters,
-        smaller graph,
+        Box Community,
+        parameters for floc grow and box interaction,
+        new window headbar,
         fullscreen switchable, 
-        auto reposition toolpanels, 
-        screenshots at will
+        screenshots,
+        copy paste,
+        templates save/load,
+        new basic bloc,
+        better file manager,
+        open file and save as shortcuts
+
+known bugs :
+        links head stay behind when closing a sheet
+        links dont always load
 
 contact growsDev@gmail.com
