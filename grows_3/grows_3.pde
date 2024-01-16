@@ -4,6 +4,9 @@ import themidibus.*;
 
 todo : see to of Macro_Sheet constructor in macmain
 
+  double click
+  right click on widget
+
 PApplet
   Log
     DEBUG_SAVE
