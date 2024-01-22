@@ -319,12 +319,11 @@ class sInterface {
   }
 
   void full_data_save() {
-    if (!savepath_value.get().equals("default.sdata")) {// && !macro_main.no_save.get()) {
-      //nPopUp pop = new nPopUp(screen_gui, taskpanel, "SAVING...", true);
+    macro_main.saving_database();
+    if (!savepath_value.get().equals("default.sdata")) {
       file_savebloc.clear(); 
       interface_bloc.preset_to_save_bloc(file_savebloc); 
       file_savebloc.save_to(savepath_value.get());
-      //pop.clear();
     } }
   //void full_data_load() {
   //  file_savebloc.clear();
@@ -441,8 +440,12 @@ class sInterface {
   sInterface addEventFullS(Runnable r) { eventsFullS.add(r); return this; }
   sInterface addEventFrame(Runnable r) { eventsFrame.add(r); return this; }
   sInterface removeEventFrame(Runnable r) { eventsFrame.remove(r); return this; }
+  sInterface addEventNextFrameEnd(Runnable r) { 
+    if (active_nxtfrm_pile) eventsFrameEnd1.add(r); else eventsFrameEnd2.add(r); return this; }
   sInterface addEventNextFrame(Runnable r) { 
     if (active_nxtfrm_pile) eventsNextFrame1.add(r); else eventsNextFrame2.add(r); return this; }
+  sInterface addEventNextFrameInverted(Runnable r) { 
+    if (active_nxtfrm_pile) eventsNextFrame2.add(r); else eventsNextFrame1.add(r); return this; }
   sInterface addEventSetup(Runnable r) { eventsSetup.add(r); return this; }
   
   String getAccess() { return user.access; }
@@ -488,6 +491,8 @@ class sInterface {
 
   ArrayList<Runnable> eventsFullS = new ArrayList<Runnable>();
   ArrayList<Runnable> eventsFrame = new ArrayList<Runnable>();
+  ArrayList<Runnable> eventsFrameEnd1 = new ArrayList<Runnable>();
+  ArrayList<Runnable> eventsFrameEnd2 = new ArrayList<Runnable>();
   ArrayList<Runnable> eventsNextFrame1 = new ArrayList<Runnable>();
   ArrayList<Runnable> eventsNextFrame2 = new ArrayList<Runnable>();
   boolean active_nxtfrm_pile = false;
@@ -507,11 +512,17 @@ class sInterface {
     runEvents(eventsFrame); // << sim runs here
     if (!active_nxtfrm_pile) { runEvents(eventsNextFrame1); eventsNextFrame1.clear(); } 
     else { runEvents(eventsNextFrame2); eventsNextFrame2.clear(); } 
-    active_nxtfrm_pile = !active_nxtfrm_pile;
+    //active_nxtfrm_pile = !active_nxtfrm_pile;
     
     screen_gui.frame();
     cam.pushCam(); // matrice d'affichage
-    cam_gui.frame();
+    cam_gui.frame(); // << macros
+    
+    // packet process
+    active_nxtfrm_pile = !active_nxtfrm_pile;
+    if (!active_nxtfrm_pile) { runEvents(eventsFrameEnd1); eventsFrameEnd1.clear(); } 
+    else { runEvents(eventsFrameEnd2); eventsFrameEnd2.clear(); } 
+    
     cam_gui.draw();
     cam.popCam();
     screen_gui.draw();
@@ -576,16 +587,20 @@ class Camera {
   }
 
   ArrayList<Runnable> eventsZoom = new ArrayList<Runnable>();
+  ArrayList<Runnable> eventsMove = new ArrayList<Runnable>();
   Camera addEventZoom(Runnable r) { 
     eventsZoom.add(r); 
-    return this;
-  }
-  ArrayList<Runnable> eventsMove = new ArrayList<Runnable>();
+    return this; }
   Camera addEventMove(Runnable r) { 
     eventsMove.add(r); 
-    return this;
-  }
-
+    return this; }
+  Camera removeEventZoom(Runnable r) { 
+    eventsZoom.remove(r); 
+    return this; }
+  Camera removeEventMove(Runnable r) { 
+    eventsMove.remove(r); 
+    return this; }
+    
   PVector mouse = new PVector();
   PVector pmouse = new PVector(); //prev pos
   PVector mmouse = new PVector(); //mouvement

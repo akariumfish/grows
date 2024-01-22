@@ -138,6 +138,7 @@ class nCursor extends nWidget {
   nWidget screen_widget;
   Macro_Sheet sheet;
   Camera cam;
+  Runnable move_run, zoom_run;
   
   void update_view() {
     if (cam.cam_scale.get() < 0.25) { 
@@ -171,21 +172,24 @@ class nCursor extends nWidget {
     setGrabbable();
     addEventDrag(new Runnable() {public void run() {pval.set(refwidget.getX(), refwidget.getY());}});
     pval = sheet.newVec(s+"_cursor_position", s+"_pos");
-    pval.addEventChange(new Runnable(pval) {public void run() {
+    pval.addEventDelete(new Runnable(pval) { public void run() { clear(); } } );
+    pval.addEventChange(new Runnable(pval) { public void run() {
       sVec v = ((sVec)builder);
       thiswidget.setPosition(v.x()-ref_size, v.y()-ref_size);
       
       PVector p = cam.cam_to_screen(pval.get());
       screen_widget.setPosition(p.x-ref_size/4, p.y-ref_size/4); }});
-    cam.addEventMove(new Runnable() {public void run() { 
+    move_run = new Runnable() {public void run() { 
       PVector p = cam.cam_to_screen(pval.get());
       screen_widget.setPosition(p.x-ref_size/4, p.y-ref_size/4);
-    }});
-    cam.addEventZoom(new Runnable() {public void run() { 
+    }};
+    zoom_run = new Runnable() {public void run() { 
       update_view();
       PVector p = cam.cam_to_screen(pval.get());
       screen_widget.setPosition(p.x-ref_size/4, p.y-ref_size/4);
-    }});
+    }};
+    cam.addEventMove(move_run);
+    cam.addEventZoom(zoom_run);
     
     screen_widget = gui.theme.newWidget(sheet.mmain().screen_gui, "Cursor")
       .setSize(ref_size/2, ref_size/2)
@@ -229,8 +233,10 @@ class nCursor extends nWidget {
     }});
   }
   void clear() { 
-    refwidget.clear(); pointwidget.clear(); super.clear(); 
-    show.clear(); pval.clear(); dval.clear(); }
+    cam.removeEventMove(move_run);
+    cam.removeEventZoom(zoom_run);
+    refwidget.clear(); pointwidget.clear(); screen_widget.clear(); super.clear(); 
+    show.clear(); dval.clear(); pval.doEvent(false); pval.clear(); }
   nCursor toLayerTop() { 
     super.toLayerTop(); refwidget.toLayerTop(); pointwidget.toLayerTop(); 
     screen_widget.toLayerTop(); 
@@ -563,32 +569,78 @@ class nExplorer extends nDrawer {
 
 
 
-//class nPopUp extends nWindowPanel {
+class nValuePicker extends nWindowPanel {
   
-//  nWidget info;
-//  boolean autoclose = false;
-//  nPopUp(nGUI _g, nTaskPanel _task, String t, boolean ac) { 
-//    super(_g, _task, t); 
-//    autoclose = ac;
-//    info = getShelf().addSeparator(0.25)
-//      .addDrawer(10.25, 1)
-//        .addModel("Label-S4", t).setTextAlignment(LEFT, CENTER);
+  ArrayList<String> explorer_entry;
+  
+  nList explorer_list;
+  nWidget info;
+  
+  sStr val_cible;
+  sValueBloc search_bloc;
+  boolean autoclose = false, mitig_ac = false;
+  
+  ArrayList<Runnable> eventsChoose = new ArrayList<Runnable>();
+  nValuePicker addEventChoose(Runnable r) { eventsChoose.add(r);  return this; } 
+  
+  nValuePicker(nGUI _g, nTaskPanel _task, sStr _sv, sValueBloc _sb, boolean _autoclose) { 
+    super(_g, _task, "select value"); 
+    val_cible = _sv;
+    search_bloc = _sb;
+    autoclose = _autoclose;
+    explorer_entry = new ArrayList<String>();
     
-//    if (!ac) {
-//      getShelf()
-//        .addSeparator(0.25)
-//        .addDrawer(10.25, 1)
-//          .addCtrlModel("Button-S2-P2", "OK")
-//          .setRunnable(new Runnable() { public void run() { clear(); } }).getShelf();
-//    }
-//  }
-//  nWindowPanel clear() { 
-//    super.clear(); return this; }
-//  nWindowPanel updateHeight() { 
-//    super.updateHeight(); return this; }
-//  nWindowPanel updateWidth() { 
-//    super.updateWidth(); return this; }
-//}
+    explorer_list = getShelf().addList(5, 10, 1).setTextAlign(LEFT);
+    
+    if (!_autoclose) {
+      info = getShelf().addSeparator(0.25)
+        .addDrawer(1.4)
+          .addLinkedModel("Label-S4", "Selected Value :")
+          .setLinkedValue(val_cible).setTextAlignment(LEFT, TOP);
+    
+      getShelf()
+        .addSeparator(0.25)
+        .addDrawer(10.25, 1)
+          .addCtrlModel("Button-S2-P2", "OK")
+          .setRunnable(new Runnable() { public void run() { 
+            runEvents(eventsChoose); clear(); } }).getShelf();
+    }
+    update_list();
+    
+    explorer_list.addEventChange_Builder(new Runnable() { 
+      public void run() {
+        String choice = explorer_list.last_choice_text;
+        if (!choice.equals("")) { 
+          val_cible.set(choice); 
+          if (autoclose && !mitig_ac) { runEvents(eventsChoose); clear(); }
+        }
+      } } );
+  } 
+  void selectEntry(String r) {
+    int i = 0;
+    for (String me : explorer_entry) {
+      if (me.equals(r)) break;
+      i++; }
+    if (i < explorer_list.listwidgets.size()) explorer_list.listwidgets.get(i).setOn();
+  }
+  
+  void update() {
+    update_list();
+  }
+  void update_list() {
+    for (Map.Entry b : search_bloc.values.entrySet()) { 
+      sValue s = (sValue)b.getValue(); 
+      explorer_entry.add(s.ref);
+    }
+    explorer_list.setEntrys(explorer_entry);
+  }
+  nWindowPanel clear() { 
+    super.clear(); return this; }
+  nWindowPanel updateHeight() { 
+    super.updateHeight(); return this; }
+  nWindowPanel updateWidth() { 
+    super.updateWidth(); return this; }
+}
 
 
 class nTextPicker extends nWindowPanel {

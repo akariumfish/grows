@@ -50,29 +50,42 @@ class Organism extends Macro_Sheet {
       .addDrawer(10.25, 1)
         .addCtrlModel("Auto_Ctrl_Button-S3-P1", "new cursor")
         .setRunnable(new Runnable(this) { public void run() { 
-          //nCursor nc = new nCursor(custom_tab.gui, ((Macro_Sheet)builder), 
-          //                         "cursor_"+cursors_list.size(), "curs");
-          //cursors_list.add(nc);
+          nCursor nc = new nCursor(((Macro_Sheet)builder), 
+                                   "cursor_"+cursors_list.size(), "curs"+cursors_list.size());
+          cursors_list.add(nc);
           //nc.show.set(true);
-          //update_curs_selector_list();
-        } } ).getShelf()
+          update_curs_selector_list();
+        } } ).getDrawer()
+        .addCtrlModel("Auto_Ctrl_Button-S3-P2", "delete cursor")
+        .setRunnable(new Runnable(this) { public void run() { 
+          if (selected_cursor != null) { 
+            cursors_list.remove(selected_cursor); selected_cursor.clear(); selected_cursor = null; }
+          update_curs_selector_list();
+        } } )
+        .getShelf()
       .addDrawer(10.25, 1)
         .addLinkedModel("Auto_Ctrl_Button-S3-P1", "add cursor show")
         .setLinkedValue(adding_cursor.show).getDrawer()
-        .addCtrlModel("Auto_Ctrl_Button-S3-P2", "duplicate")
-        .setLinkedValue(srun_duplic).getShelf()
+        //.addCtrlModel("Auto_Ctrl_Button-S3-P2", "duplicate")
+        //.setLinkedValue(srun_duplic)
+        .getShelf()
       .addSeparator(0.125)
       .addList(4, 10, 0.8);
     selector_list.addEventChange_Builder(new Runnable() { public void run() {
       nList sl = ((nList)builder); 
-      nCursor c;
+      nCursor c = null;
       if (sl.last_choice_index < cursors_list.size()) 
         c = cursors_list.get(sl.last_choice_index);
+      if (c != null) { 
+        if (selected_cursor != null) selected_cursor.hide(); 
+        selected_cursor = c; 
+        selected_cursor.show();
+      }
+      
     } } );
     
     selector_entry = new ArrayList<String>();
     selector_value = new ArrayList<nCursor>();
-    cursors_list = new ArrayList<nCursor>();
     
     selector_list.getShelf()
       .addSeparator(0.0625)
@@ -120,6 +133,7 @@ class Organism extends Macro_Sheet {
     super(_s.inter.macro_main, n, b);
     sim = _s;
     sim.organ = this;
+    cursors_list = new ArrayList<nCursor>();
     
     branch = menuFltFact(500, 2, "branch");
     shrt = menuFltFact(0.95, 1.02, "shortening");
@@ -137,6 +151,7 @@ class Organism extends Macro_Sheet {
     organ_init();
     
     adding_cursor = new nCursor(this, n, "add");
+    cursors_list.add(adding_cursor);
   }
   Organism(Simulation _s, String n, Organism b) { 
     super(_s.inter.macro_main, n, null);
@@ -160,9 +175,12 @@ class Organism extends Macro_Sheet {
     adding_cursor = new nCursor(this, n, "add");
     adding_cursor.pval.set(b.adding_cursor.pval.get());
     adding_cursor.pval.add(ref_size * 4, 0);
+    cursors_list.add(adding_cursor);
   }
   
   void organ_init() {
+    
+    selected_cursor = adding_cursor;
     
     active_entity = menuIntWatch(0, "active_entity");
     

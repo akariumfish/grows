@@ -78,6 +78,7 @@ abstract class sValue {
   sValue addEventChange(Runnable r) { eventsChange.add(r); return this; }
   sValue removeEventChange(Runnable r) { eventsChange.remove(r); return this; }
   sValue addEventAllChange(Runnable r) { eventsAllChange.add(r); return this; }
+  sValue removeEventAllChange(Runnable r) { eventsAllChange.remove(r); return this; }
   void doChange() { if (doevent) runEvents(eventsAllChange); has_changed = true; }
   sValueBloc bloc;
   boolean has_changed = false, doevent = true;

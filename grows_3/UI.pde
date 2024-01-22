@@ -90,6 +90,7 @@ class nGUI {
   float scale = 1;
   float ref_size = 30;
   boolean isShown = true;
+  boolean field_used = false;
   
   Drawing_pile drawing_pile = new Drawing_pile();
   Hoverable_pile hoverable_pile = new Hoverable_pile();
@@ -954,14 +955,17 @@ class nWidget {
           prev_select_outline = showOutline;
           showOutline = true;
           if (isField) showCursor = true;
+          gui.field_used = true;
         } else {
           showOutline = prev_select_outline;
           if (isField) showCursor = false;
+          gui.field_used = false;
         }
       } else if (!isHovered && gui.in.getClick("MouseLeft") && isSelected) {
         showOutline = prev_select_outline;
         if (isField) showCursor = false;
         isSelected = false;
+        gui.field_used = false;
       }
     }
     if (isField && isSelected) {

@@ -111,7 +111,7 @@ class Face extends Macro_Sheet {
     val_scale.addEventChange(new Runnable() { public void run() { shape.dir.setMag(val_scale.get()); }});
     val_linew.addEventChange(new Runnable() { public void run() { shape.line_w = val_linew.get(); }});
     ref_cursor = new nCursor(this, "center", "center");
-    ref_cursor.show.set(true);
+    //ref_cursor.show.set(true);
     ref_cursor.pval.addEventChange(new Runnable() { public void run() { 
       shape.pos.set(ref_cursor.pval.get()); }});
     ref_cursor.dval.addEventChange(new Runnable() { public void run() {

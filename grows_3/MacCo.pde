@@ -123,6 +123,7 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
       .setPosition(-ref_size*5/16, -ref_size*5/16)
       .addEventTrigger(new Runnable(this) { public void run() {
         if (sheet.mmain().selected_sheet != sheet && !is_sheet_co) sheet.select();
+        
         if (buildingLine) {
           buildingLine = false; elem.bloc.mmain().buildingLine = false;
           for (Macro_Connexion i : sheet.child_connect) 
@@ -181,8 +182,9 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
         }
         if (!buildingLine && elem.bloc.mmain().gui.in.getClick("MouseRight")) for (Macro_Connexion m : connected_inputs) {
           if (distancePointToLine(elem.bloc.mmain().gui.mouseVector.x, elem.bloc.mmain().gui.mouseVector.y, 
-              getCenterX(), getCenterY(), m.getCenterX(), m.getCenterY()) < ref.look.outlineWeight) {
+              getCenter().x, getCenter().y, m.getCenter().x, m.getCenter().y) < ref.look.outlineWeight) {
             disconnect_from(m);
+            sheet.redo_link();
             break;
           }
         }
@@ -190,58 +192,55 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
       ;
     ref_draw = new Drawable(gui.drawing_pile, 0) { 
       public void drawing() {
-        if (elem.bloc.openning.get() == OPEN || elem.bloc.openning.get() == REDUC 
-        
-            || (is_sheet_co && sheet.openning.get() != HIDE) //
-            
+        //logln("draw " + descr + " sheet " + sheet.value_bloc.ref + " op " + sheet.openning.get());
+        if (
+            isDraw()
             ) {
           if (lens.isClicked) fill(ref.look.pressColor);
           else if (lens.isHovered) fill(ref.look.hoveredColor);
           else if (sending || hasSend > 0 || hasReceived > 0) fill(ref.look.outlineColor);
           else fill(ref.look.standbyColor);
           noStroke(); ellipseMode(CENTER);
-          ellipse(getCenterX(), getCenterY(), ref.getLocalSX(), ref.getLocalSY());
+          ellipse(getCenter().x, getCenter().y, ref.getLocalSX(), ref.getLocalSY());
           if (lens.isClicked) stroke(ref.look.pressColor);
           else if (lens.isHovered) stroke(ref.look.hoveredColor);
           else if (sending || hasSend > 0 || hasReceived > 0) stroke(ref.look.outlineColor);
           else noStroke();
           noFill(); strokeWeight(ref.look.outlineWeight/4);
-          ellipse(getCenterX(), getCenterY(), 
+          ellipse(getCenter().x, getCenter().y, 
             ref.getLocalSX() + ref.look.outlineWeight * 2, ref.getLocalSY() + ref.look.outlineWeight * 2);
             
           if (buildingLine) {
             stroke(ref.look.outlineColor);
             strokeWeight(ref.look.outlineWeight/2);
-            PVector l = new PVector(newLine.x - getCenterX(), newLine.y - getCenterY());
+            PVector l = new PVector(newLine.x - getCenter().x, newLine.y - getCenter().y);
             PVector lm = new PVector(l.x, l.y);
             lm.setMag(getSize()/2);
-            line(getCenterX()+lm.x, getCenterY()+lm.y, 
-                 getCenterX()+l.x-lm.x, getCenterY()+l.y-lm.y);
+            line(getCenter().x+lm.x, getCenter().y+lm.y, 
+                 getCenter().x+l.x-lm.x, getCenter().y+l.y-lm.y);
             fill(255, 0);
             ellipseMode(CENTER);
-            ellipse(getCenterX(), getCenterY(), 
+            ellipse(getCenter().x, getCenter().y, 
                     getSize(), getSize() );
             ellipse(newLine.x, newLine.y, 
                     getSize(), getSize() );
           }
           for (Macro_Connexion m : connected_inputs) {
-            if (m.elem.bloc.openning.get() == OPEN || m.elem.bloc.openning.get() == REDUC 
-            
-                || (m.is_sheet_co && m.sheet.openning.get() != HIDE) // && m.sheet.openning.get() == OPEN
-                
+            if (
+                m.isDraw()
                 ) {
               if (distancePointToLine(elem.bloc.mmain().gui.mouseVector.x, elem.bloc.mmain().gui.mouseVector.y, 
-                  getCenterX(), getCenterY(), m.getCenterX(), m.getCenterY()) < ref.look.outlineWeight ) { 
+                  getCenter().x, getCenter().y, m.getCenter().x, m.getCenter().y) < ref.look.outlineWeight ) { 
                 if (pack_info != null && hasSend > 0) elem.bloc.mmain().info.showText(pack_info);
                 fill(ref.look.outlineSelectedColor); stroke(ref.look.outlineSelectedColor); } 
               else if (sending || hasSend > 0) { fill(ref.look.outlineColor); stroke(ref.look.outlineColor); }
               else { fill(ref.look.standbyColor); stroke(ref.look.standbyColor); }
               strokeWeight(ref.look.outlineWeight);
-              PVector l = new PVector(m.getCenterX() - getCenterX(), m.getCenterY() - getCenterY());
+              PVector l = new PVector(m.getCenter().x - getCenter().x, m.getCenter().y - getCenter().y);
               PVector lm = new PVector(l.x, l.y);
               lm.setMag(getSize()/2);
-              line(getCenterX()+lm.x, getCenterY()+lm.y, 
-                   getCenterX()+l.x-lm.x, getCenterY()+l.y-lm.y);
+              line(getCenter().x+lm.x, getCenter().y+lm.y, 
+                   getCenter().x+l.x-lm.x, getCenter().y+l.y-lm.y);
             }
           }
           if (hasSend > 0) hasSend--;
@@ -270,30 +269,67 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
     lens.setParent(ref);
     sheet.child_connect.add(this);
   }
-  float getCenterX() { 
-    //if (is_sheet_co && elem.bloc.sheet.openning.get() == REDUC) 
-    //  return elem.bloc.sheet.grabber.getX()+elem.bloc.sheet.grabber.getLocalSX()/2;
-    //else if (is_sheet_co && elem.bloc.sheet.openning.get() == OPEN) 
-    //  return ref.getX()+ref.getLocalSX()/2;
-    //else 
-    if (elem.bloc.openning.get() == REDUC && !is_sheet_co) 
-      return elem.bloc.grabber.getX()+elem.bloc.grabber.getLocalSX()/2;
-    else if (elem.bloc.openning.get() == OPEN) return ref.getX()+ref.getLocalSX()/2;
-    
-    return ref.getX()+ref.getLocalSX()/2;
+  
+  Macro_Connexion upview() { 
+    if (isDraw()) {
+      ref.show(); 
+      if ((!is_sheet_co && elem.bloc.sheet.openning.get() == DEPLOY && elem.bloc.openning.get() == OPEN ) 
+          || (is_sheet_co && elem.spot != null && elem.bloc.sheet.openning.get() == OPEN) ) {
+        lens.show(); 
+        msg_view.show(); 
+      } else {
+        lens.hide(); 
+        msg_view.hide(); 
+      }
+    } else {
+      ref.hide(); 
+      lens.hide(); 
+      msg_view.hide(); 
+    }
+    return this;
   }
-  float getCenterY() { 
-    //if (is_sheet_co && elem.bloc.sheet.openning.get() == REDUC) 
-    //  return elem.bloc.sheet.grabber.getY()+elem.bloc.sheet.grabber.getLocalSY()/2;
-    //else if (is_sheet_co && elem.bloc.sheet.openning.get() == OPEN) 
-    //  return ref.getY()+ref.getLocalSY()/2;
-    //else 
-    if (elem.bloc.openning.get() == REDUC && !is_sheet_co) 
-      return elem.bloc.grabber.getY()+elem.bloc.grabber.getLocalSY()/2;
-    else if (elem.bloc.openning.get() == OPEN) return ref.getY()+ref.getLocalSY()/2;
-    
-    return ref.getY()+ref.getLocalSY()/2;
+  
+  boolean isDraw() {
+    return sheet.mmain().show_macro.get() && ( (!is_sheet_co && sheet.openning.get() == DEPLOY)
+            || (is_sheet_co && elem.spot != null && sheet.openning.get() == DEPLOY)
+            );
   }
+  
+  PVector getCenter(nWidget w) { 
+    return new PVector(w.getX()+w.getLocalSX()/2, w.getY()+w.getLocalSY()/2);
+  }
+  PVector getCenter() {
+    PVector p = new PVector();
+    if (!is_sheet_co) {
+      if (sheet.openning.get() != DEPLOY) {
+        return p;
+      }
+      if (sheet.openning.get() == DEPLOY) {
+        if (elem.bloc.openning.get() == HIDE) return p;
+        if (elem.bloc.openning.get() == REDUC) return getCenter(elem.bloc.grabber);
+        if (elem.bloc.openning.get() == OPEN) return getCenter(ref);
+      }
+    }
+    if (is_sheet_co) {
+      if (sheet.openning.get() != DEPLOY) {
+        return p;
+      }
+      if (sheet.openning.get() == DEPLOY) {
+        if (elem.bloc.sheet.openning.get() == HIDE) return p;
+        if (elem.bloc.sheet.openning.get() == REDUC) return getCenter(elem.bloc.sheet.grabber);
+        if (elem.bloc.sheet.openning.get() == OPEN) return getCenter(ref);
+        if (elem.bloc.sheet.openning.get() == DEPLOY) {
+          if (elem.bloc.openning.get() == HIDE) return p;
+          if (elem.bloc.openning.get() == REDUC) return getCenter(elem.bloc.grabber);
+          if (elem.bloc.openning.get() == OPEN) return getCenter(ref);
+        } 
+      }
+    }
+    
+    return new PVector(10, 10);
+  }
+  
+  
   float getSize() { return ref.getLocalSY() * 2; }
   
   String infoText = "";
@@ -380,9 +416,18 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
     if (!flag) process_resum += descr+" send ";
     for (Macro_Packet p : packet_to_send) {
       process_resum = process_resum + p.getText() + " ";
-      for (Macro_Connexion m : connected_inputs) m.receive(p);
       if (direct_co != null && direct_co.type == OUTPUT) direct_co.send(p);
       if (direct_co != null && direct_co.type == INPUT) direct_co.receive(p);
+      int i = 0;
+      for (Macro_Connexion m : connected_inputs) 
+        if (i < m.elem.bloc.priority.get() ) i = m.elem.bloc.priority.get();
+      int c = 0;
+      while (i >= 0 && c < connected_inputs.size()) {
+        for (Macro_Connexion m : connected_inputs) 
+          if (i == m.elem.bloc.priority.get()) { m.receive(p); c++; }
+        i--;
+      }
+      //for (Macro_Connexion m : connected_inputs) m.receive(p);
     }
     packet_to_send.clear();
     return flag;
@@ -441,7 +486,6 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
       hasReceived = 15;
     }
     packet_received.clear();
-    //last_packet = null; //done by sheet after processing all packets
     return flag;
   }
   
@@ -494,23 +538,6 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
     filter = "vec";
     lens.setInfo(infoText+" "+filter);
     return this; }
-  
-  Macro_Connexion hide() { 
-    lens.hide(); msg_view.hide(); ref.hide(); 
-    return this;
-  }
-  
-  Macro_Connexion reduc() { 
-    if (elem.bloc.sheet.openning.get() == OPEN) ref.show(); 
-    lens.hide(); msg_view.hide();
-    return this;
-  }
-
-  Macro_Connexion show() { 
-    ref.show(); lens.show(); msg_view.show();
-    return this;
-  }
-
 }
 
 /*
@@ -562,7 +589,7 @@ class Macro_Element extends nDrawer implements Macro_Interf {
   void set_spot(nWidget _spot) { 
     spot = _spot; spot.setLook("MC_Element_At_Spot").setPassif(); back.setLook("MC_Element_At_Spot").setPassif(); 
     spot.setText(bloc.value_bloc.base_ref);
-    sheet_viewable = false; //if (sheet_connect != null) sheet_connect.show(); 
+    sheet_viewable = false; 
   }
   void clear_spot() { 
     if (spot != null) spot.setText("");
@@ -574,44 +601,49 @@ class Macro_Element extends nDrawer implements Macro_Interf {
     
     back.clearParent(); back.setParent(ref); 
     back.setPX(-ref_size*0.5);
-    if (bloc.openning.get() == OPEN) {
+    if (bloc.openning.get() == OPEN && bloc.mmain().show_macro.get()) {
       back.show(); 
       for (nWidget w : elem_widgets) w.show();
-    }
-    
-    if (sheet_connect != null && spot != null)  { sheet_connect.show(); sheet_connect.toLayerTop(); }
-    //if (sheet_connect != null && spot == null) sheet_connect.hide(); 
-    if (connect != null && bloc.openning.get() == OPEN) { connect.show(); connect.toLayerTop(); }
-    if (connect != null && bloc.openning.get() == REDUC) { connect.reduc(); connect.toLayerTop(); }
-    
+    } else { 
+      back.hide(); 
+      for (nWidget w : elem_widgets) w.hide();
+    } 
     toLayerTop();
+    
+    if (sheet_connect != null) { sheet_connect.upview(); sheet_connect.toLayerTop(); }
+    if (connect != null)  { connect.upview(); connect.toLayerTop(); }
+    
     return this;
   }
   Macro_Element reduc() {
+    
     back.hide(); 
     for (nWidget w : elem_widgets) w.hide();
     
-      //if (connect != null)  { connect.hide(); }
-      //if (sheet_connect != null) { sheet_connect.hide(); }
-    if (connect != null) connect.reduc(); 
-    if (sheet_connect != null && spot != null) sheet_connect.reduc(); 
-    //if (sheet_connect != null && spot == null) sheet_connect.hide(); 
+    if (sheet_connect != null) { sheet_connect.upview(); sheet_connect.toLayerTop(); }
+    if (connect != null)  { connect.upview(); connect.toLayerTop(); }
+      
     return this;
   }
   
   Macro_Element hide() {
-      //if (connect != null)  { connect.hide(); }
-      //if (sheet_connect != null) { sheet_connect.hide(); }
-    if (bloc.sheet.openning.get() == OPEN && spot != null) {
+    
+    if (bloc.sheet.openning.get() == OPEN && spot != null && bloc.mmain().show_macro.get()) {
       
-      back.clearParent(); back.setParent(spot).show(); 
+      back.clearParent(); back.setParent(spot);
+      //if () 
+      back.show(); 
       back.setPX(0);
       for (nWidget w : elem_widgets) w.show();
-      
-      if (sheet_connect != null && spot != null) { sheet_connect.show(); sheet_connect.toLayerTop(); }
-      //else if (sheet_connect != null && spot == null) { sheet_connect.hide(); }
       toLayerTop();
-    }
+    } else { 
+      back.hide(); 
+      for (nWidget w : elem_widgets) w.hide();
+    } 
+    
+    if (sheet_connect != null) { sheet_connect.upview(); sheet_connect.toLayerTop(); }
+    if (connect != null)  { connect.upview(); connect.toLayerTop(); }
+    
     return this;
   }
   
