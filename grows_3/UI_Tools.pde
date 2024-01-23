@@ -59,66 +59,6 @@
 
 
 
-class nColorPanel extends nWindowPanel {
-  //nColorPanel setOkEvent_Builder(Runnable r) { ok_run = r; ok_run.builder = this; return this; }
-  nWidget color_widget, red_widget, gre_widget, blu_widget;
-  float red, gre, blu;
-  //Runnable ok_run;
-  sCol cval;
-  nColorPanel(nGUI _g, nTaskPanel _task, sCol _cv) { 
-    super(_g, _task, "color"); 
-    cval = _cv;
-    red = cval.getred(); gre = cval.getgreen(); blu = cval.getblue(); 
-    getShelf()
-      .addDrawer(10.25, 1)
-        .addWidget(new nSlide(gui, ref_size*7.375, ref_size).setValue(cval.getred() / 255)
-          .addEventSlide(new Runnable() { public void run(float v) { 
-            red = v*255; update(); red_widget.setText(trimStringFloat(red)); } } )
-          .setPosition(0, 0) ).getShelf()
-      .addDrawer(10.25, 1)
-        .addWidget(new nSlide(gui, ref_size*7.375, ref_size).setValue(cval.getgreen() / 255)
-          .addEventSlide(new Runnable() { public void run(float v) { 
-            gre = v*255; update(); gre_widget.setText(trimStringFloat(gre)); } } )
-          .setPosition(0, 0) ).getShelf()
-      .addDrawer(10.25, 1)
-        .addWidget(new nSlide(gui, ref_size*7.375, ref_size).setValue(cval.getblue() / 255)
-          .addEventSlide(new Runnable() { public void run(float v) { 
-            blu = v*255; update(); blu_widget.setText(trimStringFloat(blu)); } } )
-          .setPosition(0, 0) ).getShelf()
-      .addDrawer(10.25, 1)
-        .addCtrlModel("Button-S2-P3", "OK")
-          .setRunnable(new Runnable() { public void run() { clear(); } }).getDrawer()
-          ;
-        
-    color_widget = getDrawer(0,3).addModel("Label-S3-P1")
-          .setStandbyColor(color(red, gre, blu));
-    red_widget = getDrawer(0,0)
-        .addModel("Label_Small_Outline-S2", str(red)).setPX(7.5*ref_size);
-    gre_widget = getDrawer(0,1)
-        .addModel("Label_Small_Outline-S2", str(gre)).setPX(7.5*ref_size);
-    blu_widget = getDrawer(0,2)
-        .addModel("Label_Small_Outline-S2", str(blu)).setPX(7.5*ref_size);
-    
-    if (cval == null) clear();
-  } 
-  void update() { 
-    if (cval != null) {
-      color_widget.setStandbyColor(color(red, gre, blu)); 
-      cval.set(color(red, gre, blu)); }
-    else clear(); }
-  nWindowPanel clear() { 
-    super.clear(); return this; }
-  nWindowPanel updateHeight() { 
-    super.updateHeight(); return this; }
-  nWindowPanel updateWidth() { 
-    super.updateWidth(); return this; }
-}
-
-
-
-
-
-
 
 
 
@@ -402,173 +342,6 @@ class nInfo {
 
 
 
-
-
-
-
-
-
-class nExplorer extends nDrawer {
-  boolean access_child = true;
-  nExplorer setChildAccess(boolean b) { access_child = b; return this; }
-  ArrayList<String> explorer_entry;
-  ArrayList<sValueBloc> explorer_blocs;
-  ArrayList<sValue> explorer_values;
-  sValueBloc explored_bloc, selected_bloc, starting_bloc;
-  sValue selected_value;
-  int selected_bloc_index = 0, selected_value_index = 0;
-  nList explorer_list;
-  
-  nExplorer setStrtBloc(sValueBloc sb) { if (sb != explored_bloc) { starting_bloc = sb; explored_bloc = sb; update(); } return this; }
-  nExplorer setBloc(sValueBloc sb) { if (sb != explored_bloc) { explored_bloc = sb; update(); } return this; }
-  
-  nExplorer hideValueView() { 
-    myshelf.removeDrawer(info_drawer);
-    info_drawer.drawer_height = 0;
-    myshelf.insertDrawer(info_drawer);
-    //info_drawer.clear(); info_drawer = null;
-    val_info.clear(); val_info = null;
-    shelf.removeDrawer(this);
-    drawer_height = ref_size*7.1;
-    shelf.insertDrawer(this);
-    return this; 
-  }
-  nExplorer hideGoBack() { 
-    hidegoback = true;
-    gobackindex = -1;
-    gobackspace = 0;
-    update();
-    return this; 
-  }
-  nExplorer showGoBack() { 
-    hidegoback = false;
-    gobackindex = 0;
-    gobackspace = 1;
-    update();
-    return this; 
-  }
-  boolean hidegoback = false;
-  int gobackindex = 0;
-  int gobackspace = 1; 
-  
-  nShelf myshelf;
-  nWidget bloc_info, val_info;
-  nDrawer info_drawer;
-  
-  nDrawer setLayer(int l) { super.setLayer(l); myshelf.setLayer(l); return this; }
-  nDrawer toLayerTop() { super.toLayerTop(); myshelf.toLayerTop(); return this; }
-  
-  ArrayList<Runnable> eventChangeRun = new ArrayList<Runnable>();
-  nExplorer addEventChange(Runnable r)       { eventChangeRun.add(r); return this; }
-  
-  nExplorer addEventChange_Builder(Runnable r) { eventChangeRun.add(r); r.builder = this; return this; }
-  
-  nExplorer(nShelf s) {
-    super(s, s.ref_size*10, s.ref_size*9);
-    explorer_entry = new ArrayList<String>();
-    explorer_blocs = new ArrayList<sValueBloc>();
-    explorer_values = new ArrayList<sValue>();
-    myshelf = new nShelf(shelf.shelfPanel, shelf.space_factor);
-    myshelf.addSeparator(0.25);
-    myshelf.ref.setParent(ref);
-    explorer_list = myshelf.addList(5, 10, 1).setTextAlign(LEFT)
-      .addEventChange_Builder(new Runnable() { 
-      public void run() {
-        int ind = ((nList)builder).last_choice_index;
-        if (ind == gobackindex && explored_bloc != null && explored_bloc != starting_bloc) {
-          explored_bloc = explored_bloc.parent;
-          selected_bloc = null;
-          selected_value = null;
-          update_list();
-          runEvents(eventChangeRun);
-          
-        } else if (ind != gobackindex && ind < explorer_blocs.size()+gobackspace) {
-          if (selected_bloc == explorer_blocs.get(ind-gobackspace) && access_child) {
-            explored_bloc = selected_bloc;
-            selected_bloc = null;
-            selected_value = null;
-            update_list();
-            runEvents(eventChangeRun);
-          } else {
-            selected_bloc = explorer_blocs.get(ind-gobackspace);
-            selected_value = null;
-            update_info();
-            runEvents(eventChangeRun);
-          }
-        } else if (ind != gobackindex && ind - explorer_blocs.size() < explorer_values.size()+gobackspace) {
-          selected_bloc = null;
-          selected_value = explorer_values.get(ind-gobackspace - explorer_blocs.size());
-          
-          update_info();
-          runEvents(eventChangeRun);
-        } 
-      } } )
-      ;
-    
-    bloc_info = myshelf.addSeparator(0.25)
-      .addDrawer(1.4)
-        .addModel("Label-S4", "Selected Bloc :").setTextAlignment(LEFT, TOP);
-    
-    info_drawer = myshelf.addDrawer(1.9);
-      
-    val_info = info_drawer
-        .addModel("Label-S4", "Selected Value :").setTextAlignment(LEFT, TOP).setPY(ref_size * 0.4);
-    
-    update_list();
-    
-  }
-  void selectEntry(String r) {
-    int i = 0;
-    for (Map.Entry me : explored_bloc.blocs.entrySet()) {
-      if (me.getKey().equals(r)) break;
-      i++; }
-    if (i < explorer_list.listwidgets.size()) explorer_list.listwidgets.get(i).setOn();
-  }
-  void update_info() {
-    if (selected_bloc != null) 
-      bloc_info.setText("Selected Bloc :\n " + selected_bloc.type + " " + selected_bloc.ref);
-    else bloc_info.setText("Selected Bloc : ");
-    if (selected_value != null && val_info != null) 
-      val_info.setText("Selected Value : " + selected_value.type + " " + selected_value.ref
-                      +"\n = " + selected_value.getString() );
-    else if (val_info != null) val_info.setText("Selected Value : " );
-  }
-  
-  void update() {
-    selected_bloc = null;
-    selected_value = null;
-    update_list();
-  }
-  void update_list() {
-    explorer_entry.clear();
-    explorer_blocs.clear();
-    explorer_values.clear();
-    if (explored_bloc != null) {
-      //println(); println(explored_bloc.getHierarchy(false));
-      if (!hidegoback) {
-        if (explored_bloc != starting_bloc) explorer_entry.add("..");
-        else explorer_entry.add("");
-      }
-      for (Map.Entry me : explored_bloc.blocs.entrySet()) {
-        sValueBloc cvb = (sValueBloc)me.getValue();
-        explorer_blocs.add(cvb); 
-        explorer_entry.add(cvb.base_ref + " " + cvb.use);
-        //explorer_entry.add((String)me.getKey());
-      }
-      for (Map.Entry me : explored_bloc.values.entrySet()) {
-        explorer_values.add((sValue)me.getValue()); 
-        explorer_entry.add("   - "+(String)me.getKey());
-      }
-    }
-    explorer_list.setEntrys(explorer_entry);
-    update_info();
-  }
-  
-}
-
-
-
-
 class nValuePicker extends nWindowPanel {
   
   ArrayList<String> explorer_entry;
@@ -783,6 +556,481 @@ class nFilePicker extends nWindowPanel {
 
 
 
+
+
+
+
+class nColorPanel extends nWindowPanel {
+  //nColorPanel setOkEvent_Builder(Runnable r) { ok_run = r; ok_run.builder = this; return this; }
+  nWidget color_widget, red_widget, gre_widget, blu_widget;
+  float red, gre, blu;
+  //Runnable ok_run;
+  sCol cval;
+  nColorPanel(nGUI _g, nTaskPanel _task, sCol _cv) { 
+    super(_g, _task, "color"); 
+    cval = _cv;
+    red = cval.getred(); gre = cval.getgreen(); blu = cval.getblue(); 
+    getShelf()
+      .addDrawer(10.25, 1)
+        .addWidget(new nSlide(gui, ref_size*7.375, ref_size).setValue(cval.getred() / 255)
+          .addEventSlide(new Runnable() { public void run(float v) { 
+            red = v*255; update(); red_widget.setText(trimStringFloat(red)); } } )
+          .setPosition(0, 0) ).getShelf()
+      .addDrawer(10.25, 1)
+        .addWidget(new nSlide(gui, ref_size*7.375, ref_size).setValue(cval.getgreen() / 255)
+          .addEventSlide(new Runnable() { public void run(float v) { 
+            gre = v*255; update(); gre_widget.setText(trimStringFloat(gre)); } } )
+          .setPosition(0, 0) ).getShelf()
+      .addDrawer(10.25, 1)
+        .addWidget(new nSlide(gui, ref_size*7.375, ref_size).setValue(cval.getblue() / 255)
+          .addEventSlide(new Runnable() { public void run(float v) { 
+            blu = v*255; update(); blu_widget.setText(trimStringFloat(blu)); } } )
+          .setPosition(0, 0) ).getShelf()
+      .addDrawer(10.25, 1)
+        .addCtrlModel("Button-S2-P3", "OK")
+          .setRunnable(new Runnable() { public void run() { clear(); } }).getDrawer()
+          ;
+        
+    color_widget = getDrawer(0,3).addModel("Label-S3-P1")
+          .setStandbyColor(color(red, gre, blu));
+    red_widget = getDrawer(0,0)
+        .addModel("Label_Small_Outline-S2", str(red)).setPX(7.5*ref_size);
+    gre_widget = getDrawer(0,1)
+        .addModel("Label_Small_Outline-S2", str(gre)).setPX(7.5*ref_size);
+    blu_widget = getDrawer(0,2)
+        .addModel("Label_Small_Outline-S2", str(blu)).setPX(7.5*ref_size);
+    
+    if (cval == null) clear();
+  } 
+  void update() { 
+    if (cval != null) {
+      color_widget.setStandbyColor(color(red, gre, blu)); 
+      cval.set(color(red, gre, blu)); }
+    else clear(); }
+  nWindowPanel clear() { 
+    super.clear(); return this; }
+  nWindowPanel updateHeight() { 
+    super.updateHeight(); return this; }
+  nWindowPanel updateWidth() { 
+    super.updateWidth(); return this; }
+}
+
+
+
+
+
+class nNumPanel extends nWindowPanel {
+  sInt ival; sFlt fval;
+  nNumPanel(nGUI _g, nTaskPanel _task, sFlt _cv) { 
+    super(_g, _task, "number"); 
+    fval = _cv; if (fval == null) clear();
+    build_ui(fval);
+  } 
+  nNumPanel(nGUI _g, nTaskPanel _task, sInt _cv) { 
+    super(_g, _task, "number"); 
+    ival = _cv; if (ival == null) clear();
+    build_ui(ival);
+  } 
+  
+  nWidget field_widget;
+  
+  void build_ui(sValue v) {
+    getShelf().addDrawer(10.25, 1).getShelf()
+      .addDrawer(10.25, 1).addCtrlModel("Button-S2-P3", "OK")
+        .setRunnable(new Runnable() { public void run() { clear(); } }).getDrawer();
+    field_widget = getDrawer(0,0).addLinkedModel("Field-S4")
+      .setLinkedValue(v);
+  }
+  nWindowPanel clear() { 
+    super.clear(); return this; }
+  nWindowPanel updateHeight() { 
+    super.updateHeight(); return this; }
+  nWindowPanel updateWidth() { 
+    super.updateWidth(); return this; }
+}
+
+
+class nBoolPanel extends nWindowPanel {
+  nWidget widget;
+  sBoo val;
+  nBoolPanel(nGUI _g, nTaskPanel _task, sBoo _cv) { 
+    super(_g, _task, "boolean"); 
+    val = _cv;
+    
+    if (val == null) clear();
+    
+    getShelf()
+      .addDrawer(7.25, 1).getShelf()
+      .addDrawer(7.25, 1)
+        .addCtrlModel("Button-S2-P2", "OK")
+          .setRunnable(new Runnable() { public void run() { clear(); } }).getDrawer()
+          ;
+    
+    widget = getDrawer(0,0).addLinkedModel("Button-S3")
+      .setLinkedValue(val)
+      ;
+  } 
+  nBoolPanel clear() { 
+    super.clear(); return this; }
+  nBoolPanel updateHeight() { 
+    super.updateHeight(); return this; }
+  nBoolPanel updateWidth() { 
+    super.updateWidth(); return this; }
+}
+
+
+class nTextPanel extends nWindowPanel {
+  nWidget text_widget;
+  sStr cval;
+  nTextPanel(nGUI _g, nTaskPanel _task, sStr _cv) { 
+    super(_g, _task, "text"); 
+    cval = _cv;
+    
+    if (cval == null) clear();
+    int larg = 15;
+    if (cval.get().length() < 50) larg = 10;
+    float font = int(ref_size/2.1);
+    int max_l = int(larg * ref_size / (font / 1.7));
+    
+    float line_cnt = float(cval.get().length()) / float(max_l);
+    if (line_cnt % 1 > 0) line_cnt += 1 - (line_cnt % 1);
+    float h_fact = (font * line_cnt) / ref_size + font / (ref_size * 2);
+    
+    //logln("m " + max_l + " lc " + line_cnt + " hf " + h_fact);
+    
+    getShelf()
+      .addDrawer(larg + 0.25, h_fact)
+        .getShelf()
+      .addDrawer(larg, 1)
+        .addCtrlModel("Button-S2-P3", "OK")
+          .setRunnable(new Runnable() { public void run() { clear(); } }).getDrawer()
+          ;
+    
+    text_widget = getDrawer(0,0).addLinkedModel("Field")
+      .setLinkedValue(cval)
+      .setTextAlignment(CENTER, TOP)
+      .setTextAutoReturn(true)
+      .setFont(int(font))
+      .setSX(ref_size * larg)
+      .setSY(ref_size * h_fact)
+      .setPX(ref_size * 0.125)
+      ;
+    
+  } 
+  nWindowPanel clear() { 
+    super.clear(); return this; }
+  nWindowPanel updateHeight() { 
+    super.updateHeight(); return this; }
+  nWindowPanel updateWidth() { 
+    super.updateWidth(); return this; }
+}
+
+class nTextView extends nWindowPanel implements Macro_Interf {
+  nWidget text_widget;
+  sStr cval;
+  String txt; boolean auto_return = true;
+  nTextView(nGUI _g, nTaskPanel _task, sStr _cv) { 
+    super(_g, _task, "text"); 
+    cval = _cv;
+    
+    if (cval == null) clear();
+    int larg = 15;
+    if (cval.get().length() < 50) larg = 10;
+    float font = int(ref_size/2.1);
+    int max_l = int(larg * ref_size / (font / 1.7));
+    
+    txt = cval.get();
+    
+    float line_cnt = float(txt.length()) / float(max_l);
+    if (line_cnt % 1 > 0) line_cnt += 1 - (line_cnt % 1);
+    
+    if (cval.ref.equals("links") || cval.ref.equals("spots")) {
+      auto_return = false;
+      line_cnt = 1;
+      int char_counter = 0;
+      for (int i = txt.length() - 1 ; i >= 0  ; i--) {
+        char_counter++;
+        if (char_counter >= max_l) { line_cnt++; char_counter = 0; }
+        if (txt.charAt(i) == OBJ_TOKEN.charAt(0) || txt.charAt(i) == GROUP_TOKEN.charAt(0)) {
+          txt = txt.substring(0, i+1) + '\n' + txt.substring(i+1, txt.length());
+          line_cnt++;
+          char_counter = 0;
+        }
+      }
+    }
+    
+    float h_fact = (font * line_cnt) / ref_size + font / (ref_size * 2);
+    
+    //logln("m " + max_l + " lc " + line_cnt + " hf " + h_fact);
+    
+    getShelf()
+      .addDrawer(larg + 0.25, h_fact)
+        .getShelf()
+      .addDrawer(larg, 1)
+        .addCtrlModel("Button-S2-P3", "OK")
+          .setRunnable(new Runnable() { public void run() { 
+            for (int i = txt.length() - 1 ; i >= 0  ; i--) 
+              if (txt.charAt(i) == '\n' || txt.charAt(i) == '\r') {
+                txt = txt.substring(0, i);
+                if (i+1 < txt.length()) txt += txt.substring(i + 1, txt.length());
+            }
+            if (cval != null) cval.set(txt);
+            clear(); 
+          } }).getDrawer()
+          ;
+    
+    text_widget = getDrawer(0,0).addModel("Field")
+      .setText(txt)
+      .setField(true)
+      .setTextAlignment(CENTER, TOP)
+      .setTextAutoReturn(auto_return)
+      .setFont(int(font))
+      .setSX(ref_size * larg)
+      .setSY(ref_size * h_fact)
+      .setPX(ref_size * 0.125)
+      ;
+    
+  } 
+  nWindowPanel clear() { 
+    super.clear(); return this; }
+  nWindowPanel updateHeight() { 
+    super.updateHeight(); return this; }
+  nWindowPanel updateWidth() { 
+    super.updateWidth(); return this; }
+}
+
+class nExplorer extends nDrawer {
+  boolean access_child = true;
+  nExplorer setChildAccess(boolean b) { access_child = b; return this; }
+  ArrayList<String> explorer_entry;
+  ArrayList<sValueBloc> explorer_blocs;
+  ArrayList<sValue> explorer_values;
+  sValueBloc explored_bloc, selected_bloc, starting_bloc;
+  sValue selected_value;
+  int selected_bloc_index = 0, selected_value_index = 0;
+  nList explorer_list;
+  
+  nExplorer setStrtBloc(sValueBloc sb) { if (sb != explored_bloc) { starting_bloc = sb; explored_bloc = sb; update(); } return this; }
+  nExplorer setBloc(sValueBloc sb) { if (sb != explored_bloc) { explored_bloc = sb; update(); } return this; }
+  
+  nExplorer hideValueView() { 
+    myshelf.removeDrawer(info_drawer);
+    info_drawer.drawer_height = 0;
+    myshelf.insertDrawer(info_drawer);
+    //info_drawer.clear(); info_drawer = null;
+    val_info.clear(); val_info = null;
+    shelf.removeDrawer(this);
+    drawer_height = ref_size*7.1;
+    shelf.insertDrawer(this);
+    return this; 
+  }
+  nExplorer hideGoBack() { 
+    hidegoback = true;
+    gobackindex = -1;
+    gobackspace = 0;
+    update();
+    return this; 
+  }
+  nExplorer showGoBack() { 
+    hidegoback = false;
+    gobackindex = 0;
+    gobackspace = 1;
+    update();
+    return this; 
+  }
+  boolean hidegoback = false;
+  int gobackindex = 0;
+  int gobackspace = 1; 
+  
+  nShelf myshelf;
+  nWidget bloc_info, val_info;
+  nDrawer info_drawer;
+  
+  nDrawer setLayer(int l) { super.setLayer(l); myshelf.setLayer(l); return this; }
+  nDrawer toLayerTop() { 
+    super.toLayerTop(); myshelf.toLayerTop(); 
+    for (nCtrlWidget w : values_button) w.toLayerTop(); 
+    return this; }
+  
+  ArrayList<Runnable> eventChangeRun = new ArrayList<Runnable>();
+  nExplorer addEventChange(Runnable r)       { eventChangeRun.add(r); return this; }
+  
+  nExplorer addEventChange_Builder(Runnable r) { eventChangeRun.add(r); r.builder = this; return this; }
+  
+  nExplorer addValuesModifier(nTaskPanel _t) {
+    task = _t;
+    hasvalbutton = true;
+    for (int i = 0 ; i < entry_nb ; i++) {
+      nCtrlWidget w = explorer_list.addCtrlModel("Button-SSS1", ""+i);
+      w.setRunnable(new Runnable(w) { public void run() {
+        int ind = int(((nCtrlWidget)builder).getText()) + explorer_list.entry_pos;
+        if (ind != gobackindex && ind - explorer_blocs.size() < explorer_values.size()+gobackspace) {
+          sValue clicked_val = explorer_values.get(ind-gobackspace - explorer_blocs.size());
+          if (clicked_val.type.equals("str")) { 
+            new nTextPanel(gui, task, (sStr)clicked_val);
+          } else if (clicked_val.type.equals("flt")) { 
+            new nNumPanel(gui, task, (sFlt)clicked_val);
+          } else if (clicked_val.type.equals("int")) { 
+            new nNumPanel(gui, task, (sInt)clicked_val);
+          } else if (clicked_val.type.equals("boo")) { 
+            new nBoolPanel(gui, task, (sBoo)clicked_val);
+          } else if (clicked_val.type.equals("col")) { 
+            new nColorPanel(gui, task, (sCol)clicked_val);
+          }
+        } 
+      }});
+      w.addEventVisibilityChange(new Runnable(w) { public void run() {
+        int ind = int(((nCtrlWidget)builder).getText()) + explorer_list.entry_pos;
+        if (ind != gobackindex && ind > explorer_blocs.size() && 
+            ind - explorer_blocs.size() < explorer_values.size()+gobackspace) {
+          sValue val = explorer_values.get(ind-gobackspace - explorer_blocs.size());
+          if (val.type.equals("str") || val.type.equals("col") || 
+              val.type.equals("int") || val.type.equals("flt") || val.type.equals("boo")) 
+                ((nCtrlWidget)builder).show();
+          else { ((nCtrlWidget)builder).hide(); }
+        } else { ((nCtrlWidget)builder).hide(); }
+      }});
+      w.setPosition(ref_size * 8.125, ref_size * (i + 0.25))
+        .setTextVisibility(false)
+        //.hide()
+        ;
+      values_button.add(w);
+    }
+    explorer_list.addEventScroll(new Runnable() { public void run() {
+      update_val_bp();
+    }});
+    update_val_bp();
+    return this; 
+  }
+  
+  void update_val_bp() {
+    if (hasvalbutton) {
+      for (int i = 0 ; i < entry_nb ; i++) {
+        int ind = i + explorer_list.entry_pos;
+        if (ind != gobackindex && ind > explorer_blocs.size() && 
+            ind - explorer_blocs.size() < explorer_values.size()+gobackspace) {
+          sValue val = explorer_values.get(ind-gobackspace - explorer_blocs.size());
+          if (val.type.equals("str") || val.type.equals("col") || 
+              val.type.equals("int") || val.type.equals("flt") || val.type.equals("boo")) values_button.get(i).show();
+          else values_button.get(i).hide();
+        } else values_button.get(i).hide();
+      }
+    }
+  }
+  
+  nTaskPanel task;
+  ArrayList<nCtrlWidget> values_button;
+  boolean hasvalbutton = false;
+  int entry_nb = 5;
+  
+  nExplorer(nShelf s) {
+    super(s, s.ref_size*10, s.ref_size*9);
+    explorer_entry = new ArrayList<String>();
+    explorer_blocs = new ArrayList<sValueBloc>();
+    explorer_values = new ArrayList<sValue>();
+    values_button = new ArrayList<nCtrlWidget>();
+    myshelf = new nShelf(shelf.shelfPanel, shelf.space_factor);
+    myshelf.addSeparator(0.25);
+    myshelf.ref.setParent(ref);
+    explorer_list = myshelf.addList(entry_nb, 10, 1).setTextAlign(LEFT)
+      .addEventChange_Builder(new Runnable() { 
+      public void run() {
+        int ind = ((nList)builder).last_choice_index;
+        if (ind == gobackindex && explored_bloc != null && explored_bloc != starting_bloc) {
+          explored_bloc = explored_bloc.parent;
+          selected_bloc = null;
+          selected_value = null;
+          update_list();
+          runEvents(eventChangeRun);
+          
+        } else if (ind != gobackindex && ind < explorer_blocs.size()+gobackspace) {
+          if (selected_bloc == explorer_blocs.get(ind-gobackspace) && access_child) {
+            explored_bloc = selected_bloc;
+            selected_bloc = null;
+            selected_value = null;
+            update_list();
+            runEvents(eventChangeRun);
+          } else {
+            selected_bloc = explorer_blocs.get(ind-gobackspace);
+            selected_value = null;
+            update_info();
+            runEvents(eventChangeRun);
+          }
+        } else if (ind != gobackindex && ind - explorer_blocs.size() < explorer_values.size()+gobackspace) {
+          selected_bloc = null;
+          selected_value = explorer_values.get(ind-gobackspace - explorer_blocs.size());
+          
+          update_info();
+          runEvents(eventChangeRun);
+        } 
+      } } )
+      ;
+      
+    bloc_info = myshelf.addSeparator(0.25)
+      .addDrawer(1.4)
+        .addModel("Label-S4", "Selected Bloc :").setTextAlignment(LEFT, TOP);
+    
+    info_drawer = myshelf.addDrawer(1.9);
+      
+    val_info = info_drawer
+        .addModel("Label-S4", "Selected Value :").setTextAlignment(LEFT, TOP).setPY(ref_size * 0.4);
+    
+    update_list();
+    
+  }
+  void selectEntry(String r) {
+    int i = 0;
+    for (Map.Entry me : explored_bloc.blocs.entrySet()) {
+      if (me.getKey().equals(r)) break;
+      i++; }
+    if (i < explorer_list.listwidgets.size()) explorer_list.listwidgets.get(i).setOn();
+  }
+  void update_info() {
+    update_val_bp();
+    if (selected_bloc != null) 
+      bloc_info.setText("Selected Bloc :\n " + selected_bloc.type + " " + selected_bloc.ref);
+    else bloc_info.setText("Selected Bloc : ");
+    if (selected_value != null && val_info != null) 
+      val_info.setText("Selected Value : " + selected_value.type + " " + selected_value.ref
+                      +"\n = " + selected_value.getString() );
+    else if (val_info != null) val_info.setText("Selected Value : " );
+  }
+  
+  void update() {
+    selected_bloc = null;
+    selected_value = null;
+    update_list();
+  }
+  void update_list() {
+    explorer_entry.clear();
+    explorer_blocs.clear();
+    explorer_values.clear();
+    if (explored_bloc != null) {
+      //println(); println(explored_bloc.getHierarchy(false));
+      if (!hidegoback) {
+        if (explored_bloc != starting_bloc) explorer_entry.add("..");
+        else explorer_entry.add("");
+      }
+      for (Map.Entry me : explored_bloc.blocs.entrySet()) {
+        sValueBloc cvb = (sValueBloc)me.getValue();
+        explorer_blocs.add(cvb); 
+        explorer_entry.add(cvb.ref + " " + cvb.use);
+        //explorer_entry.add((String)me.getKey());
+      }
+      for (Map.Entry me : explored_bloc.values.entrySet()) {
+        explorer_values.add((sValue)me.getValue()); 
+        explorer_entry.add("   - "+(String)me.getKey());
+      }
+    }
+    explorer_list.setEntrys(explorer_entry);
+    update_info();
+  }
+}
+
+
+
+
+
 class nList extends nDrawer {
   
   //nPanelDrawer panel_drawer = null;
@@ -803,6 +1051,9 @@ class nList extends nDrawer {
   String last_choice_text = null;
   
   ArrayList<Runnable> eventChangeRun = new ArrayList<Runnable>();
+  ArrayList<Runnable> eventScrollRun = new ArrayList<Runnable>();
+  nList addEventScroll(Runnable r)       { eventScrollRun.add(r); return this; }
+  
   nList addEventChange(Runnable r)       { eventChangeRun.add(r); return this; }
   
   nList addEventChange_Builder(Runnable r) { eventChangeRun.add(r); r.builder = this; return this; }
@@ -867,6 +1118,7 @@ class nList extends nDrawer {
         //  listwidgets.get(last_choice_index).setOn(); event_active = true; }
         
         update_list();
+        runEvents(eventScrollRun);
       }});
     setListLength(_ent_nb);
     

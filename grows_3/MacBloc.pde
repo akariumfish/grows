@@ -37,6 +37,165 @@
 //    super.clear(); return this; }
 //}
 
+class MVecCtrl extends Macro_Bloc { 
+  void setValue(sValue v) { 
+    if (v.type.equals("vec")) {
+      if (val_run != null && cible != null) cible.removeEventChange(val_run);
+      if (in1_run != null) in1.removeEventReceive(in1_run);
+      if (in2_run != null) in2.removeEventReceive(in2_run);
+      val_cible.set(v.ref);
+      cible = v; val_field.setLinkedValue(cible);
+      val_field.setLook(gui.theme.getLook("MC_Element_Field"));
+      vval = (sVec)cible;
+      out.send(newPacketVec(vval.get()));
+      val_run = new Runnable() { public void run() { out.send(newPacketVec(vval.get())); }};
+      in1_run = new Runnable() { public void run() { 
+        if (in1.getLastPacket() != null && in1.getLastPacket().isBang()) { 
+          if (valMAG.get()) {
+            PVector p = new PVector().set(vval.get());
+            p.setMag(p.mag() + mod_f);
+            vval.set(p);
+          } else if (valROT.get()) {
+            PVector p = new PVector(vval.get().mag(), 0);
+            p.rotate(vval.get().heading() + mod_f);
+            vval.set(p);
+          } else if (valADD.get()) {
+            PVector p = new PVector().set(vval.get());
+            p.x += mod_vec.x; p.y += mod_vec.y;
+            vval.set(p);
+          } 
+        }
+      } };
+      in2_run = new Runnable() { public void run() { 
+        if (in2.getLastPacket() != null && in2.getLastPacket().isBang()) { 
+          if (valMAG.get()) {
+            PVector p = new PVector().set(vval.get());
+            p.setMag(p.mag() - mod_f);
+            vval.set(p);
+          } else if (valROT.get()) {
+            PVector p = new PVector(vval.get().mag(), 0);
+            p.rotate(vval.get().heading() - mod_f);
+            vval.set(p);
+          } else if (valADD.get()) {
+            PVector p = new PVector().set(vval.get());
+            p.x -= mod_vec.x; p.y -= mod_vec.y;
+            vval.set(p); //logln("setvec");
+          } 
+        }
+      } };
+      v.addEventChange(val_run);
+      in1.addEventReceive(in1_run);
+      in2.addEventReceive(in2_run);
+    }
+  }
+  Runnable val_run, in1_run, in2_run;
+  sVec vval;
+  Macro_Connexion in1, in2, in_m, out;
+  sStr val_cible; 
+  sBoo search_folder;
+  sValue cible;
+  nLinkedWidget ref_field, search_view;
+  nWatcherWidget val_field;
+  nLinkedWidget widgMAG, widgROT, widgADD; 
+  sBoo valMAG, valROT, valADD;
+  float mod_f = 0; PVector mod_vec;
+  nLinkedWidget mod_view1, mod_view2;
+  sStr val_mod1, val_mod2; 
+  MVecCtrl(Macro_Sheet _sheet, sValueBloc _bloc, sValue v) { 
+    super(_sheet, "vecCtrl", "vecCtrl", _bloc); 
+    
+    val_cible = newStr("cible", "cible", "");
+    search_folder = newBoo("search_folder", "search_folder", false);
+    mod_vec = new PVector();
+    val_mod1 = newStr("mod1", "mod1", "0");
+    String t = val_mod1.get();
+    if (t.length() > 0) {
+      if (t.equals("0") || t.equals("0.0")) { mod_f = 0; mod_vec.x = 0; }
+      else if (float(t) != 0) { mod_f = float(t); mod_vec.x = mod_f; }
+    }
+    val_mod2 = newStr("mod2", "mod2", "0");
+    t = val_mod2.get();
+    if (t.length() > 0) {
+      if (t.equals("0") || t.equals("0.0")) { mod_vec.y = 0; }
+      else if (float(t) != 0) { mod_vec.y = float(t); }
+    }
+    ref_field = addEmptyL(0).addLinkedModel("MC_Element_Field").setLinkedValue(val_cible);
+    ref_field.setInfo("value");
+    
+    val_cible.addEventChange(new Runnable(this) { public void run() { 
+      get_cible(); } } );
+    
+    search_view = ref_field.getDrawer().addLinkedModel("MC_Element_MiniButton").setLinkedValue(search_folder);
+    search_folder.addEventChange(new Runnable(this) { public void run() { 
+      get_cible(); } } );
+    
+    val_field = addEmptyL(0).addWatcherModel("MC_Element_Text");
+    addEmpty(1); addEmpty(1);
+    
+    in1 = addInput(0, "+").setFilterBang();
+    in2 = addInput(0, "-").setFilterBang();
+    in_m = addInput(0, "modifier").addEventReceive(new Runnable() { public void run() { 
+      if (in_m.getLastPacket() != null && in_m.getLastPacket().isFloat() && 
+          in_m.getLastPacket().asFloat() != mod_f) {
+        mod_f = in_m.getLastPacket().asFloat(); 
+        mod_view1.setText(trimStringFloat(mod_f)); 
+        mod_view2.setText("-"); 
+      } else if (in_m.getLastPacket() != null && in_m.getLastPacket().isVec() && 
+          !in_m.getLastPacket().equalsVec(mod_vec)) {
+        mod_vec.set(in_m.getLastPacket().asVec()); 
+        mod_view1.setText(trimStringFloat(mod_vec.x)); 
+        mod_view2.setText(trimStringFloat(mod_vec.y)); 
+      }
+    } });
+    
+    
+    out = addOutput(1, "out");
+    
+    mod_view1 = addEmptyS(1).addLinkedModel("MC_Element_SField").setLinkedValue(val_mod1);
+    mod_view1.addEventFieldChange(new Runnable() { public void run() { 
+      String t = mod_view1.getText();
+      if (t.length() > 0) {
+        if (t.equals("0") || t.equals("0.0")) { mod_f = 0; mod_vec.x = 0; }
+        else if (float(t) != 0) { mod_f = float(t); mod_vec.x = mod_f; }
+      }
+    } });
+    mod_view2 = addEmptyS(1).addLinkedModel("MC_Element_SField").setLinkedValue(val_mod2);
+    mod_view2.addEventFieldChange(new Runnable() { public void run() { 
+      String t = mod_view2.getText();
+      if (t.length() > 0) {
+        if (t.equals("0") || t.equals("0.0")) { mod_vec.y = 0; }
+        else if (float(t) != 0) { mod_vec.y = float(t); }
+      }
+    } });
+    
+    valMAG = newBoo("valMAG", "valMAG", false);
+    valROT = newBoo("valROT", "valROT", false);
+    valADD = newBoo("valADD", "valADD", false);
+    
+    Macro_Element e = addEmptyL(0);
+    widgMAG = e.addLinkedModel("MC_Element_Button_Selector_1", "Mag").setLinkedValue(valMAG);
+    widgROT = e.addLinkedModel("MC_Element_Button_Selector_2", "Rot").setLinkedValue(valROT);
+    widgADD = e.addLinkedModel("MC_Element_Button_Selector_4", "Add").setLinkedValue(valADD);
+    widgMAG.addExclude(widgROT).addExclude(widgADD);
+    widgROT.addExclude(widgMAG).addExclude(widgADD);
+    widgADD.addExclude(widgROT).addExclude(widgMAG);
+    
+    if (v != null) setValue(v);
+    else {
+      get_cible();
+    }
+  }
+  void get_cible() {
+    val_field.setLook(gui.theme.getLook("MC_Element_Text")).setText("");
+    if (!search_folder.get()) cible = sheet.value_bloc.getValue(val_cible.get());
+    else if (sheet != mmain()) cible = sheet.sheet.value_bloc.getValue(val_cible.get());
+    if (cible != null) setValue(cible);
+  }
+  MVecCtrl clear() {
+    if (val_run != null && cible != null) cible.removeEventChange(val_run);
+    super.clear(); return this; }
+}
+
 class MData extends Macro_Bloc {
   void setValue(sValue v) {
     if (val_run != null && cible != null) cible.removeEventChange(val_run);
@@ -530,6 +689,7 @@ class MRamp extends Macro_Bloc {
 class MCrossVec extends Macro_Bloc {
   Macro_Connexion in_m, out_d, out_t;
   PVector dir = new PVector();
+  PVector pdir = new PVector();
   sFlt val_mag;
   nLinkedWidget mag_field;
   
@@ -560,173 +720,27 @@ class MCrossVec extends Macro_Bloc {
       }
       if ( dir.magSq() > 0) {
         dir.setMag(val_mag.get());
-        out_d.send(newPacketVec(dir));
+        if (!pdir.equals(dir)) out_d.send(newPacketVec(dir));
+        pdir.set(dir);
         out_t.send(newPacketBang());
-        //logln("bang");
-      } else {
+      } else if (!pdir.equals(dir)) {
         out_d.send(newPacketVec(dir));
+        pdir.set(dir);
       }
     } } );
   }
+  
   MCrossVec clear() {
     super.clear(); return this; }
   
 }
 
-class MVecCtrl extends Macro_Bloc { 
-  void setValue(sValue v) { 
-    if (v.type.equals("vec")) {
-      if (val_run != null && cible != null) cible.removeEventChange(val_run);
-      if (in1_run != null) in1.removeEventReceive(in1_run);
-      if (in2_run != null) in2.removeEventReceive(in2_run);
-      val_cible.set(v.ref);
-      cible = v; val_field.setLinkedValue(cible);
-      val_field.setLook(gui.theme.getLook("MC_Element_Field"));
-      vval = (sVec)cible;
-      out.send(newPacketVec(vval.get()));
-      val_run = new Runnable() { public void run() { out.send(newPacketVec(vval.get())); }};
-      in1_run = new Runnable() { public void run() { 
-        if (in1.getLastPacket() != null && in1.getLastPacket().isBang()) { 
-          if (valMAG.get()) {
-            PVector p = new PVector().set(vval.get());
-            p.setMag(p.mag() + mod_f);
-            vval.set(p);
-          } else if (valROT.get()) {
-            PVector p = new PVector(vval.get().mag(), 0);
-            p.rotate(vval.get().heading() + mod_f);
-            vval.set(p);
-          } else if (valADD.get()) {
-            PVector p = new PVector().set(vval.get());
-            p.x += mod_vec.x; p.y += mod_vec.y;
-            vval.set(p);
-          } 
-        }
-      } };
-      in2_run = new Runnable() { public void run() { 
-        if (in2.getLastPacket() != null && in2.getLastPacket().isBang()) { 
-          if (valMAG.get()) {
-            PVector p = new PVector().set(vval.get());
-            p.setMag(p.mag() - mod_f);
-            vval.set(p);
-          } else if (valROT.get()) {
-            PVector p = new PVector(vval.get().mag(), 0);
-            p.rotate(vval.get().heading() - mod_f);
-            vval.set(p);
-          } else if (valADD.get()) {
-            PVector p = new PVector().set(vval.get());
-            p.x -= mod_vec.x; p.y -= mod_vec.y;
-            vval.set(p); //logln("setvec");
-          } 
-        }
-      } };
-      v.addEventChange(val_run);
-      in1.addEventReceive(in1_run);
-      in2.addEventReceive(in2_run);
-    }
-  }
-  Runnable val_run, in1_run, in2_run;
-  sVec vval;
-  Macro_Connexion in1, in2, in_m, out;
-  sStr val_cible; 
-  sValue cible;
-  nLinkedWidget ref_field;
-  nWatcherWidget val_field;
-  nLinkedWidget widgMAG, widgROT, widgADD; 
-  sBoo valMAG, valROT, valADD;
-  float mod_f = 0; PVector mod_vec;
-  nLinkedWidget mod_view1, mod_view2;
-  sStr val_mod1, val_mod2; 
-  MVecCtrl(Macro_Sheet _sheet, sValueBloc _bloc, sValue v) { 
-    super(_sheet, "vecCtrl", "vecCtrl", _bloc); 
-    
-    val_cible = newStr("cible", "cible", "");
-    mod_vec = new PVector();
-    val_mod1 = newStr("mod1", "mod1", "0");
-    String t = val_mod1.get();
-    if (t.length() > 0) {
-      if (t.equals("0") || t.equals("0.0")) { mod_f = 0; mod_vec.x = 0; }
-      else if (float(t) != 0) { mod_f = float(t); mod_vec.x = mod_f; }
-    }
-    val_mod2 = newStr("mod2", "mod2", "0");
-    t = val_mod2.get();
-    if (t.length() > 0) {
-      if (t.equals("0") || t.equals("0.0")) { mod_vec.y = 0; }
-      else if (float(t) != 0) { mod_vec.y = float(t); }
-    }
-    ref_field = addEmptyL(0).addLinkedModel("MC_Element_Field").setLinkedValue(val_cible);
-    ref_field.setInfo("value");
-    val_cible.addEventChange(new Runnable(this) { public void run() { 
-      val_field.setLook(gui.theme.getLook("MC_Element_Text"));
-      cible = sheet.value_bloc.getValue(val_cible.get());
-      if (cible != null) setValue(cible); } } );
-    
-    val_field = addEmptyL(0).addWatcherModel("MC_Element_Text");
-    addEmpty(1); addEmpty(1);
-    
-    in1 = addInput(0, "+").setFilterBang();
-    in2 = addInput(0, "-").setFilterBang();
-    in_m = addInput(0, "modifier").addEventReceive(new Runnable() { public void run() { 
-      if (in_m.getLastPacket() != null && in_m.getLastPacket().isFloat() && 
-          in_m.getLastPacket().asFloat() != mod_f) {
-        mod_f = in_m.getLastPacket().asFloat(); 
-        mod_view1.setText(trimStringFloat(mod_f)); 
-        mod_view2.setText("-"); 
-      } else if (in_m.getLastPacket() != null && in_m.getLastPacket().isVec() && 
-          !in_m.getLastPacket().equalsVec(mod_vec)) {
-        mod_vec.set(in_m.getLastPacket().asVec()); 
-        mod_view1.setText(trimStringFloat(mod_vec.x)); 
-        mod_view2.setText(trimStringFloat(mod_vec.y)); 
-      }
-    } });
-    
-    
-    out = addOutput(1, "out");
-    
-    mod_view1 = addEmptyS(1).addLinkedModel("MC_Element_SField").setLinkedValue(val_mod1);
-    mod_view1.addEventFieldChange(new Runnable() { public void run() { 
-      String t = mod_view1.getText();
-      if (t.length() > 0) {
-        if (t.equals("0") || t.equals("0.0")) { mod_f = 0; mod_vec.x = 0; }
-        else if (float(t) != 0) { mod_f = float(t); mod_vec.x = mod_f; }
-      }
-    } });
-    mod_view2 = addEmptyS(1).addLinkedModel("MC_Element_SField").setLinkedValue(val_mod2);
-    mod_view2.addEventFieldChange(new Runnable() { public void run() { 
-      String t = mod_view2.getText();
-      if (t.length() > 0) {
-        if (t.equals("0") || t.equals("0.0")) { mod_vec.y = 0; }
-        else if (float(t) != 0) { mod_vec.y = float(t); }
-      }
-    } });
-    
-    valMAG = newBoo("valMAG", "valMAG", false);
-    valROT = newBoo("valROT", "valROT", false);
-    valADD = newBoo("valADD", "valADD", false);
-    
-    Macro_Element e = addEmptyL(0);
-    widgMAG = e.addLinkedModel("MC_Element_Button_Selector_1", "Mag").setLinkedValue(valMAG);
-    widgROT = e.addLinkedModel("MC_Element_Button_Selector_2", "Rot").setLinkedValue(valROT);
-    widgADD = e.addLinkedModel("MC_Element_Button_Selector_4", "Add").setLinkedValue(valADD);
-    widgMAG.addExclude(widgROT).addExclude(widgADD);
-    widgROT.addExclude(widgMAG).addExclude(widgADD);
-    widgADD.addExclude(widgROT).addExclude(widgMAG);
-    
-    if (v != null) setValue(v);
-    else {
-      cible = sheet.value_bloc.getValue(val_cible.get());
-      if (cible != null) setValue(cible);
-    }
-  }
-  MVecCtrl clear() {
-    if (val_run != null && cible != null) cible.removeEventChange(val_run);
-    super.clear(); return this; }
-}
-
 class MKeyboard extends Macro_Bloc {
   Macro_Connexion out_t;
-  nLinkedWidget key_field; 
+  nLinkedWidget key_field, ctrl_swt; 
   sStr val_cible; 
-  sBoo v1, v2;
+  sBoo val_swtch, val_trig, ctrl_filter;
+  boolean swt_state = false;
   MKeyboard(Macro_Sheet _sheet, sValueBloc _bloc) { 
     super(_sheet, "keyb", "keyb", _bloc); 
     val_cible = newStr("cible", "cible", "");
@@ -735,27 +749,36 @@ class MKeyboard extends Macro_Bloc {
   void init() {
     key_field = addEmptyS(0).addLinkedModel("MC_Element_SField").setLinkedValue(val_cible);
     
-    v1 = newBoo("v1", true);
-    v2 = newBoo("v2", false);
+    val_swtch = newBoo("v1", true);
+    val_trig = newBoo("v2", false);
+    ctrl_filter = newBoo("ctrl_filter", false);
     
-    addSelectS(0, v1, v2, "Swtch", "Trig");
+    ctrl_swt = key_field.getDrawer().addLinkedModel("MC_Element_MiniButton").setLinkedValue(ctrl_filter);
+    ctrl_swt.setInfo("desactive send when macros are hided");
+    
+    addSelectS(0, val_swtch, val_trig, "Swtch", "Trig");
     
     out_t = addOutput(1, "out")
       .setDefBang();
     key_field.addEventFrame(new Runnable() { public void run() {
-      if ( v1.get() && key_field.getText().length() > 0 && 
+      if ( val_swtch.get() && key_field.getText().length() > 0 && 
            mmain().inter.input.getState(key_field.getText().charAt(0)) && !gui.field_used && 
-           !mmain().screen_gui.field_used ) 
-        out_t.send(newPacketBool(true));
-      else if (v1.get() && key_field.getText().length() > 0) 
-        out_t.send(newPacketBool(false));
-      if ( v2.get() && !inib && mmain().inter.input.keyAll.trigClick && key_field.getText().length() > 0 && 
+           !mmain().screen_gui.field_used && 
+           (!ctrl_filter.get() || mmain().show_macro.get())) {
+        if (!swt_state) out_t.send(newPacketBool(true));
+        swt_state = true; }
+      else if (val_swtch.get() && key_field.getText().length() > 0) {
+        if (swt_state) out_t.send(newPacketBool(false));
+        swt_state = false; }
+      if (val_trig.get() && !inib && mmain().inter.input.keyAll.trigClick && 
+          key_field.getText().length() > 0 && 
           key_field.getText().charAt(0) == mmain().inter.input.getLastKey() && !gui.field_used && 
-           !mmain().screen_gui.field_used ) {
+          !mmain().screen_gui.field_used  && 
+          (!ctrl_filter.get() || mmain().show_macro.get())) {
         out_t.send(newPacketBang());
         inib = true;
       }
-      if ( v2.get() && inib && mmain().inter.input.keyAll.trigUClick && key_field.getText().length() > 0 && 
+      if ( val_trig.get() && inib && mmain().inter.input.keyAll.trigUClick && key_field.getText().length() > 0 && 
           key_field.getText().charAt(0) == mmain().inter.input.getLastKey()) {
         inib = false;
       }
@@ -2289,38 +2312,147 @@ class MMouse extends Macro_Bloc {
     mmain().inter.removeEventFrame(run);
     super.clear(); return this; }
 }
+
 class MComment extends Macro_Bloc { 
-  sBoo vtop;
-  sStr val_com, val_screen; 
-  nLinkedWidget com_field, screen_field, vline; 
-  nWatcherWidget screen_txt;
+  //sBoo vtop;
+  //sStr val_screen; 
+  //nLinkedWidget screen_field, vline;
+  //nWatcherWidget screen_txt;
+  Macro_Connexion in;
+  
+  Macro_Element elem_com, elem_param;
+  
+  sStr val_com;
+  sFlt w_f, h_f;
+  sBoo param_view;
+  
+  nLinkedWidget com_field, param_ctrl;
+  nCtrlWidget w_add, w_sub, h_add, h_sub;
+  Runnable pview_run;
+  
+  boolean rebuilding = false;
+  
   MComment(Macro_Sheet _sheet, sValueBloc _bloc) { 
     super(_sheet, "com", "com", _bloc); 
-    val_com = newStr("val_com", "val_com", "");
-    val_screen = newStr("screen_field", "screen_field", "");
-    vtop = newBoo("vtop", "vtop", true);
     
-    com_field = addEmptyL(0).addLinkedModel("MC_Element_Field").setLinkedValue(val_com);
-    Macro_Element e = addEmptyL(0);
-    screen_field = e.addLinkedModel("MC_Element_Field").setLinkedValue(val_screen);
-    vline = e.addLinkedModel("MC_Element_MiniButton").setLinkedValue(vtop);
-    screen_txt = mmain().screen_gui.theme.newWatcherWidget(mmain().screen_gui, "Label-S1")
-      .setLinkedValue(val_screen);
-    screen_txt.setFont(int(ref_size/1.4))
-      .setTextAlignment(CENTER, CENTER);
-    if (vtop.get()) screen_txt.setPY(window_head);
-    else screen_txt.setPY(window_head + ref_size*2);
-    vtop.addEventChange(new Runnable() { public void run() { 
-      if (vtop.get()) screen_txt.setPY(window_head);
-      else screen_txt.setPY(window_head + ref_size);
-    } });
-    screen_txt.setPX(mmain().screen_gui.view.size.x/2.2);
-    addEmpty(1); 
+    val_com = newStr("val_com", "val_com", "");
+    w_f = newFlt("w_f", "w_f", 3.875);
+    h_f = newFlt("h_f", "h_f", 0.875);
+    param_view = newBoo("com_param_view", "com_param_view", true);
+    
+    if (param_view.get()) {
+      in = addInput(0, "in").addEventReceive(new Runnable() { public void run() { 
+        if (in.getLastPacket() != null) logln(val_com.get());
+      } });
+      
+      elem_param = addEmptyL(1);
+      w_sub = elem_param.addCtrlModel("MC_Element_Button_Selector_1", "W-")
+        .setRunnable(new Runnable() { public void run() { 
+        if (w_f.get() > 3.875) {
+          w_f.set(3.875);
+          rebuild();
+        }
+      } });
+      w_add = elem_param.addCtrlModel("MC_Element_Button_Selector_2", "W+")
+        .setRunnable(new Runnable() { public void run() { 
+        if (w_f.get() < 5.75) {
+          w_f.set(5.75);
+          rebuild();
+        }
+      } });
+      h_sub = elem_param.addCtrlModel("MC_Element_Button_Selector_3", "H-")
+        .setRunnable(new Runnable() { public void run() { 
+        if (h_f.get() > 1.125) {
+          h_f.add(-1.125);
+          rebuild();
+        }
+      } });
+      h_add = elem_param.addCtrlModel("MC_Element_Button_Selector_4", "H+")
+        .setRunnable(new Runnable() { public void run() { 
+        if (h_f.get() < 5) {
+          h_f.add(1.125);
+          rebuild();
+        }
+      } });
+      w_sub.setFont(int(ref_size/2.8)); w_add.setFont(int(ref_size/2.8));
+      h_sub.setFont(int(ref_size/2.8)); h_add.setFont(int(ref_size/2.8));
+    } 
+   
+    elem_com = addEmptyS(0);
+    param_ctrl = elem_com.addLinkedModel("MC_Element_MiniButton", "S");
+    param_ctrl.setSwitch()
+      .setSwitchState(param_view.get())
+      ;
+    param_ctrl.setPX(-ref_size*1 / 16).setInfo("show param");
+    pview_run = new Runnable() { public void run() { 
+      param_view.set(!param_view.get());
+      rebuild();
+    } };
+    param_ctrl.addEventSwitchOn(pview_run);
+    param_ctrl.addEventSwitchOff(pview_run);
+    
+    com_field = elem_com.addLinkedModel("MC_Element_Field").setLinkedValue(val_com);
+    com_field.setPosition(ref_size*3 / 16, ref_size * 1 / 16)
+      .setSize(ref_size * w_f.get(), ref_size * h_f.get())
+      .setTextAlignment(LEFT, TOP)
+      .setTextAutoReturn(true)
+      .setFont(int(ref_size / 2));
+    
+    
+    if (w_f.get() >= 2) addEmptyS(1);
+    if (h_f.get() > 1) addEmptyS(1);
+    if (h_f.get() > 2) addEmptyS(1);
+    if (h_f.get() > 4) addEmptyS(1);
+    if (h_f.get() > 5) addEmptyS(1);
+    
+    //val_screen = newStr("screen_field", "screen_field", "");
+    //vtop = newBoo("vtop", "vtop", true);
+    
+    //Macro_Element e = addEmptyL(0);
+    //screen_field = e.addLinkedModel("MC_Element_Field").setLinkedValue(val_screen);
+    //vline = e.addLinkedModel("MC_Element_MiniButton").setLinkedValue(vtop);
+    //screen_txt = mmain().screen_gui.theme.newWatcherWidget(mmain().screen_gui, "Label-S1")
+    //  .setLinkedValue(val_screen);
+    //screen_txt.setFont(int(ref_size/1.4))
+    //  .setTextAlignment(CENTER, CENTER);
+    //if (vtop.get()) screen_txt.setPY(window_head);
+    //else screen_txt.setPY(window_head + ref_size*2);
+    //vtop.addEventChange(new Runnable() { public void run() { 
+    //  if (vtop.get()) screen_txt.setPY(window_head);
+    //  else screen_txt.setPY(window_head + ref_size);
+    //} });
+    //screen_txt.setPX(mmain().screen_gui.view.size.x/2.2);
+    //addEmpty(1); 
+  }
+  sValueBloc _bloc;
+  void rebuild() {
+    if (!rebuilding) {
+      //logln("redo");
+      rebuilding = true;
+      sVec v = (sVec)(value_bloc.getBloc("settings").getValue("position"));
+      v.setx(v.x() - ref_size * 2); v.sety(v.y() - ref_size * 3);
+      mmain().szone_clear_select();
+      szone_select();
+      mmain().copy_to_tmpl();
+      szone_select();
+      mmain().del_selected();
+      mmain().inter.addEventNextFrame(new Runnable() { public void run() { 
+        mmain().inter.addEventNextFrame(new Runnable() { public void run() { 
+          mmain().paste_tmpl();
+        } } );
+      } } );
+      //logln("redo done");
+    }
   }
   MComment clear() {
-    screen_txt.clear();
+    //screen_txt.clear();
     super.clear(); return this; }
+  MComment toLayerTop() {
+    super.toLayerTop(); 
+    if (com_field != null) com_field.toLayerTop(); 
+    if (param_ctrl != null) param_ctrl.toLayerTop(); return this; }
 }
+
 /*
 channel call / listen : 
   packet whormhole
@@ -2669,7 +2801,7 @@ class MVar extends Macro_Bloc {
     super(_sheet, "var", "var", _bloc); 
     
     val_view = newStr("val", "val", "");
-    setup_send = newBoo("stp_snd", "stp_snd", true);
+    setup_send = newBoo("stp_snd", "stp_snd", false);
     auto_send = newBoo("auto_send", "auto_send", false);
     
     bval = newBoo("bval", "bval", false);
@@ -2790,8 +2922,9 @@ class MSheetIn extends Macro_Bloc {
     } });
     view.setLinkedValue(val_view);
     elem = addSheetInput(0, "in");
-    val_title.addEventChange(new Runnable() { public void run() { 
-    if (elem.sheet_connect != null) elem.sheet_connect.setInfo(val_title.get()); } });
+    elem.sheet_connect.setInfo(val_view.get());
+    //val_title.addEventChange(new Runnable() { public void run() { 
+    //if (elem.sheet_connect != null) elem.sheet_connect.setInfo(val_title.get()); } });
   }
   MSheetIn clear() {
     super.clear(); return this; }
@@ -2810,8 +2943,9 @@ class MSheetOut extends Macro_Bloc {
     } });
     view.setLinkedValue(val_view);
     elem = addSheetOutput(0, "out");
-    val_title.addEventChange(new Runnable() { public void run() { 
-    if (elem.sheet_connect != null) elem.sheet_connect.setInfo(val_title.get()); } });
+    elem.sheet_connect.setInfo(val_view.get());
+    //val_title.addEventChange(new Runnable() { public void run() { 
+    //if (elem.sheet_connect != null) elem.sheet_connect.setInfo(val_title.get()); } });
   }
   MSheetOut clear() {
     super.clear(); return this; }
@@ -2875,6 +3009,11 @@ class Macro_Bloc extends Macro_Abstract {
   }
   Macro_Element addEmptyB(int c) { 
     Macro_Element m = new Macro_Element(this, "", "MC_Element_Big", null, NO_CO, NO_CO, false);
+    addElement(c, m); 
+    return m;
+  }
+  Macro_Element addEmptyXB(int c) { 
+    Macro_Element m = new Macro_Element(this, "", "MC_Element_Bigger", null, NO_CO, NO_CO, false);
     addElement(c, m); 
     return m;
   }
@@ -2951,12 +3090,12 @@ class Macro_Bloc extends Macro_Abstract {
     for (Macro_Element m : elements) {
       if (m.connect != null) for (Macro_Connexion co : m.connect.connected_inputs) 
         r += co.descr + INFO_TOKEN + m.connect.descr + OBJ_TOKEN;
-      //if (m.connect != null) for (Macro_Connexion co : m.connect.connected_outputs) 
-      //  r += m.connect.descr + INFO_TOKEN + co.descr + OBJ_TOKEN;
-      //if (m.sheet_connect != null) for (Macro_Connexion co : m.sheet_connect.connected_inputs) 
-      //  r += co.descr + INFO_TOKEN + m.sheet_connect.descr + OBJ_TOKEN;
-      //if (m.sheet_connect != null) for (Macro_Connexion co : m.sheet_connect.connected_outputs) 
-      //  r += m.sheet_connect.descr + INFO_TOKEN + co.descr + OBJ_TOKEN;
+      if (m.connect != null) for (Macro_Connexion co : m.connect.connected_outputs) 
+        r += m.connect.descr + INFO_TOKEN + co.descr + OBJ_TOKEN;
+      if (m.sheet_connect != null) for (Macro_Connexion co : m.sheet_connect.connected_inputs) 
+        r += co.descr + INFO_TOKEN + m.sheet_connect.descr + OBJ_TOKEN;
+      if (m.sheet_connect != null) for (Macro_Connexion co : m.sheet_connect.connected_outputs) 
+        r += m.sheet_connect.descr + INFO_TOKEN + co.descr + OBJ_TOKEN;
     }
     return r; 
   }

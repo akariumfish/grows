@@ -183,8 +183,13 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
         if (!buildingLine && elem.bloc.mmain().gui.in.getClick("MouseRight")) for (Macro_Connexion m : connected_inputs) {
           if (distancePointToLine(elem.bloc.mmain().gui.mouseVector.x, elem.bloc.mmain().gui.mouseVector.y, 
               getCenter().x, getCenter().y, m.getCenter().x, m.getCenter().y) < ref.look.outlineWeight) {
+                
+                
+                
             disconnect_from(m);
-            sheet.redo_link();
+            
+            
+            
             break;
           }
         }
@@ -339,12 +344,22 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
   
   Macro_Connexion clear() {
     super.clear();
-    for (int i = connected_inputs.size() - 1 ; i >= 0 ; i--) disconnect_from(connected_inputs.get(i));
-    for (int i = connected_outputs.size() - 1 ; i >= 0 ; i--) disconnect_from(connected_outputs.get(i));
+    clear_link();
     ref_draw.clear();
     return this;
   }
   
+  Macro_Connexion clear_link() {
+    for (int i = connected_inputs.size() - 1 ; i >= 0 ; i--) disconnect_from(connected_inputs.get(i));
+    for (int i = connected_outputs.size() - 1 ; i >= 0 ; i--) disconnect_from(connected_outputs.get(i));
+    return this;
+  }
+  
+  Macro_Connexion clear_link_array() {
+    connected_inputs.clear();
+    connected_outputs.clear();
+    return this;
+  }
   
   boolean connect_to(Macro_Connexion m) {
     if (m != null) {
@@ -367,12 +382,12 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
     return false;
   }
   void disconnect_from(Macro_Connexion m) {
-    if (m != null && connected_inputs.contains(m)) {
+    if (m != null) {// && connected_inputs.contains(m)
       connected_inputs.remove(m);
       m.connected_outputs.remove(this); 
       sheet.remove_link(descr, m.descr);
     } 
-    else if (m != null && connected_outputs.contains(m)) {
+    if (m != null) {// && connected_outputs.contains(m)
       connected_outputs.remove(m);
       m.connected_inputs.remove(this); 
       sheet.remove_link(m.descr, descr);
@@ -404,28 +419,39 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
     for (String m : p.messages) pack_info = pack_info + " " + m;
     sending = true;
     hasSend = 15;
+    //logln(descr+" send");
     packet_to_send.add(p);
-    sheet.ask_packet_process();
+    sheet.ask_packet_process(this);
     return this;
   }
   ArrayList<Macro_Packet> packet_to_send = new ArrayList<Macro_Packet>();
   
   boolean process_send() {
+    //logln(descr+" process send");
+    
     process_resum = ""; 
     boolean flag = packet_to_send.size() == 0;
     if (!flag) process_resum += descr+" send ";
     for (Macro_Packet p : packet_to_send) {
       process_resum = process_resum + p.getText() + " ";
       if (direct_co != null && direct_co.type == OUTPUT) direct_co.send(p);
-      if (direct_co != null && direct_co.type == INPUT) direct_co.receive(p);
-      int i = 0;
+      if (direct_co != null && direct_co.type == INPUT) direct_co.receive(this, p);
+      int prio = 0;
       for (Macro_Connexion m : connected_inputs) 
-        if (i < m.elem.bloc.priority.get() ) i = m.elem.bloc.priority.get();
-      int c = 0;
-      while (i >= 0 && c < connected_inputs.size()) {
-        for (Macro_Connexion m : connected_inputs) 
-          if (i == m.elem.bloc.priority.get()) { m.receive(p); c++; }
-        i--;
+        if (prio < m.elem.bloc.priority.get() ) prio = m.elem.bloc.priority.get();
+      //logln(descr+" max prio "+prio);
+      int co_done = 0;
+      while (prio >= 0 && co_done < connected_inputs.size()) {
+        //logln("try prio "+prio);
+        for (Macro_Connexion m : connected_inputs) {
+          //logln("try co "+m.elem.descr+" of prio "+m.elem.bloc.priority.get());
+          if (prio == m.elem.bloc.priority.get()) { 
+            //logln("found"); 
+            co_done++; 
+            m.receive(this, p); 
+          }
+        }
+        prio--;
       }
       //for (Macro_Connexion m : connected_inputs) m.receive(p);
     }
@@ -460,32 +486,58 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
   
   Macro_Packet getLastPacket() { return last_packet; }
   
-  void receive(Macro_Packet p) {
+  void receive(Macro_Connexion s, Macro_Packet p) {
     if (filter == null || p.def.equals(filter) || 
         (filter.equals("bin") && (p.def.equals("bool") || p.def.equals("bang"))) ||
         (filter.equals("num") && (p.def.equals("float") || p.def.equals("int"))) ||
-        (filter.equals("val") && (p.def.equals("float") || p.def.equals("int") || p.def.equals("bool"))) ) {
+        (filter.equals("val") && (p.def.equals("float") || p.def.equals("int") || 
+                                  p.def.equals("bool"))) ) {
+      //logln(descr+"receive");
       packet_received.add(p);
-      sheet.ask_packet_process();
+      packet_sender.add(s);
+      sheet.ask_packet_process(this);
     }
   }
   ArrayList<Macro_Packet> packet_received = new ArrayList<Macro_Packet>();
+  ArrayList<Macro_Connexion> packet_sender = new ArrayList<Macro_Connexion>();
   
   String process_resum = "";
   boolean process_receive() {
+    //logln(descr+" process receive");
+    
     process_resum = "";
     boolean flag = packet_received.size() == 0;
     if (!flag) process_resum += descr+" receive ";
-    for (Macro_Packet p : packet_received) {
-      last_packet = p;
-      process_resum = process_resum + p.getText() + " ";
-      for (Runnable r : eventReceiveRun) r.run();
-      if (direct_co != null && direct_co.type == OUTPUT) direct_co.send(p);
-      if (direct_co != null && direct_co.type == INPUT) direct_co.receive(p);
-      msg_view.setText(p.getText());
-      hasReceived = 15;
+    
+    int prio = 0;
+    for (Macro_Connexion m : packet_sender) 
+      if (prio < m.elem.bloc.priority.get()) prio = m.elem.bloc.priority.get();
+    int c = 0;
+    while (prio >= 0 && c < packet_received.size()) {
+      for (int i = 0 ; i < packet_received.size() ; i++) 
+        if (prio == packet_sender.get(i).elem.bloc.priority.get()) { 
+          c++; 
+          last_packet = packet_received.get(i);
+          process_resum = process_resum + last_packet.getText() + " ";
+          for (Runnable r : eventReceiveRun) r.run();
+          if (direct_co != null && direct_co.type == OUTPUT) direct_co.send(last_packet);
+          if (direct_co != null && direct_co.type == INPUT) direct_co.receive(packet_sender.get(i), last_packet);
+          msg_view.setText(last_packet.getText());
+          hasReceived = 15;
+        }
+      prio--;
     }
+    //for (int i = 0 ; i < packet_received.size() ; i++) {
+    //  last_packet = packet_received.get(i);
+    //  process_resum = process_resum + last_packet.getText() + " ";
+    //  for (Runnable r : eventReceiveRun) r.run();
+    //  if (direct_co != null && direct_co.type == OUTPUT) direct_co.send(last_packet);
+    //  if (direct_co != null && direct_co.type == INPUT) direct_co.receive(packet_sender.get(i), last_packet);
+    //  msg_view.setText(last_packet.getText());
+    //  hasReceived = 15;
+    //}
     packet_received.clear();
+    packet_sender.clear();
     return flag;
   }
   
@@ -597,6 +649,18 @@ class Macro_Element extends nDrawer implements Macro_Interf {
     sheet_viewable = was_viewable; //if (sheet_connect != null) sheet_connect.hide(); 
   }
     
+  Macro_Element clear() { 
+    if (connect != null) bloc.sheet.child_connect.remove(connect);
+    if (sheet_connect != null) bloc.sheet.sheet.child_connect.remove(sheet_connect);
+    if (connect != null) connect.clear(); 
+    if (sheet_connect != null) sheet_connect.clear(); 
+    clear_spot();
+    if (spot != null) bloc.sheet.remove_spot(descr);
+    bloc.sheet.child_elements.remove(this);
+    super.clear(); 
+    return this;
+  }
+  
   Macro_Element show() {
     
     back.clearParent(); back.setParent(ref); 
@@ -662,13 +726,4 @@ class Macro_Element extends nDrawer implements Macro_Interf {
     return w.setDrawer(this); 
   }
   
-  Macro_Element clear() { 
-    if (spot != null) bloc.sheet.remove_spot(descr);
-    super.clear(); 
-    if (connect != null) connect.clear(); if (sheet_connect != null) sheet_connect.clear(); 
-    if (connect != null) bloc.sheet.child_connect.remove(connect);
-    if (sheet_connect != null) bloc.sheet.sheet.child_connect.remove(sheet_connect);
-    bloc.sheet.child_elements.remove(this);
-    return this;
-  }
 }

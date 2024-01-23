@@ -446,6 +446,7 @@ class nWidget {
   nWidget setFont(int s) { look.textFont = s; return this; }
   nWidget setTextAlignment(int sx, int sy) { textAlignX = sx; textAlignY = sy; return this; }
   nWidget setTextVisibility(boolean s) { show_text = s; return this; }
+  nWidget setTextAutoReturn(boolean s) { auto_line_return = s; return this; }
   nWidget setInfo(String s) { if (s != null) { infoText = s; showInfo = true; } return this; }
   nWidget setNoInfo() { showInfo = false; return this; }
   
@@ -507,6 +508,7 @@ class nWidget {
     textAlignX = w.textAlignX; textAlignY = w.textAlignY; show_text = w.show_text;
     shapeRound = w.shapeRound; shapeLosange = w.shapeLosange; 
     showInfo = w.showInfo; infoText = str_copy(w.infoText);
+    auto_line_return = w.auto_line_return;
     constrainDlength = w.constrainDlength; constrainD = w.constrainD;
     look.copy(w.look);
     setLayer(w.layer);
@@ -765,6 +767,7 @@ class nWidget {
   private nDrawer ndrawer = null;
   
   private String label, infoText;
+  private boolean auto_line_return = false;
   private float mx = 0, my = 0, pmx = 0, pmy = 0;
   private int cursorPos = 0;
   private int cursorCount = 0;
@@ -876,9 +879,20 @@ class nWidget {
                 ;
         else if (textAlignY == BOTTOM) 
           ty += getLocalSY() - (look.textFont / 10);
-        if (textAlignX == LEFT)        tx += getSY() / 2;
+        if (textAlignX == LEFT)        tx += look.textFont / 4.0;
         else if (textAlignX == CENTER) tx += getSX() / 2;
-        text(l, tx, ty);
+        if (!auto_line_return) text(l, tx, ty);
+        else {
+          int max_l = int(getLocalSX() / (look.textFont / 1.7));
+          int printed_char = 0;
+          int line_cnt = 0;
+          while (printed_char < l.length()) {
+            String line_string = l.substring(line_cnt * max_l, min(max_l * (line_cnt+1), l.length()));
+            printed_char += line_string.length();
+            text(line_string, tx, ty + (line_cnt*look.textFont));
+            line_cnt++;
+          }
+        }
       }
     } } ;
   }
@@ -979,11 +993,12 @@ class nWidget {
         runEvents(eventFieldChangeRun);
       }
       else if (gui.in.getClick("Enter")) {
-        String str = label.substring(0, cursorPos);
-        String end = label.substring(cursorPos, label.length());
-        label = str + '\n' + end;
-        cursorPos++;
-        runEvents(eventFieldChangeRun);
+              // it break the saving!!!
+        //String str = label.substring(0, cursorPos);
+        //String end = label.substring(cursorPos, label.length());
+        //label = str + '\n' + end;
+        //cursorPos++;
+        //runEvents(eventFieldChangeRun);
       }
       else if (gui.in.getClick("Backspace")) {}
       else if (gui.in.getClick("All")) {

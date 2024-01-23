@@ -28807,7 +28807,7 @@ int
 shr
 tick
 val
-1264
+2086
 0
 0
 tick seconde
@@ -28823,7 +28823,7 @@ flt
 shr
 tps
 val
-53.619305
+53.667263
 0
 0
 pause
@@ -29399,7 +29399,7 @@ int
 shr
 frsr
 val
-631
+1042
 0
 0
 files_management
@@ -29445,7 +29445,7 @@ flt
 shr
 fdur
 val
-41.0
+31.0
 0
 0
 full_screen_run
@@ -29491,7 +29491,7 @@ flt
 shr
 cfr
 val
-0.041
+0.031
 0
 0
 sec_since_reset
@@ -29507,7 +29507,7 @@ int
 shr
 sec
 val
-23
+38
 0
 0
 median_framerate
@@ -29523,7 +29523,7 @@ flt
 shr
 mfr
 val
-26.809652
+26.833632
 0
 0
 cam scale
@@ -55453,7 +55453,7 @@ str
 shr
 spath
 val
-save.sdata
+demo_macro.sdata
 0
 0
 filempath
