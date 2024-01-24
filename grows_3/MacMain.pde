@@ -522,12 +522,23 @@ Macro_Abstract(Macro_Sheet _sheet, String ty, String n, sValueBloc _bloc) {
       int cn = 0;
       String n_ref = cn + "_" + n_suff;
       
+      boolean is_in_other_sheet = false;
+      if (sheet != this) for (Macro_Sheet m : sheet.child_sheet) if (m != this)
+        is_in_other_sheet = m.value_bloc.getBloc(n_ref) != null || is_in_other_sheet;
+      
       while (sheet.value_bloc.getBloc(n_ref) != null ||
-             (sheet != this && sheet.sheet.value_bloc.getBloc(n_ref) != null) ) {
+             (sheet != this && sheet.sheet.value_bloc.getBloc(n_ref) != null) || 
+             is_in_other_sheet) {
         cn++;
         n_ref = cn + "_" + n_suff;
+        
+        is_in_other_sheet = false;
+        if (sheet != this) for (Macro_Sheet m : sheet.child_sheet) if (m != this)
+          is_in_other_sheet = m.value_bloc.getBloc(n_ref) != null || is_in_other_sheet;
+        
       }
       value_bloc = sheet.value_bloc.newBloc(n_ref);
+      
     } else value_bloc = _bloc;
     
     setting_bloc = value_bloc.getBloc("settings");

@@ -215,7 +215,7 @@ class Canvas extends Macro_Sheet {
   
   sVec val_pos;
   sInt val_w, val_h, can_div;
-  sFlt val_scale, color_keep_thresh;
+  sFlt val_scale, color_keep_thresh, val_decay;
   sBoo val_show, val_show_bound, val_show_grab;
   sStr selected_com;
   sCol val_col_back;
@@ -238,6 +238,7 @@ class Canvas extends Macro_Sheet {
     can_div = menuIntIncr(4, 1, "can_div");
     val_scale = menuFltSlide(def_pix_size, 10, 500, "val_scale");
     color_keep_thresh = menuFltSlide(200, 10, 260, "clrkeep_thresh");
+    val_decay = menuFltSlide(1, 0, 2, "decay");
     val_show = newBoo(true, "val_show", "show_canvas");
     val_show_bound = newBoo(true, "val_show_bound", "show_bound");
     val_show_grab = newBoo(true, "val_show_grab", "show_grab");
@@ -316,9 +317,14 @@ class Canvas extends Macro_Sheet {
     return (red(c) + green(c) + blue(c)) / 3; 
   }
   
+  color decay(color c) {
+    return color(red(c)*val_decay.get(), green(c)*val_decay.get(), blue(c)*val_decay.get()); 
+  }
+  
   private void clear_pim(PImage canvas) {
     for (int i = 0 ; i < canvas.pixels.length ; i++) {
       if (sat(canvas.pixels[i]) < color_keep_thresh.get()) canvas.pixels[i] = val_col_back.get(); 
+      else canvas.pixels[i] = decay(canvas.pixels[i]);
     }
   }
   

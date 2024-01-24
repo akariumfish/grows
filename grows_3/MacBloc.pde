@@ -148,6 +148,41 @@ class MVecCtrl extends Macro_Bloc {
       }
     } });
     
+    in1_run = new Runnable() { public void run() { 
+      if (in1.getLastPacket() != null && in1.getLastPacket().isBang()) { 
+        if (valMAG.get()) {
+          PVector p = new PVector(1, 0);
+          p.setMag(mod_f);
+          out.send(newPacketVec(p));
+        } else if (valROT.get()) {
+          PVector p = new PVector(1, 0);
+          p.rotate(mod_f);
+          out.send(newPacketVec(p));
+        } else if (valADD.get()) {
+          out.send(newPacketVec(mod_vec));
+        } 
+      }
+    } };
+    in2_run = new Runnable() { public void run() { 
+      if (in2.getLastPacket() != null && in2.getLastPacket().isBang()) { 
+        if (valMAG.get()) {
+          PVector p = new PVector();
+          p.setMag( - mod_f);
+          out.send(newPacketVec(p));
+        } else if (valROT.get()) {
+          PVector p = new PVector(1, 0);
+          p.rotate( - mod_f);
+          out.send(newPacketVec(p));
+        } else if (valADD.get()) {
+          PVector p = new PVector();
+          p.x -= mod_vec.x; p.y -= mod_vec.y;
+          out.send(newPacketVec(p));
+        } 
+      }
+    } };
+    in1.addEventReceive(in1_run);
+    in2.addEventReceive(in2_run);
+    
     
     out = addOutput(1, "out");
     
@@ -2396,7 +2431,7 @@ class MComment extends Macro_Bloc {
       .setSize(ref_size * w_f.get(), ref_size * h_f.get())
       .setTextAlignment(LEFT, TOP)
       .setTextAutoReturn(true)
-      .setFont(int(ref_size / 2));
+      .setFont(int(ref_size / 1.7));
     
     
     if (w_f.get() >= 2) addEmptyS(1);

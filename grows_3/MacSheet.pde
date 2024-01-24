@@ -464,9 +464,17 @@ class Macro_Sheet extends Macro_Abstract {
     event for sheet co descr look like :
       left :elem_name(bloc ref + num) ... token right: ...
     there his no mention that its a sheet co and that his bloc is on another sheet than the co
-    >> just need to check inside child_sheet too
+    
+    tldr duplicate sheet with spot beug coz sheet connections
+    >> need to check inside child_sheet too
   
   its needed to group shapes to limit object nb
+  
+  find a way to easily grab a bloc from far away
+  
+  when manually adding try to stay on top of sheet back to keep it small
+  
+  when saving a group move its median to origin, when adding make a rect around all to find place
   
   MVar
     add a hideable (like com) param drawer : select variable type
@@ -506,6 +514,8 @@ class Macro_Sheet extends Macro_Abstract {
   
   sort explorer blocs n values alfabeticaly
     more entry and smaller height
+    
+  hide majority of macro widgets when dezoom
 
 
                     R & D
@@ -1049,12 +1059,20 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
       if (bloc.getBloc("settings") != null && bloc.getBloc("settings").getValue("title") != null)
         n_ref = ((sStr)(bloc.getBloc("settings").getValue("title"))).get();
       int cn = 0;
+      boolean is_in_other_sheet = false;
+      if (sheet != this) for (Macro_Sheet m : sheet.child_sheet) if (m != this)
+        is_in_other_sheet = m.value_bloc.getBloc(n_ref) != null || is_in_other_sheet;
+      
       while (value_bloc.getBloc(n_ref) != null || 
              (blocs_to_add.getBloc(n_ref) != null && blocs_to_add.getBloc(n_ref) != bloc) || 
-             (sheet != this && sheet.sheet.value_bloc.getBloc(n_ref) != null) ) {
+             (sheet != this && sheet.sheet.value_bloc.getBloc(n_ref) != null) || 
+             is_in_other_sheet) {
         if (n_ref.length() > 0) while (n_ref.charAt(0) != '_') n_ref = n_ref.substring(1, n_ref.length());
         n_ref = cn + n_ref;
         cn++;
+        is_in_other_sheet = false;
+        if (sheet != this) for (Macro_Sheet m : sheet.child_sheet) if (m != this)
+          is_in_other_sheet = m.value_bloc.getBloc(n_ref) != null || is_in_other_sheet;
       }
       //logln("in "+value_bloc.ref+" new ref "+((sStr)(bloc.getBloc("settings").getValue("title"))).get()+" > "+n_ref);
       sValueBloc nbloc = copy_bloc(bloc, value_bloc, n_ref);
