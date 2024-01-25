@@ -6369,6 +6369,8 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
     else if (t.equals("keyb")) return addKey(b);
     else if (t.equals("switch")) return addSwitch(b);
     else if (t.equals("trig")) return addTrig(b);
+    else if (t.equals("bswitch")) return addBigSwitch(b);
+    else if (t.equals("btrig")) return addBigTrig(b);
     else if (t.equals("gate")) return addGate(b);
     else if (t.equals("not")) return addNot(b);
     else if (t.equals("bin")) return addBin(b);
@@ -6420,6 +6422,8 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
   public MKeyboard addKey(sValueBloc b) { MKeyboard m = new MKeyboard(this, b); return m; }
   public MSwitch addSwitch(sValueBloc b) { MSwitch m = new MSwitch(this, b); return m; }
   public MTrig addTrig(sValueBloc b) { MTrig m = new MTrig(this, b); return m; }
+  public MBigSwitch addBigSwitch(sValueBloc b) { MBigSwitch m = new MBigSwitch(this, b); return m; }
+  public MBigTrig addBigTrig(sValueBloc b) { MBigTrig m = new MBigTrig(this, b); return m; }
   public MGate addGate(sValueBloc b) { MGate m = new MGate(this, b); return m; }
   public MNot addNot(sValueBloc b) { MNot m = new MNot(this, b); return m; }
   public MBin addBin(sValueBloc b) { MBin m = new MBin(this, b); return m; }
@@ -6494,7 +6498,7 @@ interface Macro_Interf {
   final String[] bloc_types2 = {"vecXY", "vecMD", "vecCtrl", "numCtrl", "mouse", "keyb", "crossVec", 
                                 "midi", "preset", "tool", "tooltri", "toolbin", "toolNC", "pan", 
                                 "panbin", "pansld", "pangrph", "menu"}; //"cursor", "pancstm", "tmpl", 
-  final String[] bloc_types3 = {"colRGB"};
+  final String[] bloc_types3 = {"colRGB", "btrig", "bswitch"};
                                 
   final String[] bloc_info1 = {"commentary", "sheet input", "sheet output", 
                                "trigger > bang", "switch > bool", "can control msg circulation", 
@@ -6515,7 +6519,7 @@ interface Macro_Interf {
                                "windowpanel binary ctrl", "add a slider to the windowpanel", 
                                "save consecutive inputs as a graph displayed in a windowpanel", 
                                "can open sheet menu"};
-  final String[] bloc_info3 = {"color <> r / g / b"};
+  final String[] bloc_info3 = {"color <> r / g / b", "", ""};
 }
 
 
@@ -9412,6 +9416,72 @@ class MSwitch extends Macro_Bloc {
 }
 
 
+class MBigTrig extends Macro_Bloc {
+  Macro_Connexion out_t;
+  nCtrlWidget trig; 
+  nLinkedWidget stp_view; sBoo setup_send;
+  MBigTrig(Macro_Sheet _sheet, sValueBloc _bloc) { 
+    super(_sheet, "btrig", "btrig", _bloc); 
+    setup_send = newBoo("stp_snd", "stp_snd", false);
+    
+    out_t = addOutput(1, "trig")
+      .setDefBang();
+    
+    addEmptyS(0);
+    
+    Macro_Element e = addEmptyL(0);
+    trig = e.addCtrlModel("MC_Element_Button").setRunnable(new Runnable() { public void run() {
+      out_t.send(newPacketBang());
+    } });
+    trig.setSY(ref_size*2).setPY(-ref_size*17/16);
+    e.addLinkedModel("MC_Element_MiniButton", "st").setLinkedValue(setup_send);
+    
+    
+    if (setup_send.get()) mmain().inter.addEventNextFrame(new Runnable() { public void run() {
+      out_t.send(newPacketBang());
+    } });
+  }
+  public MBigTrig clear() {
+    super.clear(); return this; }
+}
+class MBigSwitch extends Macro_Bloc {
+  Macro_Connexion in, out_t;
+  nLinkedWidget swtch; 
+  sBoo state;
+  MBigSwitch(Macro_Sheet _sheet, sValueBloc _bloc) { 
+    super(_sheet, "bswitch", "bswitch", _bloc); 
+    
+    state = newBoo("state", "state", false);
+    
+    in = addInput(0, "in").addEventReceive(new Runnable() { public void run() { 
+      if (in.getLastPacket() != null && in.getLastPacket().isBang()) {
+        swtch.setSwitchState(!swtch.isOn());
+      } 
+      if (in.getLastPacket() != null && in.getLastPacket().isBool()) {
+        swtch.setSwitchState(in.getLastPacket().asBool());
+      } 
+    } });
+    addEmptyS(1);
+    
+    out_t = addOutput(1, "out")
+      .setDefBool();
+      
+    swtch = addEmptyS(0).addLinkedModel("MC_Element_Button").setLinkedValue(state);
+    swtch.setSY(ref_size*2).setPY(-ref_size*17/16);
+    
+    state.addEventChange(new Runnable() { public void run() {
+      out_t.send(newPacketBool(state.get()));
+    } });
+    
+    mmain().inter.addEventNextFrame(new Runnable() { public void run() {
+      out_t.send(newPacketBool(state.get()));
+    } });
+    
+  }
+  public MBigSwitch clear() {
+    super.clear(); return this; }
+}
+
 
 class MVar extends Macro_Bloc {
   Macro_Connexion in, out;
@@ -9577,8 +9647,6 @@ class MSheetOut extends Macro_Bloc {
   public MSheetOut clear() {
     super.clear(); return this; }
 }
-
-
 
 
 

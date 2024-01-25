@@ -1235,6 +1235,8 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
     else if (t.equals("keyb")) return addKey(b);
     else if (t.equals("switch")) return addSwitch(b);
     else if (t.equals("trig")) return addTrig(b);
+    else if (t.equals("bswitch")) return addBigSwitch(b);
+    else if (t.equals("btrig")) return addBigTrig(b);
     else if (t.equals("gate")) return addGate(b);
     else if (t.equals("not")) return addNot(b);
     else if (t.equals("bin")) return addBin(b);
@@ -1286,6 +1288,8 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
   MKeyboard addKey(sValueBloc b) { MKeyboard m = new MKeyboard(this, b); return m; }
   MSwitch addSwitch(sValueBloc b) { MSwitch m = new MSwitch(this, b); return m; }
   MTrig addTrig(sValueBloc b) { MTrig m = new MTrig(this, b); return m; }
+  MBigSwitch addBigSwitch(sValueBloc b) { MBigSwitch m = new MBigSwitch(this, b); return m; }
+  MBigTrig addBigTrig(sValueBloc b) { MBigTrig m = new MBigTrig(this, b); return m; }
   MGate addGate(sValueBloc b) { MGate m = new MGate(this, b); return m; }
   MNot addNot(sValueBloc b) { MNot m = new MNot(this, b); return m; }
   MBin addBin(sValueBloc b) { MBin m = new MBin(this, b); return m; }
@@ -1360,7 +1364,7 @@ interface Macro_Interf {
   final String[] bloc_types2 = {"vecXY", "vecMD", "vecCtrl", "numCtrl", "mouse", "keyb", "crossVec", 
                                 "midi", "preset", "tool", "tooltri", "toolbin", "toolNC", "pan", 
                                 "panbin", "pansld", "pangrph", "menu"}; //"cursor", "pancstm", "tmpl", 
-  final String[] bloc_types3 = {"colRGB"};
+  final String[] bloc_types3 = {"colRGB", "btrig", "bswitch"};
                                 
   final String[] bloc_info1 = {"commentary", "sheet input", "sheet output", 
                                "trigger > bang", "switch > bool", "can control msg circulation", 
@@ -1381,7 +1385,7 @@ interface Macro_Interf {
                                "windowpanel binary ctrl", "add a slider to the windowpanel", 
                                "save consecutive inputs as a graph displayed in a windowpanel", 
                                "can open sheet menu"};
-  final String[] bloc_info3 = {"color <> r / g / b"};
+  final String[] bloc_info3 = {"color <> r / g / b", "", ""};
 }
 
 
