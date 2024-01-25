@@ -8,7 +8,7 @@ Using Processing 3.5.4  -  https://www.processing.org/
 Library : The MidiBus 8 Severin Smith http://smallbutdigital.com/projects/themidibus/
 
 see previews for sample results
-last relatively stable : grows2.9.exe in bin/grows2.9		( full screen )
+last relatively stable : grows2.9.5.exe in bin/grows2.9.5		( full screen )
 in image/ there is screenshots of the developement of this phase
 
 IF YOU JUST WANT TO TRY AND KNOW NOTHING ABOUT COMPUTERS (or your lazy) just send a mail to growsDev@gmail.com with subject "exe please" and i will mail the last stable executable to you.
@@ -47,6 +47,11 @@ IN CASE OF FREEZING (or simply to exit) : left click anywhere then hit ESC
 
 thanks for trying, no doc yet, good luck ... 	( sorry )
 
+New in 3.0
+        link and spot saving ok?
+        group select/move/copy/paste/delete
+        ease of life
+        
 New in 2.9:
         Box Community,
         parameters for floc grow and box interaction,
@@ -58,9 +63,5 @@ New in 2.9:
         new basic bloc,
         better file manager,
         open file and save as shortcuts
-
-known bugs :
-        links head stay behind when closing a sheet
-        links dont always load
 
 contact growsDev@gmail.com
