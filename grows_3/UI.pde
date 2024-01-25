@@ -825,72 +825,74 @@ class nWidget {
     label = new String();
     look = new nLook();
     drawer = new Drawable(g.drawing_pile) { public void drawing() {
-      if (((triggerMode || switchMode) && isClicked) || switchState) { fill(look.pressColor); } 
-      else if (isHovered && (triggerMode || switchMode))             { fill(look.hoveredColor); } 
-      else                                                           { fill(look.standbyColor); }
-      noStroke();
-      ellipseMode(CORNER);
-      if (shapeRound) ellipse(getX(), getY(), getSX(), getSY());
-      else if (shapeLosange) {quad(getX() + getSX()/2, getY(), 
-                                   getX() + getSX()  , getY() + getSY()/2, 
-                                   getX() + getSX()/2, getY() + getSY(), 
-                                   getX()            , getY() + getSY()/2  );}
-      else if (!DEBUG_NOFILL) rect(getX(), getY(), getSX(), getSY());
-      
-      noFill();
-      if (isField && isSelected) stroke(look.outlineSelectedColor);
-      else if (showOutline || (hoverOutline && isHovered)) stroke(look.outlineColor);
-      else noStroke();
-      float wf = 1;
-      if (constantOutlineWeight) { wf = 1 / gui.scale; strokeWeight(look.outlineWeight / gui.scale); }
-      else strokeWeight(look.outlineWeight);
-      
-      
-      if (shapeRound) ellipse(getX() + wf*look.outlineWeight/2, getY() + wf*look.outlineWeight/2, 
-           getSX() - wf*look.outlineWeight, getSY() - wf*look.outlineWeight);
-      else if (shapeLosange) {quad(getX() + getSX()/2, getY() + wf*look.outlineWeight/2, 
-                                   getX() + getSX() - wf*look.outlineWeight/2, getY() + getSY()/2, 
-                                   getX() + getSX()/2, getY() + getSY() - wf*look.outlineWeight/2, 
-                                   getX() + wf*look.outlineWeight/2, getY() + getSY()/2  );}
-      else rect(getX() + wf*look.outlineWeight/2, getY() + wf*look.outlineWeight/2, 
-           getSX() - wf*look.outlineWeight, getSY() - wf*look.outlineWeight);
-      
-      if (show_text) {
-        String l = label;
-        if (showCursor) {
-          String str = label.substring(0, cursorPos);
-          String end = label.substring(cursorPos, label.length());
-          if (cursorCount < cursorCycle / 2) l = str + "|" + end;
-          else l = str + " " + end;
-          cursorCount++;
-          if (cursorCount > cursorCycle) cursorCount = 0;
-        }
-        fill(look.textColor); 
-        textAlign(textAlignX, textAlignY);
-        textFont(getFont(look.textFont));
-        //int line = 0;
-        //for (int i = 0 ; i < l.length() ; i++) if (l.charAt(i) == '\n') line+=1;
-        float tx = getX();
-        float ty = getY();
-        if (textAlignY == CENTER)         
-          ty += (getLocalSY() / 2.0)
-                - (look.textFont / 6.0)
-                  //- (line * look.textFont / 3)
-                ;
-        else if (textAlignY == BOTTOM) 
-          ty += getLocalSY() - (look.textFont / 10);
-        if (textAlignX == LEFT)        tx += look.textFont / 4.0;
-        else if (textAlignX == CENTER) tx += getSX() / 2;
-        if (!auto_line_return) text(l, tx, ty);
-        else {
-          int max_l = int(getLocalSX() / (look.textFont / 1.7));
-          int printed_char = 0;
-          int line_cnt = 0;
-          while (printed_char < l.length()) {
-            String line_string = l.substring(line_cnt * max_l, min(max_l * (line_cnt+1), l.length()));
-            printed_char += line_string.length();
-            text(line_string, tx, ty + (line_cnt*look.textFont));
-            line_cnt++;
+      if (rectCollide(getPhantomRect(), gui.view)) {
+        if (((triggerMode || switchMode) && isClicked) || switchState) { fill(look.pressColor); } 
+        else if (isHovered && (triggerMode || switchMode))             { fill(look.hoveredColor); } 
+        else                                                           { fill(look.standbyColor); }
+        noStroke();
+        ellipseMode(CORNER);
+        if (shapeRound) ellipse(getX(), getY(), getSX(), getSY());
+        else if (shapeLosange) {quad(getX() + getSX()/2, getY(), 
+                                     getX() + getSX()  , getY() + getSY()/2, 
+                                     getX() + getSX()/2, getY() + getSY(), 
+                                     getX()            , getY() + getSY()/2  );}
+        else if (!DEBUG_NOFILL) rect(getX(), getY(), getSX(), getSY());
+        
+        noFill();
+        if (isField && isSelected) stroke(look.outlineSelectedColor);
+        else if (showOutline || (hoverOutline && isHovered)) stroke(look.outlineColor);
+        else noStroke();
+        float wf = 1;
+        if (constantOutlineWeight) { wf = 1 / gui.scale; strokeWeight(look.outlineWeight / gui.scale); }
+        else strokeWeight(look.outlineWeight);
+        
+        
+        if (shapeRound) ellipse(getX() + wf*look.outlineWeight/2, getY() + wf*look.outlineWeight/2, 
+             getSX() - wf*look.outlineWeight, getSY() - wf*look.outlineWeight);
+        else if (shapeLosange) {quad(getX() + getSX()/2, getY() + wf*look.outlineWeight/2, 
+                                     getX() + getSX() - wf*look.outlineWeight/2, getY() + getSY()/2, 
+                                     getX() + getSX()/2, getY() + getSY() - wf*look.outlineWeight/2, 
+                                     getX() + wf*look.outlineWeight/2, getY() + getSY()/2  );}
+        else rect(getX() + wf*look.outlineWeight/2, getY() + wf*look.outlineWeight/2, 
+             getSX() - wf*look.outlineWeight, getSY() - wf*look.outlineWeight);
+        
+        if (show_text && gui.scale >= 0.3) {
+          String l = label;
+          if (showCursor) {
+            String str = label.substring(0, cursorPos);
+            String end = label.substring(cursorPos, label.length());
+            if (cursorCount < cursorCycle / 2) l = str + "|" + end;
+            else l = str + " " + end;
+            cursorCount++;
+            if (cursorCount > cursorCycle) cursorCount = 0;
+          }
+          fill(look.textColor); 
+          textAlign(textAlignX, textAlignY);
+          textFont(getFont(look.textFont));
+          //int line = 0;
+          //for (int i = 0 ; i < l.length() ; i++) if (l.charAt(i) == '\n') line+=1;
+          float tx = getX();
+          float ty = getY();
+          if (textAlignY == CENTER)         
+            ty += (getLocalSY() / 2.0)
+                  - (look.textFont / 6.0)
+                    //- (line * look.textFont / 3)
+                  ;
+          else if (textAlignY == BOTTOM) 
+            ty += getLocalSY() - (look.textFont / 10);
+          if (textAlignX == LEFT)        tx += look.textFont / 4.0;
+          else if (textAlignX == CENTER) tx += getSX() / 2;
+          if (!auto_line_return) text(l, tx, ty);
+          else {
+            int max_l = int(getLocalSX() / (look.textFont / 1.7));
+            int printed_char = 0;
+            int line_cnt = 0;
+            while (printed_char < l.length()) {
+              String line_string = l.substring(line_cnt * max_l, min(max_l * (line_cnt+1), l.length()));
+              printed_char += line_string.length();
+              text(line_string, tx, ty + (line_cnt*look.textFont));
+              line_cnt++;
+            }
           }
         }
       }

@@ -638,6 +638,8 @@ class sValueBloc {
 
   
   sValue newValue(Save_Bloc sb) {
+    //logln(ref+" newValue from SB "+sb.name);
+    //logln("   type "+sb.getData("__bloc_type"));
     sValue nv = null;
     if (sb.getData("__bloc_type") != null && sb.getData("__bloc_type").equals("val")) {
       String n = sb.getData("ref");
@@ -767,9 +769,13 @@ sValueBloc copy_bloc(sValueBloc from, sValueBloc to, String n) {
 }
 sValue copy_value(sValue from, sValueBloc to) {
   if (from != null && to != null) {
+    //logln("copy val from "+from.ref);
     Save_Bloc b = new Save_Bloc(from.ref);
-    from.save_to_bloc(b);
-    return to.newValue(b);
+    from.save_to_bloc(b); 
+    b.newData("__bloc_type", "val");
+    sValue v = to.newValue(b);
+    //logln("a "+v.ref);
+    return v;
   } return null;
 }
 void transfer_values(sValueBloc from, sValueBloc to) {
@@ -866,6 +872,16 @@ class Save_Data {
 
 class Save_Bloc {
   
+  //Save_Bloc(String n, int i) { name = copy(n); index = i; }
+  Save_Bloc(String n) { name = copy(n); index = 0; }
+  
+  String name;
+  int index;
+  ArrayList<Save_Data> datas = new ArrayList<Save_Data>();
+  ArrayList<Save_Bloc> blocs = new ArrayList<Save_Bloc>();
+  
+  
+  
   void runIterator(Iterator<Save_Bloc> i) { 
     int count = 0;
     for (Save_Bloc b : blocs) { count++; i.run(b); i.run(b, count); }
@@ -927,15 +943,6 @@ class Save_Bloc {
     if (b) from_list(sl);
     return b;
   }
-  
-  //Save_Bloc(String n, int i) { name = copy(n); index = i; }
-  Save_Bloc(String n) { name = copy(n); index = 0; }
-  
-  String name;
-  int index;
-  ArrayList<Save_Data> datas = new ArrayList<Save_Data>();
-  ArrayList<Save_Bloc> blocs = new ArrayList<Save_Bloc>();
-  
   
   void to_list(Save_List sl) {
     slog("Bloc - to string - start");

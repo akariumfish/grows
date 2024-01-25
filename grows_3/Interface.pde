@@ -36,15 +36,23 @@ class User {
 class sInterface {
   
   void quick_open() {
-    new nFilePicker(screen_gui, taskpanel, savepath_value, true)
+    new nFilePicker(screen_gui, taskpanel, savepath_value, true, "0pen")
       .addFilter("sdata")
       .addEventChoose(new Runnable() { public void run() { 
         setup_load();
       } } );
   }
-
+  
+  void save_to() {
+    new nFilePicker(screen_gui, taskpanel, savepath_value, false, "Save to")
+      .addFilter("sdata")
+      .addEventChoose(new Runnable() { public void run() { 
+        full_data_save();
+      } } );
+  }
+  
   void save_as() {
-    new nTextPicker(screen_gui, taskpanel, savepath_value, "New save title")
+    new nTextPicker(screen_gui, taskpanel, savepath_value, "Save as")
       .addSuffix("sdata")
       .addEventChoose(new Runnable() { public void run() { 
         full_data_save();
@@ -61,7 +69,7 @@ class sInterface {
         .addDrawer(1)
           .addCtrlModel("Button-S4", "Select file")
           .setRunnable(new Runnable() { public void run() { 
-            new nFilePicker(screen_gui, taskpanel, filempath_value, true)
+            new nFilePicker(screen_gui, taskpanel, filempath_value, true, "Select file to explore")
               .addFilter("sdata");
           } } )
           .setInfo("choose a .sdata to explore in the manager")
@@ -406,7 +414,7 @@ class sInterface {
     framerate = new sFramerate(macro_main.value_bloc, 60);
     
     cam = new Camera(input, macro_main.value_bloc)
-      .addEventZoom(new Runnable() { public void run() { cam_gui.updateView(); } } )
+      //.addEventZoom(new Runnable() { public void run() { cam_gui.updateView(); } } )
       .addEventMove(new Runnable() { public void run() { cam_gui.updateView(); } } );
     
     screen_gui.addEventFound(new Runnable() { public void run() { 
@@ -443,6 +451,7 @@ class sInterface {
   sInterface addToScreenDrawerPile(Drawable d) { d.setPile(screen_gui.drawing_pile); return this; }
   
   sInterface addEventHoverNotFound(Runnable r) { eventsHoverNotFound.add(r); return this; }
+  sInterface removeEventHoverNotFound(Runnable r) { eventsHoverNotFound.remove(r); return this; }
   sInterface addEventFullS(Runnable r) { eventsFullS.add(r); return this; }
   sInterface addEventFrame(Runnable r) { eventsFrame.add(r); return this; }
   sInterface removeEventFrame(Runnable r) { eventsFrame.remove(r); return this; }
@@ -453,6 +462,11 @@ class sInterface {
   sInterface addEventNextFrameInverted(Runnable r) { 
     if (active_nxtfrm_pile) eventsNextFrame2.add(r); else eventsNextFrame1.add(r); return this; }
   sInterface addEventSetup(Runnable r) { eventsSetup.add(r); return this; }
+  
+  sInterface addEventTwoFrame(Runnable r) { 
+    addEventNextFrame(new Runnable(r) { public void run() { addEventNextFrame(((Runnable)builder)); }});
+    return this; 
+  }
   
   String getAccess() { return user.access; }
   boolean canAccess(String a) { 

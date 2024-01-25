@@ -113,7 +113,8 @@ class Simulation extends Macro_Sheet {
     
     mmain().addEventSetupLoad(new Runnable() { 
       public void run() { mmain().inter.addEventNextFrame(new Runnable() { 
-      public void run() { reset(); } } ); } } );
+      public void run() { reset(); } } ); 
+    } } );
       
     show_toolpanel = newBoo("show_toolpanel", "toolpanel", true);
     show_toolpanel.addEventChange(new Runnable(this) { public void run() { 

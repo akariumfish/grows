@@ -483,8 +483,8 @@ class nFilePicker extends nWindowPanel {
   ArrayList<Runnable> eventsChoose = new ArrayList<Runnable>();
   nFilePicker addEventChoose(Runnable r) { eventsChoose.add(r);  return this; } 
   
-  nFilePicker(nGUI _g, nTaskPanel _task, sStr _sv, boolean _autoclose) { 
-    super(_g, _task, "select file"); 
+  nFilePicker(nGUI _g, nTaskPanel _task, sStr _sv, boolean _autoclose, String t) { 
+    super(_g, _task, t); 
     val_cible = _sv;
     autoclose = _autoclose;
     explorer_entry = new ArrayList<String>();
@@ -662,8 +662,9 @@ class nBoolPanel extends nWindowPanel {
     getShelf()
       .addDrawer(7.25, 1).getShelf()
       .addDrawer(7.25, 1)
-        .addCtrlModel("Button-S2-P2", "OK")
-          .setRunnable(new Runnable() { public void run() { clear(); } }).getDrawer()
+        .addCtrlModel("Button-S2", "OK")
+          .setRunnable(new Runnable() { public void run() { clear(); } })
+          .setPX(2.375*ref_size).getDrawer()
           ;
     
     widget = getDrawer(0,0).addLinkedModel("Button-S3")
@@ -679,62 +680,17 @@ class nBoolPanel extends nWindowPanel {
 }
 
 
-class nTextPanel extends nWindowPanel {
+class nTextPanel extends nWindowPanel implements Macro_Interf {
   nWidget text_widget;
   sStr cval;
+  String txt; boolean auto_return = true;
+  Runnable val_run;
+  int larg = 20;
   nTextPanel(nGUI _g, nTaskPanel _task, sStr _cv) { 
     super(_g, _task, "text"); 
     cval = _cv;
     
     if (cval == null) clear();
-    int larg = 15;
-    if (cval.get().length() < 50) larg = 10;
-    float font = int(ref_size/2.1);
-    int max_l = int(larg * ref_size / (font / 1.7));
-    
-    float line_cnt = float(cval.get().length()) / float(max_l);
-    if (line_cnt % 1 > 0) line_cnt += 1 - (line_cnt % 1);
-    float h_fact = (font * line_cnt) / ref_size + font / (ref_size * 2);
-    
-    //logln("m " + max_l + " lc " + line_cnt + " hf " + h_fact);
-    
-    getShelf()
-      .addDrawer(larg + 0.25, h_fact)
-        .getShelf()
-      .addDrawer(larg, 1)
-        .addCtrlModel("Button-S2-P3", "OK")
-          .setRunnable(new Runnable() { public void run() { clear(); } }).getDrawer()
-          ;
-    
-    text_widget = getDrawer(0,0).addLinkedModel("Field")
-      .setLinkedValue(cval)
-      .setTextAlignment(CENTER, TOP)
-      .setTextAutoReturn(true)
-      .setFont(int(font))
-      .setSX(ref_size * larg)
-      .setSY(ref_size * h_fact)
-      .setPX(ref_size * 0.125)
-      ;
-    
-  } 
-  nWindowPanel clear() { 
-    super.clear(); return this; }
-  nWindowPanel updateHeight() { 
-    super.updateHeight(); return this; }
-  nWindowPanel updateWidth() { 
-    super.updateWidth(); return this; }
-}
-
-class nTextView extends nWindowPanel implements Macro_Interf {
-  nWidget text_widget;
-  sStr cval;
-  String txt; boolean auto_return = true;
-  nTextView(nGUI _g, nTaskPanel _task, sStr _cv) { 
-    super(_g, _task, "text"); 
-    cval = _cv;
-    
-    if (cval == null) clear();
-    int larg = 15;
     if (cval.get().length() < 50) larg = 10;
     float font = int(ref_size/2.1);
     int max_l = int(larg * ref_size / (font / 1.7));
@@ -748,7 +704,7 @@ class nTextView extends nWindowPanel implements Macro_Interf {
       auto_return = false;
       line_cnt = 1;
       int char_counter = 0;
-      for (int i = txt.length() - 1 ; i >= 0  ; i--) {
+      for (int i = 0 ; i < txt.length() ; i++) {
         char_counter++;
         if (char_counter >= max_l) { line_cnt++; char_counter = 0; }
         if (txt.charAt(i) == OBJ_TOKEN.charAt(0) || txt.charAt(i) == GROUP_TOKEN.charAt(0)) {
@@ -789,7 +745,32 @@ class nTextView extends nWindowPanel implements Macro_Interf {
       .setSY(ref_size * h_fact)
       .setPX(ref_size * 0.125)
       ;
-    
+    val_run = new Runnable() { public void run() { 
+      float font = int(ref_size/2.1);
+      int max_l = int(larg * ref_size / (font / 1.7));
+      
+      txt = cval.get();
+      
+      float line_cnt = float(txt.length()) / float(max_l);
+      if (line_cnt % 1 > 0) line_cnt += 1 - (line_cnt % 1);
+      
+      if (cval.ref.equals("links") || cval.ref.equals("spots")) {
+        auto_return = false;
+        line_cnt = 1;
+        int char_counter = 0;
+        for (int i = 0 ; i < txt.length() ; i++) {
+          char_counter++;
+          if (char_counter >= max_l) { line_cnt++; char_counter = 0; }
+          if (txt.charAt(i) == OBJ_TOKEN.charAt(0) || txt.charAt(i) == GROUP_TOKEN.charAt(0)) {
+            txt = txt.substring(0, i+1) + '\n' + txt.substring(i+1, txt.length());
+            line_cnt++;
+            char_counter = 0;
+          }
+        }
+      }
+      text_widget.setText(txt);
+    } };
+    cval.addEventChange(val_run);
   } 
   nWindowPanel clear() { 
     super.clear(); return this; }

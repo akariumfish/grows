@@ -181,8 +181,10 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
           }
         }
         if (!buildingLine && elem.bloc.mmain().gui.in.getClick("MouseRight")) for (Macro_Connexion m : connected_inputs) {
-          if (distancePointToLine(elem.bloc.mmain().gui.mouseVector.x, elem.bloc.mmain().gui.mouseVector.y, 
-              getCenter().x, getCenter().y, m.getCenter().x, m.getCenter().y) < ref.look.outlineWeight) {
+          if (distancePointToLine(gui.mouseVector.x, gui.mouseVector.y, 
+              getCenter().x, getCenter().y, m.getCenter().x, m.getCenter().y) 
+              < 
+              3 * ref.look.outlineWeight / gui.scale) {
                 
                 
                 
@@ -231,11 +233,12 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
                     getSize(), getSize() );
           }
           for (Macro_Connexion m : connected_inputs) {
-            if (
+            if (gui.scale > 0.03 && 
                 m.isDraw()
                 ) {
               if (distancePointToLine(elem.bloc.mmain().gui.mouseVector.x, elem.bloc.mmain().gui.mouseVector.y, 
-                  getCenter().x, getCenter().y, m.getCenter().x, m.getCenter().y) < ref.look.outlineWeight ) { 
+                  getCenter().x, getCenter().y, m.getCenter().x, m.getCenter().y) < 
+                  3 * ref.look.outlineWeight / gui.scale) { 
                 if (pack_info != null && hasSend > 0) elem.bloc.mmain().info.showText(pack_info);
                 fill(ref.look.outlineSelectedColor); stroke(ref.look.outlineSelectedColor); } 
               else if (sending || hasSend > 0) { fill(ref.look.outlineColor); stroke(ref.look.outlineColor); }

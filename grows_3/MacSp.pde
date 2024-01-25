@@ -2321,19 +2321,21 @@ class MRandom extends Macro_Bloc {
 }
 
 class MMouse extends Macro_Bloc { 
-  Macro_Connexion out1, out2, out3;
-  Runnable run;
+  Macro_Connexion out1, outt, out3, outb;
+  Runnable run, hovernotfound_run;
   PVector m, pm, mm, v;
+  boolean st = false;
   MMouse(Macro_Sheet _sheet, sValueBloc _bloc) { 
     super(_sheet, "mouse", "mouse", _bloc); 
-    out1 = addOutput(0, "pos"); out2 = addOutput(0, "ppos"); out3 = addOutput(0, "mouv");
+    out1 = addOutput(0, "pos"); out3 = addOutput(0, "mouv");
+    outt = addOutput(0, "trig"); outb = addOutput(0, "state"); 
     m = new PVector(0, 0); pm = new PVector(0, 0); mm = new PVector(0, 0); v = new PVector(0, 0);
     run = new Runnable() { public void run() { 
       if (m.x != gui.mouseVector.x || m.y != gui.mouseVector.y) { 
         out1.send(newPacketVec(gui.mouseVector));
         m.set(gui.mouseVector); }
       if (pm.x != gui.pmouseVector.x || pm.y != gui.pmouseVector.y) { 
-        out2.send(newPacketVec(gui.pmouseVector));
+        //out2.send(newPacketVec(gui.pmouseVector));
         pm.set(gui.pmouseVector); }
       v.set(gui.mouseVector);
       v = v.sub(gui.pmouseVector);
@@ -2341,10 +2343,22 @@ class MMouse extends Macro_Bloc {
         out3.send(newPacketVec(v));
         mm.set(v); }
     } };
+    hovernotfound_run = new Runnable() { public void run() { 
+      if (mmain().inter.input.mouseLeft.trigClick) {
+        outt.send(newPacketBang());
+      }
+      boolean ms = mmain().inter.input.mouseLeft.state;
+      if (st != ms) {
+        st = ms;
+        outb.send(newPacketBool(st));
+      }
+    } };
     mmain().inter.addEventFrame(run);
+    mmain().inter.addEventHoverNotFound(hovernotfound_run);
   }
   MMouse clear() {
     mmain().inter.removeEventFrame(run);
+    mmain().inter.removeEventHoverNotFound(hovernotfound_run);
     super.clear(); return this; }
 }
 
@@ -2460,12 +2474,16 @@ class MComment extends Macro_Bloc {
     //addEmpty(1); 
   }
   sValueBloc _bloc;
+  Macro_Sheet prev_sheet = null;
+  ArrayList<Macro_Abstract> prev_selected = new ArrayList<Macro_Abstract>();
   void rebuild() {
     if (!rebuilding) {
       //logln("redo");
       rebuilding = true;
       sVec v = (sVec)(value_bloc.getBloc("settings").getValue("position"));
       v.setx(v.x() - ref_size * 2); v.sety(v.y() - ref_size * 3);
+      prev_selected.clear();
+      for(Macro_Abstract m : mmain().selected_macro) prev_selected.add(m);
       mmain().szone_clear_select();
       szone_select();
       mmain().copy_to_tmpl();
@@ -2473,7 +2491,10 @@ class MComment extends Macro_Bloc {
       mmain().del_selected();
       mmain().inter.addEventNextFrame(new Runnable() { public void run() { 
         mmain().inter.addEventNextFrame(new Runnable() { public void run() { 
-          mmain().paste_tmpl();
+          mmain().pastebin_tmpl();
+          mmain().szone_clear_select();
+          for(Macro_Abstract m : prev_selected) m.szone_select();
+          prev_selected.clear();
         } } );
       } } );
       //logln("redo done");
@@ -2978,196 +2999,10 @@ class MSheetOut extends Macro_Bloc {
     } });
     view.setLinkedValue(val_view);
     elem = addSheetOutput(0, "out");
-    elem.sheet_connect.setInfo(val_view.get());
+    if (elem.sheet_connect != null) elem.sheet_connect.setInfo(val_view.get());
     //val_title.addEventChange(new Runnable() { public void run() { 
     //if (elem.sheet_connect != null) elem.sheet_connect.setInfo(val_title.get()); } });
   }
   MSheetOut clear() {
     super.clear(); return this; }
-}
-
-
-/*
-
- bloc extend abstract
- shelfpanel of element
- methods to add and manipulate element for easy macro building
- 
- */
-class Macro_Bloc extends Macro_Abstract {
-  Macro_Bloc(Macro_Sheet _sheet, String t, String n, sValueBloc _bloc) {
-    super(_sheet, t, n, _bloc);
-    addShelf(); 
-    addShelf();
-  }
-
-  Macro_Element addSelectS(int c, sBoo v1, sBoo v2, String s1, String s2) { 
-    Macro_Element m = new Macro_Element(this, "", "MC_Element_Single", null, NO_CO, NO_CO, true);
-    addElement(c, m); 
-    nWidget w1 = m.addLinkedModel("MC_Element_Button_Selector_1", s1).setLinkedValue(v1);
-    nWidget w2 = m.addLinkedModel("MC_Element_Button_Selector_2", s2).setLinkedValue(v2);
-    w1.addExclude(w2);
-    w2.addExclude(w1);
-    return m;
-  }
-  
-
-  Macro_Element addSelectL(int c, sBoo v1, sBoo v2, sBoo v3, sBoo v4, 
-                           String s1, String s2, String s3, String s4) { 
-    Macro_Element m = new Macro_Element(this, "", "MC_Element_Double", null, NO_CO, NO_CO, false);
-    addElement(c, m); 
-    nWidget w1 = m.addLinkedModel("MC_Element_Button_Selector_1", s1).setLinkedValue(v1);
-    nWidget w2 = m.addLinkedModel("MC_Element_Button_Selector_2", s2).setLinkedValue(v2);
-    nWidget w3 = m.addLinkedModel("MC_Element_Button_Selector_3", s3).setLinkedValue(v3);
-    nWidget w4 = m.addLinkedModel("MC_Element_Button_Selector_4", s4).setLinkedValue(v4);
-    w1.addExclude(w2).addExclude(w3).addExclude(w4);
-    w2.addExclude(w1).addExclude(w3).addExclude(w4);
-    w3.addExclude(w2).addExclude(w1).addExclude(w4);
-    w4.addExclude(w2).addExclude(w3).addExclude(w1);
-    return m;
-  }
-  
-  Macro_Element addEmptyS(int c) { 
-    Macro_Element m = new Macro_Element(this, "", "MC_Element_Single", null, NO_CO, NO_CO, true);
-    addElement(c, m); 
-    return m;
-  }
-  Macro_Element addEmptyL(int c) { 
-    Macro_Element m = new Macro_Element(this, "", "MC_Element_Double", null, NO_CO, NO_CO, false);
-    addElement(c, m); 
-    return m;
-  }
-  Macro_Element addEmptyXL(int c) { 
-    Macro_Element m = new Macro_Element(this, "", "MC_Element_Triple", null, NO_CO, NO_CO, false);
-    addElement(c, m); 
-    return m;
-  }
-  Macro_Element addEmptyB(int c) { 
-    Macro_Element m = new Macro_Element(this, "", "MC_Element_Big", null, NO_CO, NO_CO, false);
-    addElement(c, m); 
-    return m;
-  }
-  Macro_Element addEmptyXB(int c) { 
-    Macro_Element m = new Macro_Element(this, "", "MC_Element_Bigger", null, NO_CO, NO_CO, false);
-    addElement(c, m); 
-    return m;
-  }
-  nWidget addEmpty(int c) { 
-    Macro_Element m = new Macro_Element(this, "", "mc_ref", null, NO_CO, NO_CO, false);
-    addElement(c, m); 
-    return m.back;
-  }
-
-  nWidget addFillR(int c) { 
-    Macro_Element m = new Macro_Element(this, "", "MC_Element_Fillright", null, NO_CO, NO_CO, false);
-    addElement(c, m); 
-    return m.back;
-  }
-  nWidget addFillL(int c) { 
-    Macro_Element m = new Macro_Element(this, "", "MC_Element_Fillleft", null, NO_CO, NO_CO, false);
-    addElement(c, m); 
-    return m.back;
-  }
-
-  nWidget addLabelS(int c, String t) { 
-    Macro_Element m = new Macro_Element(this, t, "MC_Element_Single", null, NO_CO, NO_CO, true);
-    addElement(c, m); 
-    return m.back;
-  }
-  nWidget addLabelL(int c, String t) { 
-    Macro_Element m = new Macro_Element(this, t, "MC_Element_Double", null, NO_CO, NO_CO, false);
-    addElement(c, m); 
-    return m.back;
-  }
-
-  Macro_Connexion addInput(int c, String t) { 
-    Macro_Element m = new Macro_Element(this, "", "MC_Element_Single", t, INPUT, INPUT, true);
-    if (m.sheet_connect != null) m.sheet_connect.direct_connect(m.connect);
-    addElement(c, m); 
-    return m.connect;
-  }
-  Macro_Connexion addOutput(int c, String t) { 
-    Macro_Element m = new Macro_Element(this, "", "MC_Element_Single", t, OUTPUT, OUTPUT, true);
-    if (m.sheet_connect != null) m.connect.direct_connect(m.sheet_connect);
-    addElement(c, m); 
-    return m.connect;
-  }
-  Macro_Element addSheetInput(int c, String t) { 
-    Macro_Element m = new Macro_Element(this, "", "MC_Element_Single", t, OUTPUT, INPUT, true);
-    if (m.sheet_connect != null) m.sheet_connect.direct_connect(m.connect);
-    addElement(c, m); 
-    return m;
-  }
-  Macro_Element addSheetOutput(int c, String t) { 
-    Macro_Element m = new Macro_Element(this, "", "MC_Element_Single", t, INPUT, OUTPUT, true);
-    if (m.sheet_connect != null) m.connect.direct_connect(m.sheet_connect);
-    addElement(c, m); 
-    return m;
-  }
-
-
-  Macro_Element addElement(int c, Macro_Element m) {
-    if (c >= 0 && c < 3) {
-      if (c == 2 && shelfs.size() < 3) addShelf();
-      elements.add(m);
-      getShelf(c).insertDrawer(m);
-      if (c == 0 && getShelf(c).drawers.size() == 1) getShelf(c).getDrawer(0).ref.setPX(-ref_size*0.0);
-      if (c == 1 && getShelf(c).drawers.size() == 1) getShelf(c).getDrawer(0).ref.setPX(ref_size*0.5);
-      if (c == 2 && getShelf(c).drawers.size() == 1) getShelf(c).getDrawer(0).ref.setPX(ref_size);
-      if (openning.get() == OPEN) for (Macro_Element e : elements) e.show();
-      toLayerTop();
-      return m;
-    } else return null;
-  }
-  
-  String resum_link() { 
-    String r = "";
-    for (Macro_Element m : elements) {
-      if (m.connect != null) for (Macro_Connexion co : m.connect.connected_inputs) 
-        r += co.descr + INFO_TOKEN + m.connect.descr + OBJ_TOKEN;
-      if (m.connect != null) for (Macro_Connexion co : m.connect.connected_outputs) 
-        r += m.connect.descr + INFO_TOKEN + co.descr + OBJ_TOKEN;
-      if (m.sheet_connect != null) for (Macro_Connexion co : m.sheet_connect.connected_inputs) 
-        r += co.descr + INFO_TOKEN + m.sheet_connect.descr + OBJ_TOKEN;
-      if (m.sheet_connect != null) for (Macro_Connexion co : m.sheet_connect.connected_outputs) 
-        r += m.sheet_connect.descr + INFO_TOKEN + co.descr + OBJ_TOKEN;
-    }
-    return r; 
-  }
-  
-  ArrayList<Macro_Element> elements = new ArrayList<Macro_Element>();
-  Macro_Bloc toLayerTop() { 
-    super.toLayerTop(); 
-    for (Macro_Element e : elements) e.toLayerTop(); 
-    grabber.toLayerTop(); 
-    return this;
-  }
-  Macro_Bloc clear() {
-    for (Macro_Element e : elements) e.clear();
-    super.clear(); return this; }
-
-  Macro_Bloc open() {
-    super.open();
-    for (Macro_Element m : elements) m.show();
-    toLayerTop();
-    return this;
-  }
-  Macro_Bloc reduc() {
-    super.reduc();
-    for (Macro_Element m : elements) m.reduc();
-    toLayerTop();
-    return this;
-  }
-  Macro_Bloc show() {
-    super.show();
-    for (Macro_Element m : elements) m.show();
-    toLayerTop();
-    return this;
-  }
-  Macro_Bloc hide() {
-    super.hide(); 
-    for (Macro_Element m : elements) m.hide();
-    //toLayerTop();
-    return this;
-  }
 }

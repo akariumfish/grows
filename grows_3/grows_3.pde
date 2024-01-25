@@ -25,7 +25,7 @@ PApplet
 
 boolean DEBUG_HOVERPILE = false;
 boolean DEBUG_NOFILL = false;
-boolean DEBUG_MACRO = true;
+boolean DEBUG_MACRO = false;
 
 boolean DEBUG = true;
 
@@ -75,7 +75,7 @@ void setup() {//executé au demarage
     public void run() { interf.addEventNextFrame(new Runnable() { 
       public void run() { interf.setup_load(); } } ); } } );
   
-  app_grab = new nWidget(interf.screen_gui, "Grows 2.9.5", 28, 0, 0, base_width - 40, 40)
+  app_grab = new nWidget(interf.screen_gui, "Grows 3.0", 28, 0, 0, base_width - 40, 40)
     .setTrigger()
     .addEventTrigger(new Runnable() { 
     public void run() { mx = mouseX; my = mouseY; } } )
@@ -89,6 +89,9 @@ void setup() {//executé au demarage
     .setTrigger()
     .addEventTrigger(new Runnable() { 
     public void run() { exit(); } } );
+  
+  interf.full_screen_run.run();
+  interf.full_screen_run.run();
   interf.full_screen_run.run();
 }
 

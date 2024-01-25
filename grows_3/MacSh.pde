@@ -64,6 +64,8 @@ class Macro_Sheet extends Macro_Abstract {
       back.setSize(maxx - minx, maxy - miny);
       if (sheet != this) sheet.updateBack();
     }
+    
+    mmain().update_select_bound();
   }
   Macro_Sheet select() {
     if (mmain().selected_sheet != this) { 
@@ -74,6 +76,7 @@ class Macro_Sheet extends Macro_Abstract {
       if (mmain().selected_sheet.openning.get() == DEPLOY)
         mmain().selected_sheet.grabber.setLook(gui.theme.getLook("MC_Grabber_Deployed"));
       else mmain().selected_sheet.grabber.setLook(gui.theme.getLook("MC_Grabber"));
+      for (Macro_Abstract m : mmain().selected_macro) m.szone_unselect();
       mmain().selected_macro.clear();
       mmain().selected_sheet = this;
       back_front.setOutline(true);
@@ -237,33 +240,35 @@ class Macro_Sheet extends Macro_Abstract {
   }
   
   void add_spot(String side, Macro_Element elem) {
-    String[] spots_side_list = splitTokens(spots.get(), GROUP_TOKEN);
-    String left_s = OBJ_TOKEN, right_s = OBJ_TOKEN;
-    if (spots_side_list.length == 2) { 
-      left_s = copy(spots_side_list[0]); right_s = copy(spots_side_list[1]); }
-    
-    nWidget spot = null;
-    if (side.equals("left")) {
-      left_s += elem.descr + OBJ_TOKEN;
+    if (elem.spot == null) {
+      String[] spots_side_list = splitTokens(spots.get(), GROUP_TOKEN);
+      String left_s = OBJ_TOKEN, right_s = OBJ_TOKEN;
+      if (spots_side_list.length == 2) { 
+        left_s = copy(spots_side_list[0]); right_s = copy(spots_side_list[1]); }
       
-      getShelf(0).removeDrawer(left_spot_drawer);
-      spot = getShelf(0).addDrawer(2, 1).addModel("MC_Panel_Spot_Back");
-      getShelf(0).insertDrawer(left_spot_drawer);
-    } else if (side.equals("right")) {
-      right_s += elem.descr + OBJ_TOKEN;
+      nWidget spot = null;
+      if (side.equals("left")) {
+        left_s += elem.descr + OBJ_TOKEN;
+        
+        getShelf(0).removeDrawer(left_spot_drawer);
+        spot = getShelf(0).addDrawer(2, 1).addModel("MC_Panel_Spot_Back");
+        getShelf(0).insertDrawer(left_spot_drawer);
+      } else if (side.equals("right")) {
+        right_s += elem.descr + OBJ_TOKEN;
+        
+        getShelf(1).removeDrawer(right_spot_drawer);
+        spot = getShelf(1).addDrawer(2, 1).addModel("MC_Panel_Spot_Back");
+        getShelf(1).insertDrawer(right_spot_drawer);
+      }
       
-      getShelf(1).removeDrawer(right_spot_drawer);
-      spot = getShelf(1).addDrawer(2, 1).addModel("MC_Panel_Spot_Back");
-      getShelf(1).insertDrawer(right_spot_drawer);
-    }
-    
-    elem.set_spot(spot);
-    String new_str = "";
-    new_str += left_s+GROUP_TOKEN+right_s;
-    spots.set(new_str);
-    if (spot != null) {
-      if (openning.get() != REDUC && openning.get() != HIDE) spot.show();
-      else spot.hide();
+      elem.set_spot(spot);
+      String new_str = "";
+      new_str += left_s+GROUP_TOKEN+right_s;
+      spots.set(new_str);
+      if (spot != null) {
+        if (openning.get() != REDUC && openning.get() != HIDE) spot.show();
+        else spot.hide();
+      }
     }
   }
   void remove_spot(String ref) {
@@ -456,21 +461,24 @@ class Macro_Sheet extends Macro_Abstract {
  
   /*
                   TO DO
-  
-  add screenshot shortcut to base templates
                   
-  when loading link there is confusion between sheet connect,
-    the bloc holding the sheet co need to check if his name is unique in his sheet parent too!!!
-    event for sheet co descr look like :
-      left :elem_name(bloc ref + num) ... token right: ...
-    there his no mention that its a sheet co and that his bloc is on another sheet than the co
+  beug past template : sheet_co link foire 
+    pb probably in rename_build_spot
+  
+  debug MComment
+    rebuild itself > change name, lose co, change place
     
-    tldr duplicate sheet with spot beug coz sheet connections
-    >> need to check inside child_sheet too
+  logging system :
+    to all custom log methods :
+    add string to a global string has new line (or not)
+    went exiting sketch save logs if activated (boolean in papplet ctrled by svalue)
+    at crash? how to detect crash?
   
   its needed to group shapes to limit object nb
   
-  find a way to easily grab a bloc from far away
+  on widget draw try collision with gui.view
+  
+  show selectgroup grabber only if more than 1 bloc selected
   
   when manually adding try to stay on top of sheet back to keep it small
   
@@ -668,6 +676,21 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
     child_sheet.clear();
     updateBack();
     return this;
+  }
+  
+  String resum_link() { 
+    String r = "";
+    for (Macro_Element m : child_elements) {
+      //if (m.connect != null) for (Macro_Connexion co : m.connect.connected_inputs) 
+      //  r += co.descr + INFO_TOKEN + m.connect.descr + OBJ_TOKEN;
+      //if (m.connect != null) for (Macro_Connexion co : m.connect.connected_outputs) 
+      //  r += m.connect.descr + INFO_TOKEN + co.descr + OBJ_TOKEN;
+      if (m.sheet_connect != null) for (Macro_Connexion co : m.sheet_connect.connected_inputs) 
+        r += co.descr + INFO_TOKEN + m.sheet_connect.descr + OBJ_TOKEN;
+      if (m.sheet_connect != null) for (Macro_Connexion co : m.sheet_connect.connected_outputs) 
+        r += m.sheet_connect.descr + INFO_TOKEN + co.descr + OBJ_TOKEN;
+    }
+    return r; 
   }
   
   nFrontTab custom_tab;
@@ -902,6 +925,7 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
   }
   
   void setupFromBloc(sValueBloc bloc) {
+    mlogln(value_bloc.ref+" setupFromBloc");
     if (canSetupFrom(bloc)) {
       
       empty();
@@ -925,26 +949,28 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
             for (Macro_Abstract m : child_macro) if (m.value_bloc.ref.equals(bloc.ref)) { 
               found = true; 
               m.setupFromBloc(bloc); 
-              //break;
             }
           }
           if (!found) { //sinon
-            addCopyofBloc(bloc);
+            addCopyofBloc(bloc, false);
           }
         }
       }});
-      //logln("nref "+new_ref);
+      
+      mlogln("setup "+value_bloc.ref+" \n    nref "+new_ref + " \n searching for link/spot");
       
       // take apart saving string to apply name change then create corresponding link or spot
       if (bloc.getBloc("settings").getValue("links") != null) {
+        mlogln("setup sheet link found");
         String link_s = ((sStr)bloc.getBloc("settings").getValue("links")).get();
         rename_build_link(link_s, new_ref);
       }
       //redo_spot();
-      //if (bloc.getBloc("settings").getValue("spots") != null) {
-      //  String spot_s = ((sStr)bloc.getBloc("settings").getValue("spots")).get();
-      //  rename_build_spot(spot_s, new_ref);
-      //}
+      if (bloc.getBloc("settings").getValue("spots") != null) {
+        mlogln("setup sheet spot found");
+        String spot_s = ((sStr)bloc.getBloc("settings").getValue("spots")).get();
+        rename_build_spot(spot_s, new_ref);
+      }
       redo_spot();
       redo_link();
       
@@ -995,13 +1021,18 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
     }
   }
   void rename_build_spot(String spots_s, String n_ref) {
+    //logln(value_bloc.ref+" rename spot strt");
     String[] change_list = splitTokens(n_ref, OBJ_TOKEN);
     //String new_str = "";
     String[] spots_side_list = splitTokens(spots_s, GROUP_TOKEN);
     int side = 0;
     for (String spot_side : spots_side_list) {
+      //logln("doing side "+side);
+      int elc = 0;
       String[] elem_list = splitTokens(spot_side, OBJ_TOKEN);
       for (String elm : elem_list) {
+        //logln(elc+" got spot elem "+elm);
+        elc++;
         String[] elem_descr_l = splitTokens(elm, BLOC_TOKEN);
         for (String change : change_list) {
           String[] changepart = splitTokens(change, INFO_TOKEN);
@@ -1010,6 +1041,7 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
           }
         }
         String new_elem = BLOC_TOKEN+elem_descr_l[0]+BLOC_TOKEN+elem_descr_l[1];
+        //logln("renamed "+new_elem);
         Macro_Element e = null;
         for (Macro_Element t : child_elements) if (t.descr.equals(new_elem)) { e = t; break; }
         if (e != null && side == 0) add_spot("left", e);
@@ -1018,41 +1050,61 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
       
       side++;
     }
-    
+    //logln(value_bloc.ref+" rename spot end");
   }
-  
-  void addCopyofBlocContent(sValueBloc bloc) {
+  boolean is_addgroup_top_bloc = false;
+  void addCopyofBlocContent(sValueBloc bloc, boolean addgroup_top_bloc) {
+    mlogln(value_bloc.ref+" addCopyofBlocContent");
     
+    is_addgroup_top_bloc = addgroup_top_bloc;
     //to store name change
     new_ref = "";
     //point to container of all blocs being added to filter name duplication
     blocs_to_add = bloc;
     
     bloc.runBlocIterator(new Iterator<sValueBloc>() { public void run(sValueBloc b) { 
-      addCopyofBloc(b);
+      addCopyofBloc(b, is_addgroup_top_bloc);
     }});
     
-    //logln("nref "+new_ref);
+    mlogln(value_bloc.ref+" \n    nref "+new_ref + " \n searching for link/spot");
     
     // take apart saving string to apply name change then create corresponding link or spot
+    
+    // template group link saving
     if (bloc.getValue("links") != null) {
+      //mlogln(value_bloc.ref+"found link value - rename/build");
       String link_s = ((sStr)bloc.getValue("links")).get();
       rename_build_link(link_s, new_ref);
     }
-    //redo_spot();
     if (bloc.getValue("spots") != null) {
+      //mlogln(value_bloc.ref+"found spot value - rename/build");
       String spot_s = ((sStr)bloc.getValue("spots")).get();
       rename_build_spot(spot_s, new_ref);
     }
+    //// sheet links
+    //if (bloc.getBloc("settings") != null && bloc.getBloc("settings").getValue("links") != null) {
+    //  logln("sheet link found");
+    //  String link_s = ((sStr)bloc.getBloc("settings").getValue("links")).get();
+    //  rename_build_link(link_s, new_ref);
+    //}
+    //// sheet spot
+    ////redo_spot();
+    //if (bloc.getBloc("settings") != null && bloc.getBloc("settings").getValue("spots") != null) {
+    //  logln("sheet spot found");
+    //  String spot_s = ((sStr)bloc.getBloc("settings").getValue("spots")).get();
+    //  rename_build_spot(spot_s, new_ref);
+    //}
+    //logln(value_bloc.ref+"redo link/spot");
     redo_spot();
     redo_link();
-    mmain().szone_clear_select();
+    mlogln(value_bloc.ref+" addCopyofBlocContent end");
   }
   
   String new_ref = "";
   sValueBloc blocs_to_add;
-  void addCopyofBloc(sValueBloc bloc) {
+  void addCopyofBloc(sValueBloc bloc, boolean from_top_bloc) {
     if (!bloc.ref.equals("settings")) {
+      mlogln(value_bloc.ref+" addCopyofBloc " + bloc.ref);
       
       //add bloc
       String n_ref = bloc.ref;
@@ -1063,15 +1115,20 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
       if (sheet != this) for (Macro_Sheet m : sheet.child_sheet) if (m != this)
         is_in_other_sheet = m.value_bloc.getBloc(n_ref) != null || is_in_other_sheet;
       
+      for (Macro_Sheet m : child_sheet) if (m != this)
+        is_in_other_sheet = m.value_bloc.getBloc(n_ref) != null || is_in_other_sheet;
+      
       while (value_bloc.getBloc(n_ref) != null || 
              (blocs_to_add.getBloc(n_ref) != null && blocs_to_add.getBloc(n_ref) != bloc) || 
-             (sheet != this && sheet.sheet.value_bloc.getBloc(n_ref) != null) || 
+             (sheet != this && sheet.value_bloc.getBloc(n_ref) != null) || 
              is_in_other_sheet) {
         if (n_ref.length() > 0) while (n_ref.charAt(0) != '_') n_ref = n_ref.substring(1, n_ref.length());
         n_ref = cn + n_ref;
         cn++;
         is_in_other_sheet = false;
         if (sheet != this) for (Macro_Sheet m : sheet.child_sheet) if (m != this)
+          is_in_other_sheet = m.value_bloc.getBloc(n_ref) != null || is_in_other_sheet;
+        for (Macro_Sheet m : child_sheet) if (m != this)
           is_in_other_sheet = m.value_bloc.getBloc(n_ref) != null || is_in_other_sheet;
       }
       //logln("in "+value_bloc.ref+" new ref "+((sStr)(bloc.getBloc("settings").getValue("title"))).get()+" > "+n_ref);
@@ -1091,16 +1148,42 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
         sValueBloc s = (sValueBloc)b.getValue(); s.clean();
       } 
       nbloc.blocs.clear();
-      copy_bloc(sbloc, nbloc);
+      copy_bloc(sbloc, nbloc, "settings");
+      
+      //copy link and spot in nbloc_child 
+      if (sbloc.getValue("links") != null) {
+      //if (bloc.getBloc("settings") != null && bloc.getBloc("settings").getValue("links") != null) {
+        sValue v = copy_value(sbloc.getValue("links"), nbloc_child);
+        //logln("copy link val has "+v.ref);
+      }
+      if (sbloc.getValue("spots") != null) {
+      //if (bloc.getBloc("settings") != null && bloc.getBloc("settings").getValue("spots") != null) {
+        sValue v = copy_value(sbloc.getValue("spots"), nbloc_child);
+        //logln("copy spot val has "+v.ref);
+      }
       sett_temp.clear();
       
+      //if (nbloc.getBloc("settings") != null) logln(value_bloc.ref+" new bloc " + nbloc.ref + " has setting"); 
+      //else logln(value_bloc.ref+" new bloc " + nbloc.ref + " DONT has setting"); 
+      
       //add macro
-      Macro_Abstract a = addByBloc(nbloc);
-      if (a != null) new_ref = new_ref + OBJ_TOKEN + bloc.ref+INFO_TOKEN+nbloc.ref;
+      Macro_Abstract a = addByValueBloc(nbloc);
+      if (a != null) { 
+        new_ref = new_ref + OBJ_TOKEN + bloc.ref+INFO_TOKEN+a.value_bloc.ref;
+        if (sheet != this) sheet.new_ref = sheet.new_ref + OBJ_TOKEN + bloc.ref+INFO_TOKEN+a.value_bloc.ref;
+      }
       
       //add copyed child to new macro
       if (a != null && a.val_type.get().equals("sheet")) {
-        ((Macro_Sheet)a).addCopyofBlocContent(nbloc_child);
+        //if (nbloc_child.getValue("links") != null && 
+        //    a.value_bloc.getBloc("settings") != null && 
+        //    a.value_bloc.getBloc("settings").getValue("links") != null) 
+        //  a.value_bloc.getBloc("settings").getValue("links").clear();
+        //if (nbloc_child.getValue("spots") != null && 
+        //    a.value_bloc.getBloc("settings") != null && 
+        //    a.value_bloc.getBloc("settings").getValue("spots") != null) 
+        //  a.value_bloc.getBloc("settings").getValue("spots").clear();
+        ((Macro_Sheet)a).addCopyofBlocContent(nbloc_child, false);
         for (Macro_Abstract m : ((Macro_Sheet)a).child_macro) m.szone_unselect();
         //((Macro_Sheet)a).redo_spot();
         //((Macro_Sheet)a).redo_link();
@@ -1111,11 +1194,11 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
       
       nbloc_child.clear();
       
-      if (a != null && !mmain().is_setup_loading) a.szone_select();
+      if (from_top_bloc && a != null && !mmain().is_setup_loading)  { a.szone_select(); }
     } 
   }
   //b need to be child of value_bloc and have setting/type + spe if sheet , everything else can be created
-  Macro_Abstract addByBloc(sValueBloc b) { 
+  Macro_Abstract addByValueBloc(sValueBloc b) { 
     if (b != null && b.parent == value_bloc && b.getBloc("settings") != null && 
         b.getBloc("settings").getValue("type") != null) {
       

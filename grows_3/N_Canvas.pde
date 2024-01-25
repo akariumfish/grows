@@ -238,7 +238,7 @@ class Canvas extends Macro_Sheet {
     can_div = menuIntIncr(4, 1, "can_div");
     val_scale = menuFltSlide(def_pix_size, 10, 500, "val_scale");
     color_keep_thresh = menuFltSlide(200, 10, 260, "clrkeep_thresh");
-    val_decay = menuFltSlide(1, 0, 2, "decay");
+    val_decay = menuFltSlide(1, 0.99, 1.01, "decay");
     val_show = newBoo(true, "val_show", "show_canvas");
     val_show_bound = newBoo(true, "val_show_bound", "show_bound");
     val_show_grab = newBoo(true, "val_show_grab", "show_grab");
