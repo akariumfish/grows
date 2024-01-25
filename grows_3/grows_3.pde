@@ -2,8 +2,7 @@ import themidibus.*;
 
 /*
 
-todo : see to of Macro_Sheet constructor in macmain
-
+todo : see top of Macro_Sheet  MacSh.pde
   double click
   right click on widget
 
@@ -93,6 +92,7 @@ void setup() {//executé au demarage
   interf.full_screen_run.run();
   interf.full_screen_run.run();
   interf.full_screen_run.run();
+  surface.setLocation(200, 40);
 }
 
 nWidget app_grab, app_close;

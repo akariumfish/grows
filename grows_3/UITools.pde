@@ -539,7 +539,7 @@ class nFilePicker extends nWindowPanel {
         while (i > 0 && s.charAt(i) != '.') { ext = s.charAt(i) + ext; i--; }
         boolean fn = false;
         for (String st : ext_filter) { fn = fn || st.equals(ext); }
-        if (fn) explorer_entry.add(s);
+        if (fn && !s.equals("database.sdata")) explorer_entry.add(s);
       }
       explorer_list.setEntrys(explorer_entry);
       selectEntry(val_cible.get());

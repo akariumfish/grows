@@ -1086,7 +1086,15 @@ Macro_Main(sInterface _int) {
         sgrab_py = select_grab_widg.getY();
       } } )
       .addEventDrag(new Runnable() { public void run() {
+        
+        select_grab_widg.setPY(select_grab_widg.getLocalY()
+                               - select_grab_widg.getLocalY()%(ref_size * (0.5*gui.scale)));
+        select_grab_widg.setPX(select_grab_widg.getLocalX() 
+                               - select_grab_widg.getLocalX()%(ref_size * (0.5*gui.scale)));
+        
         PVector gr_p = new PVector(select_grab_widg.getX(), select_grab_widg.getY());
+        
+
         PVector prev_gr_p = new PVector(sgrab_px, sgrab_py);
         gr_p = inter.cam.screen_to_cam(gr_p);
         prev_gr_p = inter.cam.screen_to_cam(prev_gr_p);

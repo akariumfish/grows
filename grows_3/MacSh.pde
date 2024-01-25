@@ -1,5 +1,139 @@
 
 /*
+                  TO DO
+                  
+  bloc node : one point in and out at the same time
+    use a custom macro_connect
+    created by leftclick on empty space
+    
+                  
+  beug past template : sheet_co link foire 
+    pb probably in rename_build_spot
+  
+  debug MComment
+    rebuild itself > change name, lose co, change place
+    
+  logging system :
+    to all custom log methods :
+    add string to a global string has new line (or not)
+    went exiting sketch save logs if activated (boolean in papplet ctrled by svalue)
+    at crash? how to detect crash?
+  
+  its needed to group shapes to limit object nb
+  
+  on widget draw try collision with gui.view
+  
+  show selectgroup grabber only if more than 1 bloc selected
+  
+  when manually adding try to stay on top of sheet back to keep it small
+  
+  when saving a group move its median to origin, when adding make a rect around all to find place
+  
+  MVar
+    add a hideable (like com) param drawer : select variable type
+    int str and vec better handling 
+    
+  MComment can log received data (auto text format with insertion token??)
+  
+  number formating!!!
+  
+  bloc a faire:
+    cursor bloc : 
+        (like menu) named, listed in mmain so global, 
+        the bloc point to an existing cursor or can build a new
+        custom setlinkedPosition(svec) setlinkedDir(svec) setlinkedShow(sboo)
+        constrain (dir pos mag ..)
+        registered independently from theirs sheet and easily accessible for
+          new comus start
+          global effect field
+          multi comu objectif
+        
+        auto follow / point to objects, instent or chasing
+        memorize path for display
+        dif shape / look
+        
+    camview
+      like a menu, name, click to go, 3 field for values, 
+      when selected capture n store cam pos / scale
+    frame delay / tick delay / packet process delay
+    setreset, counter, sequance, multigate 
+  
+  TEST packet processing order for inputs
+  
+  redo link loop protection
+    auto delete last link
+  
+  mesure and store the relative process time used by each special sheet
+  
+  sort explorer blocs n values alfabeticaly
+    more entry and smaller height
+    
+  hide majority of macro widgets when dezoom
+
+
+                    R & D
+                    
+  Sending Object through link ??
+    more like temporary and restricted access > need timed, volatile container
+  
+  infrastructure :
+    structural model switchable (patch structure)
+    need used value to be present  
+    
+  mtemplate : load / save
+  sheet selector : select sheet choosen by name on bang
+  pack / unpack > build complex packet
+  
+  unique macro bloc custom build by the special sheet, non deletable, non duplicable
+    ex: Canvas :
+      will send each pixel throug this:
+        4 out color of the neigbours
+        1 out my color
+        4 in color modif for the neigbours
+        1 in color modif for myself
+      by charging the pixels data on the inputs, forcibly running packet process, getting the outs
+      need no exterior co and no packet delaying
+      
+  special sheet : effect field
+    affect a canvas
+    all pixel under his shape get a custom processing
+                    
+  make organism use a face as exemple for its shape
+                    
+  enregistrement de different POV camera entre lesquel on peut basquler
+    vue macro / vue exploration / vue general
+    macro camview
+  
+  change access
+    low access hide certain sheet
+    gain access by meeting enigmatic condition ??
+  
+  when selecting a preset auto hide uncompatible widget ? > need to redo explorer
+  
+  gameplay thinking :
+    consumable is needed to influence the world :
+      modifying svalues
+      diplaying a shape
+      processing data (running macro)
+      packet hold consummable
+    the canvas is the origin and destination of the consumable
+    links connect consummable pool with restriction
+      macro bloc are pool
+      restriction on volume and quantity by tick
+      transfer quality : some of the packet consummable is lost to the canvas
+    displayed shape are pool
+    collision between shape create pool link
+      collision area influence link quality
+    
+    
+    
+  */
+
+
+
+
+
+/*
 
 
 
@@ -459,130 +593,7 @@ class Macro_Sheet extends Macro_Abstract {
   
   
  
-  /*
-                  TO DO
-                  
-  beug past template : sheet_co link foire 
-    pb probably in rename_build_spot
   
-  debug MComment
-    rebuild itself > change name, lose co, change place
-    
-  logging system :
-    to all custom log methods :
-    add string to a global string has new line (or not)
-    went exiting sketch save logs if activated (boolean in papplet ctrled by svalue)
-    at crash? how to detect crash?
-  
-  its needed to group shapes to limit object nb
-  
-  on widget draw try collision with gui.view
-  
-  show selectgroup grabber only if more than 1 bloc selected
-  
-  when manually adding try to stay on top of sheet back to keep it small
-  
-  when saving a group move its median to origin, when adding make a rect around all to find place
-  
-  MVar
-    add a hideable (like com) param drawer : select variable type
-    int str and vec better handling 
-    
-  MComment can log received data (auto text format with insertion token??)
-  
-  number formating!!!
-  
-  bloc a faire:
-    cursor bloc : 
-        (like menu) named, listed in mmain so global, 
-        the bloc point to an existing cursor or can build a new
-        custom setlinkedPosition(svec) setlinkedDir(svec) setlinkedShow(sboo)
-        constrain (dir pos mag ..)
-        registered independently from theirs sheet and easily accessible for
-          new comus start
-          global effect field
-          multi comu objectif
-        
-        auto follow / point to objects, instent or chasing
-        memorize path for display
-        dif shape / look
-        
-    camview
-      like a menu, name, click to go, 3 field for values, 
-      when selected capture n store cam pos / scale
-    frame delay / tick delay / packet process delay
-    setreset, counter, sequance, multigate 
-  
-  TEST packet processing order for inputs
-  
-  redo link loop protection
-    auto delete last link
-  
-  mesure and store the relative process time used by each special sheet
-  
-  sort explorer blocs n values alfabeticaly
-    more entry and smaller height
-    
-  hide majority of macro widgets when dezoom
-
-
-                    R & D
-                    
-  Sending Object through link ??
-    more like temporary and restricted access > need timed, volatile container
-  
-  infrastructure :
-    structural model switchable (patch structure)
-    need used value to be present  
-    
-  mtemplate : load / save
-  sheet selector : select sheet choosen by name on bang
-  pack / unpack > build complex packet
-  
-  unique macro bloc custom build by the special sheet, non deletable, non duplicable
-    ex: Canvas :
-      will send each pixel throug this:
-        4 out color of the neigbours
-        1 out my color
-        4 in color modif for the neigbours
-        1 in color modif for myself
-      by charging the pixels data on the inputs, forcibly running packet process, getting the outs
-      need no exterior co and no packet delaying
-      
-  special sheet : effect field
-    affect a canvas
-    all pixel under his shape get a custom processing
-                    
-  make organism use a face as exemple for its shape
-                    
-  enregistrement de different POV camera entre lesquel on peut basquler
-    vue macro / vue exploration / vue general
-    macro camview
-  
-  change access
-    low access hide certain sheet
-    gain access by meeting enigmatic condition ??
-  
-  when selecting a preset auto hide uncompatible widget ? > need to redo explorer
-  
-  gameplay thinking :
-    consumable is needed to influence the world :
-      modifying svalues
-      diplaying a shape
-      processing data (running macro)
-      packet hold consummable
-    the canvas is the origin and destination of the consumable
-    links connect consummable pool with restriction
-      macro bloc are pool
-      restriction on volume and quantity by tick
-      transfer quality : some of the packet consummable is lost to the canvas
-    displayed shape are pool
-    collision between shape create pool link
-      collision area influence link quality
-    
-    
-    
-  */
   
     
 Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) { 

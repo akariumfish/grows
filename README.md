@@ -50,7 +50,8 @@ thanks for trying, no doc yet, good luck ... 	( sorry )
 New in 3.0
         link and spot saving ok?
         group select/move/copy/paste/delete
-        ease of life
+        template and preset database
+        basic save file, presets and template
         
 New in 2.9:
         Box Community,

@@ -825,7 +825,7 @@ class nWidget {
     label = new String();
     look = new nLook();
     drawer = new Drawable(g.drawing_pile) { public void drawing() {
-      if (rectCollide(getPhantomRect(), gui.view)) {
+      if (rectCollide(getRect(), gui.view) && !(getSX()*gui.scale < 3 && getSY()*gui.scale < 3)) {
         if (((triggerMode || switchMode) && isClicked) || switchState) { fill(look.pressColor); } 
         else if (isHovered && (triggerMode || switchMode))             { fill(look.hoveredColor); } 
         else                                                           { fill(look.standbyColor); }
