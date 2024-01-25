@@ -2978,7 +2978,7 @@ class MSheetIn extends Macro_Bloc {
     } });
     view.setLinkedValue(val_view);
     elem = addSheetInput(0, "in");
-    elem.sheet_connect.setInfo(val_view.get());
+    if (elem.sheet_connect != null) elem.sheet_connect.setInfo(val_view.get());
     //val_title.addEventChange(new Runnable() { public void run() { 
     //if (elem.sheet_connect != null) elem.sheet_connect.setInfo(val_title.get()); } });
   }

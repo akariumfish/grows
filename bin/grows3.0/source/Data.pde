@@ -7,12 +7,20 @@ import java.util.Map;
 
 //#############    RUNNABLE    #############
 abstract class Runnable {
+  boolean to_clear = false;
   Object builder = null; Runnable() {} Runnable(Object p) { builder = p; } 
   public void run() {}
   public void run(float v) {} }
   
 void runEvents(ArrayList<Runnable> e) { for (int i = e.size() - 1 ; i >= 0 ; i--) e.get(i).run(); }
 void runEvents(ArrayList<Runnable> e, float v) { for (int i = e.size() - 1 ; i >= 0 ; i--) e.get(i).run(v); }
+
+void clearEvents(ArrayList<Runnable> e) { 
+  ArrayList<Runnable> e2 = new ArrayList<Runnable>();
+  for (Runnable r : e) if (r.to_clear) e2.add(r);
+  for (Runnable r : e2) e.remove(r);
+  
+}
 
 //execution ordonné en layer et timer
 
@@ -70,6 +78,7 @@ abstract class sValue {
   sValue addEventChange(Runnable r) { eventsChange.add(r); return this; }
   sValue removeEventChange(Runnable r) { eventsChange.remove(r); return this; }
   sValue addEventAllChange(Runnable r) { eventsAllChange.add(r); return this; }
+  sValue removeEventAllChange(Runnable r) { eventsAllChange.remove(r); return this; }
   void doChange() { if (doevent) runEvents(eventsAllChange); has_changed = true; }
   sValueBloc bloc;
   boolean has_changed = false, doevent = true;
@@ -176,8 +185,20 @@ class sStr extends sValue {
   String val = null, def;
   sStr(sValueBloc b, String v, String n, String s) { super(b, "str", n, s); val = copy(v); def = copy(val); }
   String get() { return copy(val); }
-  void set(String v) { if (!v.equals(val)) { 
-    if (limited && v.length() > max) val = v.substring(0, max); else val = copy(v); doChange(); } }
+  void set(String v) { 
+    if (!v.equals(val)) { 
+      if (limited && v.length() > max) val = v.substring(0, max); else val = copy(v); 
+      
+      //filter line return
+      for (int i = val.length() - 1 ; i >= 0  ; i--)
+        if (val.charAt(i) == '\n' || val.charAt(i) == '\r') {
+          val = val.substring(0, i);
+          if (i+1 < val.length()) val += val.substring(i + 1, val.length());
+      }
+      
+      doChange(); 
+    } 
+  }
   void save_to_bloc(Save_Bloc svb) { super.save_to_bloc(svb);
     svb.newData("val", val);
   }
@@ -450,19 +471,50 @@ class sValueBloc {
     if (parent.doevent) parent.last_created_bloc = this; 
     if (parent.doevent) runEvents(parent.eventsAddBloc); }
   void frame() {
-    for (Map.Entry b : values.entrySet()) { sValue s = (sValue)b.getValue(); s.frame(); }
-    for (Map.Entry b : blocs.entrySet()) { sValueBloc s = (sValueBloc)b.getValue(); s.frame(); } }
+    //for (Map.Entry b : values.entrySet()) { sValue s = (sValue)b.getValue(); s.frame(); }
+    //for (Map.Entry b : blocs.entrySet()) { sValueBloc s = (sValueBloc)b.getValue(); s.frame(); } 
+    
+    tmpblc.clear();
+    for (Map.Entry b : blocs.entrySet()) tmpblc.add((sValueBloc)b.getValue());
+    for (int i = tmpblc.size()-1 ; i >= 0 ; i--) tmpblc.get(i).frame();
+    tmpblc.clear();
+    tmpval.clear();
+    for (Map.Entry b : values.entrySet()) tmpval.add((sValue)b.getValue());
+    for (int i = tmpval.size()-1 ; i >= 0 ; i--) tmpval.get(i).frame();
+    tmpval.clear();
+  }
   void clear() {
     clean();
     parent.blocs.remove(ref, this);
   }
+  ArrayList<sValue> tmpval = new ArrayList<sValue>();
+  ArrayList<sValueBloc> tmpblc = new ArrayList<sValueBloc>();
   void clean() {
     //parent.blocs.remove(ref, this);
     for (Map.Entry b : blocs.entrySet()) { sValueBloc s = (sValueBloc)b.getValue(); s.clean(); } 
-    for (Map.Entry b : values.entrySet()) { sValue s = (sValue)b.getValue(); s.clean(); } 
+    
+    tmpval.clear();
+    for (Map.Entry b : values.entrySet()) tmpval.add((sValue)b.getValue());
+    for (int i = tmpval.size()-1 ; i >= 0 ; i--) tmpval.get(i).clean();
+    tmpval.clear();
+    
+    //for (Map.Entry b : values.entrySet()) { sValue s = (sValue)b.getValue(); s.clean(); } 
     blocs.clear(); values.clear();
     if (doevent) runEvents(eventsDelete); 
     if (parent.doevent) runEvents(parent.eventsDelBloc);
+  }
+  void empty() {
+    tmpblc.clear();
+    for (Map.Entry b : blocs.entrySet()) tmpblc.add((sValueBloc)b.getValue());
+    for (int i = tmpblc.size()-1 ; i >= 0 ; i--) tmpblc.get(i).clear();
+    tmpblc.clear();
+    
+    tmpval.clear();
+    for (Map.Entry b : values.entrySet()) tmpval.add((sValue)b.getValue());
+    for (int i = tmpval.size()-1 ; i >= 0 ; i--) tmpval.get(i).clean();
+    tmpval.clear();
+    
+    blocs.clear(); values.clear();
   }
   
   void load_from_bloc(Save_Bloc sb) {
@@ -586,6 +638,8 @@ class sValueBloc {
 
   
   sValue newValue(Save_Bloc sb) {
+    //logln(ref+" newValue from SB "+sb.name);
+    //logln("   type "+sb.getData("__bloc_type"));
     sValue nv = null;
     if (sb.getData("__bloc_type") != null && sb.getData("__bloc_type").equals("val")) {
       String n = sb.getData("ref");
@@ -699,12 +753,12 @@ boolean full_match(sValueBloc b1, sValueBloc b2) {
   return b1.getHierarchy(true).equals(b2.getHierarchy(true)); }
 
 
-void copy_bloc(sValueBloc from, sValueBloc to) {
+sValueBloc copy_bloc(sValueBloc from, sValueBloc to) {
   if (from != null && to != null) {
     Save_Bloc b = new Save_Bloc("");
     from.preset_to_save_bloc(b);
-    to.newBloc(b, from.base_ref);
-  } 
+    return to.newBloc(b, from.base_ref);
+  } return null;
 }
 sValueBloc copy_bloc(sValueBloc from, sValueBloc to, String n) {
   if (from != null && to != null) {
@@ -715,9 +769,13 @@ sValueBloc copy_bloc(sValueBloc from, sValueBloc to, String n) {
 }
 sValue copy_value(sValue from, sValueBloc to) {
   if (from != null && to != null) {
+    //logln("copy val from "+from.ref);
     Save_Bloc b = new Save_Bloc(from.ref);
-    from.save_to_bloc(b);
-    return to.newValue(b);
+    from.save_to_bloc(b); 
+    b.newData("__bloc_type", "val");
+    sValue v = to.newValue(b);
+    //logln("a "+v.ref);
+    return v;
   } return null;
 }
 void transfer_values(sValueBloc from, sValueBloc to) {
@@ -814,6 +872,16 @@ class Save_Data {
 
 class Save_Bloc {
   
+  //Save_Bloc(String n, int i) { name = copy(n); index = i; }
+  Save_Bloc(String n) { name = copy(n); index = 0; }
+  
+  String name;
+  int index;
+  ArrayList<Save_Data> datas = new ArrayList<Save_Data>();
+  ArrayList<Save_Bloc> blocs = new ArrayList<Save_Bloc>();
+  
+  
+  
   void runIterator(Iterator<Save_Bloc> i) { 
     int count = 0;
     for (Save_Bloc b : blocs) { count++; i.run(b); i.run(b, count); }
@@ -865,23 +933,16 @@ class Save_Bloc {
     to_list(sl);
     saveStrings(savepath, sl.list);
   }
-  void load_from(String savepath) { 
+  boolean load_from(String savepath) { 
     slog("bloc - load from");
     clear();
     String[] load = loadStrings(savepath);
     Save_List sl = new Save_List();
-    sl.init(load);
-    from_list(sl);
+    boolean b = (load != null);
+    if (b) sl.init(load);
+    if (b) from_list(sl);
+    return b;
   }
-  
-  //Save_Bloc(String n, int i) { name = copy(n); index = i; }
-  Save_Bloc(String n) { name = copy(n); index = 0; }
-  
-  String name;
-  int index;
-  ArrayList<Save_Data> datas = new ArrayList<Save_Data>();
-  ArrayList<Save_Bloc> blocs = new ArrayList<Save_Bloc>();
-  
   
   void to_list(Save_List sl) {
     slog("Bloc - to string - start");

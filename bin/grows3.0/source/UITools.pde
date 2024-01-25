@@ -58,65 +58,6 @@
 
 
 
-class nColorPanel extends nWindowPanel {
-  //nColorPanel setOkEvent_Builder(Runnable r) { ok_run = r; ok_run.builder = this; return this; }
-  nWidget color_widget, red_widget, gre_widget, blu_widget;
-  float red, gre, blu;
-  //Runnable ok_run;
-  sCol cval;
-  nColorPanel(nGUI _g, nTaskPanel _task, sCol _cv) { 
-    super(_g, _task, "color"); 
-    cval = _cv;
-    red = cval.getred(); gre = cval.getgreen(); blu = cval.getblue(); 
-    getShelf()
-      .addDrawer(10.25, 1)
-        .addWidget(new nSlide(gui, ref_size*7.375, ref_size).setValue(cval.getred() / 255)
-          .addEventSlide(new Runnable() { public void run(float v) { 
-            red = v*255; update(); red_widget.setText(trimStringFloat(red)); } } )
-          .setPosition(0, 0) ).getShelf()
-      .addDrawer(10.25, 1)
-        .addWidget(new nSlide(gui, ref_size*7.375, ref_size).setValue(cval.getgreen() / 255)
-          .addEventSlide(new Runnable() { public void run(float v) { 
-            gre = v*255; update(); gre_widget.setText(trimStringFloat(gre)); } } )
-          .setPosition(0, 0) ).getShelf()
-      .addDrawer(10.25, 1)
-        .addWidget(new nSlide(gui, ref_size*7.375, ref_size).setValue(cval.getblue() / 255)
-          .addEventSlide(new Runnable() { public void run(float v) { 
-            blu = v*255; update(); blu_widget.setText(trimStringFloat(blu)); } } )
-          .setPosition(0, 0) ).getShelf()
-      .addDrawer(10.25, 1)
-        .addCtrlModel("Button-S2-P3", "OK")
-          .setRunnable(new Runnable() { public void run() { clear(); } }).getDrawer()
-          ;
-        
-    color_widget = getDrawer(0,3).addModel("Label-S3-P1")
-          .setStandbyColor(color(red, gre, blu));
-    red_widget = getDrawer(0,0)
-        .addModel("Label_Small_Outline-S2", str(red)).setPX(7.5*ref_size);
-    gre_widget = getDrawer(0,1)
-        .addModel("Label_Small_Outline-S2", str(gre)).setPX(7.5*ref_size);
-    blu_widget = getDrawer(0,2)
-        .addModel("Label_Small_Outline-S2", str(blu)).setPX(7.5*ref_size);
-    
-    if (cval == null) clear();
-  } 
-  void update() { 
-    if (cval != null) {
-      color_widget.setStandbyColor(color(red, gre, blu)); 
-      cval.set(color(red, gre, blu)); }
-    else clear(); }
-  nWindowPanel clear() { 
-    super.clear(); return this; }
-  nWindowPanel updateHeight() { 
-    super.updateHeight(); return this; }
-  nWindowPanel updateWidth() { 
-    super.updateWidth(); return this; }
-}
-
-
-
-
-
 
 
 
@@ -134,11 +75,35 @@ class nCursor extends nWidget {
   sBoo show;
   String ref;
   nWidget refwidget, thiswidget, pointwidget;
-  nCursor(nGUI _g, Macro_Sheet sheet, String r, String s) {
-    super(_g);
-    new nConstructor(_g.theme, _g.theme.ref_size);
+  nWidget screen_widget;
+  Macro_Sheet sheet;
+  Camera cam;
+  Runnable move_run, zoom_run;
+  
+  void update_view() {
+    if (cam.cam_scale.get() < 0.25) { 
+      if (show.get()) { screen_widget.show(); toLayerTop(); }
+      //screen_widget.setGrabbable();
+      pointwidget.hide();
+      thiswidget.hide();
+    } else { 
+      screen_widget.hide();
+      //screen_widget.setPassif();
+      if (show.get()) { 
+        pointwidget.show();
+        thiswidget.show();
+        toLayerTop();
+      }
+    }
+  }
+  
+  nCursor(Macro_Sheet _sheet, String r, String s) {
+    super(_sheet.gui);
+    sheet = _sheet;
+    cam = sheet.mmain().inter.cam;
+    new nConstructor(sheet.gui.theme, sheet.gui.theme.ref_size);
     thiswidget = this;
-    gui = _g; ref_size = _g.theme.ref_size; ref = r;
+    gui = sheet.gui; ref_size = sheet.gui.theme.ref_size; ref = r;
     copy(gui.theme.getModel("Cursor"));
     refwidget = gui.theme.newWidget(gui, "ref").setParent(this).setPosition(ref_size, ref_size);
     setSize(ref_size*2, ref_size*2);
@@ -147,10 +112,40 @@ class nCursor extends nWidget {
     setGrabbable();
     addEventDrag(new Runnable() {public void run() {pval.set(refwidget.getX(), refwidget.getY());}});
     pval = sheet.newVec(s+"_cursor_position", s+"_pos");
-    pval.addEventChange(new Runnable(pval) {public void run() {
+    pval.addEventDelete(new Runnable(pval) { public void run() { clear(); } } );
+    pval.addEventChange(new Runnable(pval) { public void run() {
       sVec v = ((sVec)builder);
-      thiswidget.setPosition(v.x()-ref_size, v.y()-ref_size);}});
+      thiswidget.setPosition(v.x()-ref_size, v.y()-ref_size);
+      
+      PVector p = cam.cam_to_screen(pval.get());
+      screen_widget.setPosition(p.x-ref_size/4, p.y-ref_size/4); }});
+    move_run = new Runnable() {public void run() { 
+      PVector p = cam.cam_to_screen(pval.get());
+      screen_widget.setPosition(p.x-ref_size/4, p.y-ref_size/4);
+    }};
+    zoom_run = new Runnable() {public void run() { 
+      update_view();
+      PVector p = cam.cam_to_screen(pval.get());
+      screen_widget.setPosition(p.x-ref_size/4, p.y-ref_size/4);
+    }};
+    cam.addEventMove(move_run);
+    cam.addEventZoom(zoom_run);
     
+    screen_widget = gui.theme.newWidget(sheet.mmain().screen_gui, "Cursor")
+      .setSize(ref_size/2, ref_size/2)
+      .setPosition(-ref_size/4, -ref_size/4)
+      //.setPassif()
+      .setGrabbable()
+      .setText(r)
+      .setFont(int(ref_size / 2.0))
+      .setTextAlignment(LEFT, DOWN)
+      .addEventDrag(new Runnable() {public void run() {
+        PVector p = new PVector(screen_widget.getX()+ref_size/4, screen_widget.getY()+ref_size/4);
+        p = cam.screen_to_cam(p);
+        pval.set(p.x, p.y);
+      }});
+      ;
+      
     show = sheet.newBoo(false, s+"_cursor_show", s+"_show"); //!!!!! is hided by default
    
     pointwidget = gui.theme.newWidget(gui, "Pointer").setPosition(-ref_size/4, -ref_size/4).setSize(ref_size/2, ref_size/2);
@@ -161,18 +156,31 @@ class nCursor extends nWidget {
       if (v.get().mag() > ref_size*2) v.set(v.get().setMag(ref_size*2));
       pointwidget.setPosition(v.x()-ref_size/4, v.y()-ref_size/4); }});
     pointwidget.addEventDrag(new Runnable() {public void run() {
-      dval.set(pointwidget.getLocalX() + ref_size/4, pointwidget.getLocalY() + ref_size/4);}});
+      dval.set(pointwidget.getLocalX() + ref_size/4, pointwidget.getLocalY() + ref_size/4);
+    }});
+      
     pointwidget.addEventLiberate(new Runnable() {public void run() {
       if (dval.get().mag() < ref_size) dval.set(0, 0); }});
     
     if (show.get()) { thiswidget.show(); pointwidget.show(); } else { thiswidget.hide(); pointwidget.hide(); }
     show.addEventChange(new Runnable(show) {public void run() {
     sBoo v = ((sBoo)builder);
-      if (v.get()) { thiswidget.show(); pointwidget.show(); } else { thiswidget.hide(); pointwidget.hide(); } }});
+      if (v.get()) { thiswidget.show(); pointwidget.show(); screen_widget.show(); } 
+    else { thiswidget.hide(); pointwidget.hide(); screen_widget.hide(); } }});
+    
+    sheet.mmain().inter.addEventNextFrame(new Runnable() {public void run() {
+      update_view();
+    }});
   }
   void clear() { 
-    refwidget.clear(); pointwidget.clear(); super.clear(); 
-    show.clear(); pval.clear(); dval.clear(); }
+    cam.removeEventMove(move_run);
+    cam.removeEventZoom(zoom_run);
+    refwidget.clear(); pointwidget.clear(); screen_widget.clear(); super.clear(); 
+    show.clear(); dval.clear(); pval.doEvent(false); pval.clear(); }
+  nCursor toLayerTop() { 
+    super.toLayerTop(); refwidget.toLayerTop(); pointwidget.toLayerTop(); 
+    screen_widget.toLayerTop(); 
+    return this; }
 }
 
 
@@ -334,11 +342,474 @@ class nInfo {
 
 
 
+class nValuePicker extends nWindowPanel {
+  
+  ArrayList<String> explorer_entry;
+  
+  nList explorer_list;
+  nWidget info;
+  
+  sStr val_cible;
+  sValueBloc search_bloc;
+  boolean autoclose = false, mitig_ac = false;
+  
+  ArrayList<Runnable> eventsChoose = new ArrayList<Runnable>();
+  nValuePicker addEventChoose(Runnable r) { eventsChoose.add(r);  return this; } 
+  
+  nValuePicker(nGUI _g, nTaskPanel _task, sStr _sv, sValueBloc _sb, boolean _autoclose) { 
+    super(_g, _task, "select value"); 
+    val_cible = _sv;
+    search_bloc = _sb;
+    autoclose = _autoclose;
+    explorer_entry = new ArrayList<String>();
+    
+    explorer_list = getShelf().addList(5, 10, 1).setTextAlign(LEFT);
+    
+    if (!_autoclose) {
+      info = getShelf().addSeparator(0.25)
+        .addDrawer(1.4)
+          .addLinkedModel("Label-S4", "Selected Value :")
+          .setLinkedValue(val_cible).setTextAlignment(LEFT, TOP);
+    
+      getShelf()
+        .addSeparator(0.25)
+        .addDrawer(10.25, 1)
+          .addCtrlModel("Button-S2-P2", "OK")
+          .setRunnable(new Runnable() { public void run() { 
+            runEvents(eventsChoose); clear(); } }).getShelf();
+    }
+    update_list();
+    
+    explorer_list.addEventChange_Builder(new Runnable() { 
+      public void run() {
+        String choice = explorer_list.last_choice_text;
+        if (!choice.equals("")) { 
+          val_cible.set(choice); 
+          if (autoclose && !mitig_ac) { runEvents(eventsChoose); clear(); }
+        }
+      } } );
+  } 
+  void selectEntry(String r) {
+    int i = 0;
+    for (String me : explorer_entry) {
+      if (me.equals(r)) break;
+      i++; }
+    if (i < explorer_list.listwidgets.size()) explorer_list.listwidgets.get(i).setOn();
+  }
+  
+  void update() {
+    update_list();
+  }
+  void update_list() {
+    for (Map.Entry b : search_bloc.values.entrySet()) { 
+      sValue s = (sValue)b.getValue(); 
+      explorer_entry.add(s.ref);
+    }
+    explorer_list.setEntrys(explorer_entry);
+  }
+  nWindowPanel clear() { 
+    super.clear(); return this; }
+  nWindowPanel updateHeight() { 
+    super.updateHeight(); return this; }
+  nWindowPanel updateWidth() { 
+    super.updateWidth(); return this; }
+}
+
+
+
+class nTextPop extends nWindowPanel {
+  
+  nWidget info;
+  ArrayList<Runnable> eventsChoose = new ArrayList<Runnable>();
+  nTextPop addEventChoose(Runnable r) { eventsChoose.add(r);  return this; } 
+  
+  nTextPop(nGUI _g, nTaskPanel _task, String t) { 
+    super(_g, _task, t); 
+    info = getShelf().addSeparator(0.25)
+      .addDrawer(10.25, 1)
+        .addModel("Label-S4").setTextAlignment(CENTER, CENTER);
+        
+    info.setText(t);
+  
+    getShelf()
+      .addSeparator(0.25)
+      .addDrawer(10.25, 1)
+        .addCtrlModel("Button-S2-P2", "OK")
+        .setRunnable(new Runnable() { public void run() { clear(); runEvents(eventsChoose); } }).getShelf();
+  }
+  nWindowPanel clear() { 
+    super.clear(); return this; }
+  nWindowPanel updateHeight() { 
+    super.updateHeight(); return this; }
+  nWindowPanel updateWidth() { 
+    super.updateWidth(); return this; }
+}
+
+
+
+class nTextPicker extends nWindowPanel {
+  
+  nWidget info;
+  String suff = "";
+  
+  sStr val_cible;
+  ArrayList<Runnable> eventsChoose = new ArrayList<Runnable>();
+  nTextPicker addEventChoose(Runnable r) { eventsChoose.add(r);  return this; } 
+  nTextPicker addSuffix(String s) { suff = s;  return this; } 
+  
+  nTextPicker(nGUI _g, nTaskPanel _task, sStr _sv, String t) { 
+    super(_g, _task, t); 
+    val_cible = _sv; 
+    info = getShelf().addSeparator(0.25)
+      .addDrawer(10.25, 1)
+        .addModel("Field-S4").setTextAlignment(LEFT, CENTER);
+        
+    info.setText(val_cible.get());
+    val_cible.addEventChange(new Runnable() { public void run() { 
+      info.changeText(val_cible.get()); } } );
+    info.setField(true);
+    info.addEventFieldChange(new Runnable() { public void run() { 
+      String s = info.getText();
+      
+      int i = s.length() - 1;
+      while (i > 0 && s.charAt(i) != '.') { i--; }
+      s = s.substring(0, i);
+      val_cible.set(s + "." + suff); 
+      //logln(s + "." + suff);
+    } } );
+  
+    getShelf()
+      .addSeparator(0.25)
+      .addDrawer(10.25, 1)
+        .addCtrlModel("Button-S2-P2", "OK")
+        .setRunnable(new Runnable() { public void run() { clear(); runEvents(eventsChoose); } }).getShelf();
+  }
+  nWindowPanel clear() { 
+    super.clear(); return this; }
+  nWindowPanel updateHeight() { 
+    super.updateHeight(); return this; }
+  nWindowPanel updateWidth() { 
+    super.updateWidth(); return this; }
+}
+
+class nFilePicker extends nWindowPanel {
+  
+  nFilePicker addFilter(String f) { 
+    ext_filter.add(f); 
+    mitig_ac = true; 
+    update(); 
+    mitig_ac = false; 
+    return this; 
+  }
+  
+  ArrayList<String> explorer_entry;
+  ArrayList<String> ext_filter;
+  
+  nList explorer_list;
+  nWidget info;
+  
+  sStr val_cible;
+  boolean autoclose = false, mitig_ac = false;
+  
+  ArrayList<Runnable> eventsChoose = new ArrayList<Runnable>();
+  nFilePicker addEventChoose(Runnable r) { eventsChoose.add(r);  return this; } 
+  
+  nFilePicker(nGUI _g, nTaskPanel _task, sStr _sv, boolean _autoclose, String t) { 
+    super(_g, _task, t); 
+    val_cible = _sv;
+    autoclose = _autoclose;
+    explorer_entry = new ArrayList<String>();
+    ext_filter = new ArrayList<String>();
+    
+    explorer_list = getShelf().addList(5, 10, 1).setTextAlign(LEFT);
+    
+    if (!_autoclose) {
+      info = getShelf().addSeparator(0.25)
+        .addDrawer(1.4)
+          .addLinkedModel("Label-S4", "Selected File :")
+          .setLinkedValue(val_cible).setTextAlignment(LEFT, TOP);
+    
+      getShelf()
+        .addSeparator(0.25)
+        .addDrawer(10.25, 1)
+          .addCtrlModel("Button-S2-P2", "OK")
+          .setRunnable(new Runnable() { public void run() { 
+            clear(); runEvents(eventsChoose); } }).getShelf();
+    }
+    update_list();
+    
+    explorer_list.addEventChange_Builder(new Runnable() { 
+      public void run() {
+        String choice = explorer_list.last_choice_text;
+        if (!choice.equals("")) { 
+          val_cible.set(choice); 
+          if (autoclose && !mitig_ac) { clear(); runEvents(eventsChoose); }
+        }
+      } } );
+  } 
+  void selectEntry(String r) {
+    int i = 0;
+    for (String me : explorer_entry) {
+      if (me.equals(r)) break;
+      i++; }
+    if (i < explorer_list.listwidgets.size()) explorer_list.listwidgets.get(i).setOn();
+  }
+  
+  void update() {
+    update_list();
+  }
+  void update_list() {
+    String[] names = null;
+    File file = new File(sketchPath());
+    if (file.isDirectory()) { names = file.list(); } // all files in sketch directory
+    if (names != null) {
+      explorer_entry.clear();
+      for (String s : names) {
+        String ext = "";
+        int i = s.length() - 1;
+        while (i > 0 && s.charAt(i) != '.') { ext = s.charAt(i) + ext; i--; }
+        boolean fn = false;
+        for (String st : ext_filter) { fn = fn || st.equals(ext); }
+        if (fn && !s.equals("database.sdata")) explorer_entry.add(s);
+      }
+      explorer_list.setEntrys(explorer_entry);
+      selectEntry(val_cible.get());
+    }
+  }
+  nWindowPanel clear() { 
+    super.clear(); return this; }
+  nWindowPanel updateHeight() { 
+    super.updateHeight(); return this; }
+  nWindowPanel updateWidth() { 
+    super.updateWidth(); return this; }
+}
 
 
 
 
 
+
+
+
+class nColorPanel extends nWindowPanel {
+  //nColorPanel setOkEvent_Builder(Runnable r) { ok_run = r; ok_run.builder = this; return this; }
+  nWidget color_widget, red_widget, gre_widget, blu_widget;
+  float red, gre, blu;
+  //Runnable ok_run;
+  sCol cval;
+  nColorPanel(nGUI _g, nTaskPanel _task, sCol _cv) { 
+    super(_g, _task, "color"); 
+    cval = _cv;
+    red = cval.getred(); gre = cval.getgreen(); blu = cval.getblue(); 
+    getShelf()
+      .addDrawer(10.25, 1)
+        .addWidget(new nSlide(gui, ref_size*7.375, ref_size).setValue(cval.getred() / 255)
+          .addEventSlide(new Runnable() { public void run(float v) { 
+            red = v*255; update(); red_widget.setText(trimStringFloat(red)); } } )
+          .setPosition(0, 0) ).getShelf()
+      .addDrawer(10.25, 1)
+        .addWidget(new nSlide(gui, ref_size*7.375, ref_size).setValue(cval.getgreen() / 255)
+          .addEventSlide(new Runnable() { public void run(float v) { 
+            gre = v*255; update(); gre_widget.setText(trimStringFloat(gre)); } } )
+          .setPosition(0, 0) ).getShelf()
+      .addDrawer(10.25, 1)
+        .addWidget(new nSlide(gui, ref_size*7.375, ref_size).setValue(cval.getblue() / 255)
+          .addEventSlide(new Runnable() { public void run(float v) { 
+            blu = v*255; update(); blu_widget.setText(trimStringFloat(blu)); } } )
+          .setPosition(0, 0) ).getShelf()
+      .addDrawer(10.25, 1)
+        .addCtrlModel("Button-S2-P3", "OK")
+          .setRunnable(new Runnable() { public void run() { clear(); } }).getDrawer()
+          ;
+        
+    color_widget = getDrawer(0,3).addModel("Label-S3-P1")
+          .setStandbyColor(color(red, gre, blu));
+    red_widget = getDrawer(0,0)
+        .addModel("Label_Small_Outline-S2", str(red)).setPX(7.5*ref_size);
+    gre_widget = getDrawer(0,1)
+        .addModel("Label_Small_Outline-S2", str(gre)).setPX(7.5*ref_size);
+    blu_widget = getDrawer(0,2)
+        .addModel("Label_Small_Outline-S2", str(blu)).setPX(7.5*ref_size);
+    
+    if (cval == null) clear();
+  } 
+  void update() { 
+    if (cval != null) {
+      color_widget.setStandbyColor(color(red, gre, blu)); 
+      cval.set(color(red, gre, blu)); }
+    else clear(); }
+  nWindowPanel clear() { 
+    super.clear(); return this; }
+  nWindowPanel updateHeight() { 
+    super.updateHeight(); return this; }
+  nWindowPanel updateWidth() { 
+    super.updateWidth(); return this; }
+}
+
+
+
+
+
+class nNumPanel extends nWindowPanel {
+  sInt ival; sFlt fval;
+  nNumPanel(nGUI _g, nTaskPanel _task, sFlt _cv) { 
+    super(_g, _task, "number"); 
+    fval = _cv; if (fval == null) clear();
+    build_ui(fval);
+  } 
+  nNumPanel(nGUI _g, nTaskPanel _task, sInt _cv) { 
+    super(_g, _task, "number"); 
+    ival = _cv; if (ival == null) clear();
+    build_ui(ival);
+  } 
+  
+  nWidget field_widget;
+  
+  void build_ui(sValue v) {
+    getShelf().addDrawer(10.25, 1).getShelf()
+      .addDrawer(10.25, 1).addCtrlModel("Button-S2-P3", "OK")
+        .setRunnable(new Runnable() { public void run() { clear(); } }).getDrawer();
+    field_widget = getDrawer(0,0).addLinkedModel("Field-S4")
+      .setLinkedValue(v);
+  }
+  nWindowPanel clear() { 
+    super.clear(); return this; }
+  nWindowPanel updateHeight() { 
+    super.updateHeight(); return this; }
+  nWindowPanel updateWidth() { 
+    super.updateWidth(); return this; }
+}
+
+
+class nBoolPanel extends nWindowPanel {
+  nWidget widget;
+  sBoo val;
+  nBoolPanel(nGUI _g, nTaskPanel _task, sBoo _cv) { 
+    super(_g, _task, "boolean"); 
+    val = _cv;
+    
+    if (val == null) clear();
+    
+    getShelf()
+      .addDrawer(7.25, 1).getShelf()
+      .addDrawer(7.25, 1)
+        .addCtrlModel("Button-S2", "OK")
+          .setRunnable(new Runnable() { public void run() { clear(); } })
+          .setPX(2.375*ref_size).getDrawer()
+          ;
+    
+    widget = getDrawer(0,0).addLinkedModel("Button-S3")
+      .setLinkedValue(val)
+      ;
+  } 
+  nBoolPanel clear() { 
+    super.clear(); return this; }
+  nBoolPanel updateHeight() { 
+    super.updateHeight(); return this; }
+  nBoolPanel updateWidth() { 
+    super.updateWidth(); return this; }
+}
+
+
+class nTextPanel extends nWindowPanel implements Macro_Interf {
+  nWidget text_widget;
+  sStr cval;
+  String txt; boolean auto_return = true;
+  Runnable val_run;
+  int larg = 20;
+  nTextPanel(nGUI _g, nTaskPanel _task, sStr _cv) { 
+    super(_g, _task, "text"); 
+    cval = _cv;
+    
+    if (cval == null) clear();
+    if (cval.get().length() < 50) larg = 10;
+    float font = int(ref_size/2.1);
+    int max_l = int(larg * ref_size / (font / 1.7));
+    
+    txt = cval.get();
+    
+    float line_cnt = float(txt.length()) / float(max_l);
+    if (line_cnt % 1 > 0) line_cnt += 1 - (line_cnt % 1);
+    
+    if (cval.ref.equals("links") || cval.ref.equals("spots")) {
+      auto_return = false;
+      line_cnt = 1;
+      int char_counter = 0;
+      for (int i = 0 ; i < txt.length() ; i++) {
+        char_counter++;
+        if (char_counter >= max_l) { line_cnt++; char_counter = 0; }
+        if (txt.charAt(i) == OBJ_TOKEN.charAt(0) || txt.charAt(i) == GROUP_TOKEN.charAt(0)) {
+          txt = txt.substring(0, i+1) + '\n' + txt.substring(i+1, txt.length());
+          line_cnt++;
+          char_counter = 0;
+        }
+      }
+    }
+    
+    float h_fact = (font * line_cnt) / ref_size + font / (ref_size * 2);
+    
+    //logln("m " + max_l + " lc " + line_cnt + " hf " + h_fact);
+    
+    getShelf()
+      .addDrawer(larg + 0.25, h_fact)
+        .getShelf()
+      .addDrawer(larg, 1)
+        .addCtrlModel("Button-S2-P3", "OK")
+          .setRunnable(new Runnable() { public void run() { 
+            for (int i = txt.length() - 1 ; i >= 0  ; i--) 
+              if (txt.charAt(i) == '\n' || txt.charAt(i) == '\r') {
+                txt = txt.substring(0, i);
+                if (i+1 < txt.length()) txt += txt.substring(i + 1, txt.length());
+            }
+            if (cval != null) cval.set(txt);
+            clear(); 
+          } }).getDrawer()
+          ;
+    
+    text_widget = getDrawer(0,0).addModel("Field")
+      .setText(txt)
+      .setField(true)
+      .setTextAlignment(CENTER, TOP)
+      .setTextAutoReturn(auto_return)
+      .setFont(int(font))
+      .setSX(ref_size * larg)
+      .setSY(ref_size * h_fact)
+      .setPX(ref_size * 0.125)
+      ;
+    val_run = new Runnable() { public void run() { 
+      float font = int(ref_size/2.1);
+      int max_l = int(larg * ref_size / (font / 1.7));
+      
+      txt = cval.get();
+      
+      float line_cnt = float(txt.length()) / float(max_l);
+      if (line_cnt % 1 > 0) line_cnt += 1 - (line_cnt % 1);
+      
+      if (cval.ref.equals("links") || cval.ref.equals("spots")) {
+        auto_return = false;
+        line_cnt = 1;
+        int char_counter = 0;
+        for (int i = 0 ; i < txt.length() ; i++) {
+          char_counter++;
+          if (char_counter >= max_l) { line_cnt++; char_counter = 0; }
+          if (txt.charAt(i) == OBJ_TOKEN.charAt(0) || txt.charAt(i) == GROUP_TOKEN.charAt(0)) {
+            txt = txt.substring(0, i+1) + '\n' + txt.substring(i+1, txt.length());
+            line_cnt++;
+            char_counter = 0;
+          }
+        }
+      }
+      text_widget.setText(txt);
+    } };
+    cval.addEventChange(val_run);
+  } 
+  nWindowPanel clear() { 
+    super.clear(); return this; }
+  nWindowPanel updateHeight() { 
+    super.updateHeight(); return this; }
+  nWindowPanel updateWidth() { 
+    super.updateWidth(); return this; }
+}
 
 class nExplorer extends nDrawer {
   boolean access_child = true;
@@ -354,66 +825,167 @@ class nExplorer extends nDrawer {
   nExplorer setStrtBloc(sValueBloc sb) { if (sb != explored_bloc) { starting_bloc = sb; explored_bloc = sb; update(); } return this; }
   nExplorer setBloc(sValueBloc sb) { if (sb != explored_bloc) { explored_bloc = sb; update(); } return this; }
   
-  nShelf shelf;
-  nWidget bloc_info, val_info;
+  nExplorer hideValueView() { 
+    myshelf.removeDrawer(info_drawer);
+    info_drawer.drawer_height = 0;
+    myshelf.insertDrawer(info_drawer);
+    //info_drawer.clear(); info_drawer = null;
+    val_info.clear(); val_info = null;
+    shelf.removeDrawer(this);
+    drawer_height = ref_size*7.1;
+    shelf.insertDrawer(this);
+    return this; 
+  }
+  nExplorer hideGoBack() { 
+    hidegoback = true;
+    gobackindex = -1;
+    gobackspace = 0;
+    update();
+    return this; 
+  }
+  nExplorer showGoBack() { 
+    hidegoback = false;
+    gobackindex = 0;
+    gobackspace = 1;
+    update();
+    return this; 
+  }
+  boolean hidegoback = false;
+  int gobackindex = 0;
+  int gobackspace = 1; 
   
-  nDrawer setLayer(int l) { super.setLayer(l); shelf.setLayer(l); return this; }
-  nDrawer toLayerTop() { super.toLayerTop(); shelf.toLayerTop(); return this; }
+  nShelf myshelf;
+  nWidget bloc_info, val_info;
+  nDrawer info_drawer;
+  
+  nDrawer setLayer(int l) { super.setLayer(l); myshelf.setLayer(l); return this; }
+  nDrawer toLayerTop() { 
+    super.toLayerTop(); myshelf.toLayerTop(); 
+    for (nCtrlWidget w : values_button) w.toLayerTop(); 
+    return this; }
   
   ArrayList<Runnable> eventChangeRun = new ArrayList<Runnable>();
   nExplorer addEventChange(Runnable r)       { eventChangeRun.add(r); return this; }
   
   nExplorer addEventChange_Builder(Runnable r) { eventChangeRun.add(r); r.builder = this; return this; }
   
+  nExplorer addValuesModifier(nTaskPanel _t) {
+    task = _t;
+    hasvalbutton = true;
+    for (int i = 0 ; i < entry_nb ; i++) {
+      nCtrlWidget w = explorer_list.addCtrlModel("Button-SSS1", ""+i);
+      w.setRunnable(new Runnable(w) { public void run() {
+        int ind = int(((nCtrlWidget)builder).getText()) + explorer_list.entry_pos;
+        if (ind != gobackindex && ind - explorer_blocs.size() < explorer_values.size()+gobackspace) {
+          sValue clicked_val = explorer_values.get(ind-gobackspace - explorer_blocs.size());
+          if (clicked_val.type.equals("str")) { 
+            new nTextPanel(gui, task, (sStr)clicked_val);
+          } else if (clicked_val.type.equals("flt")) { 
+            new nNumPanel(gui, task, (sFlt)clicked_val);
+          } else if (clicked_val.type.equals("int")) { 
+            new nNumPanel(gui, task, (sInt)clicked_val);
+          } else if (clicked_val.type.equals("boo")) { 
+            new nBoolPanel(gui, task, (sBoo)clicked_val);
+          } else if (clicked_val.type.equals("col")) { 
+            new nColorPanel(gui, task, (sCol)clicked_val);
+          }
+        } 
+      }});
+      w.addEventVisibilityChange(new Runnable(w) { public void run() {
+        int ind = int(((nCtrlWidget)builder).getText()) + explorer_list.entry_pos;
+        if (ind != gobackindex && ind > explorer_blocs.size() && 
+            ind - explorer_blocs.size() < explorer_values.size()+gobackspace) {
+          sValue val = explorer_values.get(ind-gobackspace - explorer_blocs.size());
+          if (val.type.equals("str") || val.type.equals("col") || 
+              val.type.equals("int") || val.type.equals("flt") || val.type.equals("boo")) 
+                ((nCtrlWidget)builder).show();
+          else { ((nCtrlWidget)builder).hide(); }
+        } else { ((nCtrlWidget)builder).hide(); }
+      }});
+      w.setPosition(ref_size * 8.125, ref_size * (i + 0.25))
+        .setTextVisibility(false)
+        //.hide()
+        ;
+      values_button.add(w);
+    }
+    explorer_list.addEventScroll(new Runnable() { public void run() {
+      update_val_bp();
+    }});
+    update_val_bp();
+    return this; 
+  }
+  
+  void update_val_bp() {
+    if (hasvalbutton) {
+      for (int i = 0 ; i < entry_nb ; i++) {
+        int ind = i + explorer_list.entry_pos;
+        if (ind != gobackindex && ind > explorer_blocs.size() && 
+            ind - explorer_blocs.size() < explorer_values.size()+gobackspace) {
+          sValue val = explorer_values.get(ind-gobackspace - explorer_blocs.size());
+          if (val.type.equals("str") || val.type.equals("col") || 
+              val.type.equals("int") || val.type.equals("flt") || val.type.equals("boo")) values_button.get(i).show();
+          else values_button.get(i).hide();
+        } else values_button.get(i).hide();
+      }
+    }
+  }
+  
+  nTaskPanel task;
+  ArrayList<nCtrlWidget> values_button;
+  boolean hasvalbutton = false;
+  int entry_nb = 5;
+  
   nExplorer(nShelf s) {
     super(s, s.ref_size*10, s.ref_size*9);
     explorer_entry = new ArrayList<String>();
     explorer_blocs = new ArrayList<sValueBloc>();
     explorer_values = new ArrayList<sValue>();
-    shelf = new nShelf(s.shelfPanel, s.space_factor);
-    shelf.addSeparator(0.25);
-    shelf.ref.setParent(ref);
-    explorer_list = shelf.addList(5, 10, 1).setTextAlign(LEFT)
+    values_button = new ArrayList<nCtrlWidget>();
+    myshelf = new nShelf(shelf.shelfPanel, shelf.space_factor);
+    myshelf.addSeparator(0.25);
+    myshelf.ref.setParent(ref);
+    explorer_list = myshelf.addList(entry_nb, 10, 1).setTextAlign(LEFT)
       .addEventChange_Builder(new Runnable() { 
       public void run() {
         int ind = ((nList)builder).last_choice_index;
-        if (ind == 0 && explored_bloc != null && explored_bloc != starting_bloc) {
+        if (ind == gobackindex && explored_bloc != null && explored_bloc != starting_bloc) {
           explored_bloc = explored_bloc.parent;
           selected_bloc = null;
           selected_value = null;
           update_list();
           runEvents(eventChangeRun);
           
-        } else if (ind != 0 && ind < explorer_blocs.size()+1) {
-          if (selected_bloc == explorer_blocs.get(ind-1) && access_child) {
+        } else if (ind != gobackindex && ind < explorer_blocs.size()+gobackspace) {
+          if (selected_bloc == explorer_blocs.get(ind-gobackspace) && access_child) {
             explored_bloc = selected_bloc;
             selected_bloc = null;
             selected_value = null;
             update_list();
             runEvents(eventChangeRun);
           } else {
-            selected_bloc = explorer_blocs.get(ind-1);
+            selected_bloc = explorer_blocs.get(ind-gobackspace);
             selected_value = null;
             update_info();
             runEvents(eventChangeRun);
           }
-        } else if (ind != 0 && ind - explorer_blocs.size() < explorer_values.size()+1) {
+        } else if (ind != gobackindex && ind - explorer_blocs.size() < explorer_values.size()+gobackspace) {
           selected_bloc = null;
-          selected_value = explorer_values.get(ind-1 - explorer_blocs.size());
+          selected_value = explorer_values.get(ind-gobackspace - explorer_blocs.size());
           
           update_info();
           runEvents(eventChangeRun);
         } 
       } } )
       ;
-    
-    bloc_info = shelf.addSeparator(0.25)
+      
+    bloc_info = myshelf.addSeparator(0.25)
       .addDrawer(1.4)
         .addModel("Label-S4", "Selected Bloc :").setTextAlignment(LEFT, TOP);
     
-    val_info = shelf.addSeparator(0.5)
-      .addDrawer(1.4)
-        .addModel("Label-S4", "Selected Value :").setTextAlignment(LEFT, TOP);
+    info_drawer = myshelf.addDrawer(1.9);
+      
+    val_info = info_drawer
+        .addModel("Label-S4", "Selected Value :").setTextAlignment(LEFT, TOP).setPY(ref_size * 0.4);
     
     update_list();
     
@@ -426,11 +998,14 @@ class nExplorer extends nDrawer {
     if (i < explorer_list.listwidgets.size()) explorer_list.listwidgets.get(i).setOn();
   }
   void update_info() {
+    update_val_bp();
     if (selected_bloc != null) 
       bloc_info.setText("Selected Bloc :\n " + selected_bloc.type + " " + selected_bloc.ref);
-    if (selected_value != null) 
+    else bloc_info.setText("Selected Bloc : ");
+    if (selected_value != null && val_info != null) 
       val_info.setText("Selected Value : " + selected_value.type + " " + selected_value.ref
                       +"\n = " + selected_value.getString() );
+    else if (val_info != null) val_info.setText("Selected Value : " );
   }
   
   void update() {
@@ -444,12 +1019,14 @@ class nExplorer extends nDrawer {
     explorer_values.clear();
     if (explored_bloc != null) {
       //println(); println(explored_bloc.getHierarchy(false));
-      if (explored_bloc != starting_bloc) explorer_entry.add("..");
-      else explorer_entry.add("");
+      if (!hidegoback) {
+        if (explored_bloc != starting_bloc) explorer_entry.add("..");
+        else explorer_entry.add("");
+      }
       for (Map.Entry me : explored_bloc.blocs.entrySet()) {
         sValueBloc cvb = (sValueBloc)me.getValue();
         explorer_blocs.add(cvb); 
-        explorer_entry.add(cvb.base_ref + " " + cvb.use);
+        explorer_entry.add(cvb.ref + " " + cvb.use);
         //explorer_entry.add((String)me.getKey());
       }
       for (Map.Entry me : explored_bloc.values.entrySet()) {
@@ -460,13 +1037,7 @@ class nExplorer extends nDrawer {
     explorer_list.setEntrys(explorer_entry);
     update_info();
   }
-  
 }
-
-
-
-
-
 
 
 
@@ -492,6 +1063,9 @@ class nList extends nDrawer {
   String last_choice_text = null;
   
   ArrayList<Runnable> eventChangeRun = new ArrayList<Runnable>();
+  ArrayList<Runnable> eventScrollRun = new ArrayList<Runnable>();
+  nList addEventScroll(Runnable r)       { eventScrollRun.add(r); return this; }
+  
   nList addEventChange(Runnable r)       { eventChangeRun.add(r); return this; }
   
   nList addEventChange_Builder(Runnable r) { eventChangeRun.add(r); r.builder = this; return this; }
@@ -556,6 +1130,7 @@ class nList extends nDrawer {
         //  listwidgets.get(last_choice_index).setOn(); event_active = true; }
         
         update_list();
+        runEvents(eventScrollRun);
       }});
     setListLength(_ent_nb);
     

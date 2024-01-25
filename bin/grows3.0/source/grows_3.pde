@@ -1,6 +1,10 @@
+import themidibus.*;
+
 /*
 
-todo : see to of Macro_Sheet constructor in macmain
+todo : see top of Macro_Sheet  MacSh.pde
+  double click
+  right click on widget
 
 PApplet
   Log
@@ -20,7 +24,7 @@ PApplet
 
 boolean DEBUG_HOVERPILE = false;
 boolean DEBUG_NOFILL = false;
-boolean DEBUG_MACRO = true;
+boolean DEBUG_MACRO = false;
 
 boolean DEBUG = true;
 
@@ -49,11 +53,13 @@ void setup() {//executé au demarage
   //smooth();//anti aliasing
   surface.setResizable(true);
   
+  setup_midi();
+  
   interf = new sInterface(40);
   
   Simulation simul = (Simulation)interf.addUniqueSheet(new SimPrint());
-  //Canvas canv = (Canvas)
-  interf.addUniqueSheet(new CanvasPrint(simul));
+  Canvas canv = (Canvas) interf.addUniqueSheet(new CanvasPrint(simul));
+  interf.addSpecializedSheet(new FacePrint(canv));
   interf.addSpecializedSheet(new OrganismPrint(simul));
   interf.addSpecializedSheet(new GrowerPrint(simul));
   interf.addSpecializedSheet(new FlocPrint(simul));
@@ -63,13 +69,12 @@ void setup() {//executé au demarage
   //logln("end models: "+interf.gui_theme.models.size());
   background(0);//fond noir
   
-  //File file = new File(sketchPath());
-  //if (file.isDirectory()) { String names[] = file.list(); } // all files in sketch directory
+  
   interf.addEventNextFrame(new Runnable() { 
     public void run() { interf.addEventNextFrame(new Runnable() { 
       public void run() { interf.setup_load(); } } ); } } );
   
-  app_grab = new nWidget(interf.screen_gui, "Grows 2.9.5", 28, 0, 0, base_width - 40, 40)
+  app_grab = new nWidget(interf.screen_gui, "Grows 3.0", 28, 0, 0, base_width - 40, 40)
     .setTrigger()
     .addEventTrigger(new Runnable() { 
     public void run() { mx = mouseX; my = mouseY; } } )
@@ -83,7 +88,11 @@ void setup() {//executé au demarage
     .setTrigger()
     .addEventTrigger(new Runnable() { 
     public void run() { exit(); } } );
+  
   interf.full_screen_run.run();
+  interf.full_screen_run.run();
+  interf.full_screen_run.run();
+  surface.setLocation(200, 40);
 }
 
 nWidget app_grab, app_close;
@@ -143,6 +152,67 @@ void mouseDragged() {
 }
 void mouseMoved() { 
   //interf.input.mouseMovedEvent();
+}
+
+
+
+
+//#######################################################################
+//##                             MIDIBus                               ##
+//#######################################################################
+
+MidiBus midiBus;
+
+void setup_midi() {
+  //MidiBus.list(); // List all available Midi devices on STDOUT. This will show each device's index and name.
+
+  // Either you can
+  //                   Parent In Out
+  //                     |    |  |
+  //midiBus = new MidiBus(this, 0, 1); // Create a new MidiBus using the device index to select the Midi input and output devices respectively.
+
+  // or you can ...
+  //                   Parent         In                   Out
+  //                     |            |                     |
+  //midiBus = new MidiBus(this, "IncomingDeviceName", "OutgoingDeviceName"); // Create a new MidiBus using the device names to select the Midi input and output devices respectively.
+
+  // or for testing you could ...
+  //                   Parent  In        Out
+  //                     |     |          |
+  //midiBus = new MidiBus(this, -1, "Java Sound Synthesizer"); // Create a new MidiBus with no input device and the default Java Sound Synthesizer as the output device.
+  
+}
+void noteOn(int channel, int pitch, int velocity) {
+  // Receive a noteOn
+  //println();
+  //println("Note On:");
+  //println("--------");
+  //println("Channel:"+channel);
+  //println("Pitch:"+pitch);
+  //println("Velocity:"+velocity);
+  interf.macro_main.noteOn(channel, pitch, velocity);
+}
+
+void noteOff(int channel, int pitch, int velocity) {
+  // Receive a noteOff
+  //println();
+  //println("Note Off:");
+  //println("--------");
+  //println("Channel:"+channel);
+  //println("Pitch:"+pitch);
+  //println("Velocity:"+velocity);
+  interf.macro_main.noteOff(channel, pitch, velocity);
+}
+
+void controllerChange(int channel, int number, int value) {
+  // Receive a controllerChange
+  //println();
+  //println("Controller Change:");
+  //println("--------");
+  //println("Channel:"+channel);
+  //println("Number:"+number);
+  //println("Value:"+value);
+  interf.macro_main.controllerChange(channel, number, value);
 }
 
 
@@ -225,94 +295,6 @@ PFont getFont(int st) {
 
 
 
-//#######################################################################
-//##                        CALLABLE CLASS V2                          ##
-//#######################################################################
-
-
-//void callChannel(Channel chan, float val) {
-//  for (int i = 0; i < chan.calls.size() ; i++) chan.calls.get(i).answer(chan, val); }
-//void callChannel(Channel chan) { callChannel(chan, 0); }
-//class Channel { ArrayList<Callable> calls = new ArrayList<Callable>(); }
-//abstract class Callable {
-//  Callable() {}   Callable(Channel c) {addChannel(c);}
-//  void addChannel(Channel c) { c.calls.add(this); }
-//  void removeChannel(Channel c) { c.calls.remove(this); }
-//  public abstract void answer(Channel channel, float value); }
-  
-//Channel test_chan = new Channel();
-//new Callable(test_chan) { public void answer(Channel c, float v) { print("test"); }};
-
-
-
-
-
-
-
-
-
-
-//#######################################################################
-//##                             GRAPHS                                ##
-//#######################################################################
-
-
-//class sGraph {
-//  int larg =             1200;
-//  int[] graph  = new int[larg];
-//  int[] graph2 = new int[larg];
-//  int gc = 0;
-//  int max = 10;
-  
-//  sBoo SHOW_GRAPH = new sBoo(simval, false);// affichage du graph a un bp
-  
-//  void init() {
-//    //initialisation des array des graph
-//    for (int i = 0; i < larg; i++) { 
-//      graph[i] = 0; 
-//      graph2[i] = 0;
-//    }
-//    max = 10;
-//    //addChannel(c);
-//  }
-  
-//  void draw() {
-//    if (SHOW_GRAPH.get()) { // && !cp5.getTab("default").isActive()) {
-//      strokeWeight(0.5);
-//      stroke(255);
-//      for (int i = 1; i < larg; i++) if (i != gc) {
-//        stroke(255);
-//        line( (i-1), height - 10 - (graph[(i-1)] * (height-20) / 5000), 
-//          i, height - 10 - (graph[i] * (height-20) / 5000) );
-//        stroke(255, 255, 0);
-//        line( (i-1), height - 10 - (graph2[(i-1)] * (height-20) / max), 
-//          i, height - 10 - (graph2[i] * (height-20) / max) );
-//      }
-//      stroke(255, 0, 0);
-//      strokeWeight(7);
-//      if (gc != 0) {
-//        point(gc-1, height - 10 - (graph[gc-1] * (height-20) / 5000) );
-//        point(gc-1, height - 10 - (graph2[gc-1] * (height-20) / max) );
-//      }
-//    }
-//  }
-  
-//  void update(int val1, int val2) {
-//    //enregistrement des donner dans les array
-//    graph[gc] = val1;
-  
-//    int g = val2;
-//    if (max < g) max = g;
-//    if (graph2[gc] == max) {
-//      max = 10;
-//      for (int i = 0; i < graph2.length; i++) if (i != gc && max < graph2[i]) max = graph2[i];
-//    }
-//    graph2[gc] = g;
-  
-//    if (gc < larg-1) gc++; 
-//    else gc = 0;
-//  }
-//}
 
 
 

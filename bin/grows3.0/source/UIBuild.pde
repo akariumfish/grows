@@ -185,8 +185,10 @@ class nConstructor {
     do_sizes(base, "-S3/0.75", ref_size*3, ref_size*0.75);
     do_sizes(base, "-S4/0.75", ref_size*4, ref_size*0.75);
     do_sizes(base, "-S6/1", ref_size*6, ref_size*1);
+    do_sizes(base, "-S10/0.75", ref_size*10, ref_size*0.75);
     
     do_sizes(base, "-SS1", ref_size*0.75, ref_size*0.75);
+    do_sizes(base, "-SSS1", ref_size*0.5, ref_size*0.5);
     do_sizes(base, "-SS2", ref_size*2.5, ref_size*0.75);
     do_sizes(base, "-SS3", ref_size*4, ref_size*0.75);
     do_sizes(base, "-SS4", ref_size*10, ref_size*0.75);
@@ -305,7 +307,11 @@ class nBuilder { // base pour les class constructrice de nwidget basic
   
   nBuilder setLayer(int l) { for (nWidget w : widgets) w.setLayer(l); return this; }
   nBuilder toLayerTop() { for (nWidget w : widgets) w.toLayerTop(); return this; }
-  nBuilder clear() { for (nWidget w : widgets) w.clear(); widgets.clear(); return this; }
+  nBuilder clear() { 
+    for (int i = widgets.size() - 1 ; i >= 0 ; i--) widgets.get(i).clear(); 
+    widgets.clear(); 
+    return this; 
+  }
   nWidget customBuild(nWidget w) { return w; }
   
   nBuilder(nGUI _g, float s) { gui = _g; ref_size = s; }
@@ -331,9 +337,11 @@ class nDrawer extends nBuilder {
     super(s.gui, s.ref_size);
     ref = addModel("ref"); shelf = s;
     drawer_width = w; drawer_height = h; }
+  nDrawer clear() { super.clear(); return this; }
   nDrawer setLayer(int l) { super.setLayer(l); ref.setLayer(l); return this; }
   nDrawer toLayerTop() { super.toLayerTop(); ref.toLayerTop(); return this; }
   nWidget customBuild(nWidget w) { return w.setParent(ref).setDrawer(this); }
+  
 }
 
 
@@ -651,6 +659,13 @@ class nShelf extends nBuilder {
     }
     return this;
   }
+  nShelf clearDrawer() {
+    ArrayList<nDrawer> a = new ArrayList<nDrawer>();
+    for (nDrawer d : drawers) a.add(d);
+    //for (nDrawer d : a) d.clear();
+    return this;
+  }
+  
   
   nList addList(int n, float wf, float hf) {
     nList d = new nList(this, n, ref_size, wf, hf);

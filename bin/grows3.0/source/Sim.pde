@@ -113,7 +113,8 @@ class Simulation extends Macro_Sheet {
     
     mmain().addEventSetupLoad(new Runnable() { 
       public void run() { mmain().inter.addEventNextFrame(new Runnable() { 
-      public void run() { reset(); } } ); } } );
+      public void run() { reset(); } } ); 
+    } } );
       
     show_toolpanel = newBoo("show_toolpanel", "toolpanel", true);
     show_toolpanel.addEventChange(new Runnable(this) { public void run() { 
@@ -323,50 +324,51 @@ class Simulation extends Macro_Sheet {
   void build_custom_menu(nFrontPanel sheet_front) {
     nFrontTab tab = sheet_front.addTab("Base");
 
-      tab.getShelf()
-        .addDrawer(10.25, 0.6)
-        .addModel("Label-S4", "- Simulation Control -").setFont(int(ref_size/1.4)).getShelf()
-        .addSeparator(0.125)
-        .addDrawerWatch(tick_counter, 10, 1)
-        .addSeparator(0.125)
-        .addDrawerLargeFieldCtrl(SEED, 10, 1)
-        .addSeparator(0.125)
-        .addDrawerFactValue(tick_by_frame, 2, 10, 1)
-        .addSeparator(0.125)
-        .addDrawerIncrValue(auto_reset_turn, 1000, 10, 1)
-        .addSeparator(0.125)
-        .addDrawerDoubleButton(auto_reset, auto_reset_rng_seed, 10, 1)
-        .addSeparator(0.125)
-        .addDrawerDoubleButton(srun_scrsht, auto_reset_screenshot, 10, 1)
-        .addSeparator(0.125)
-        .addDrawerTripleButton(srun_reset, srun_rngr, srun_nxtt, 10, 1)
-        .addSeparator(0.125)
-        .addDrawerTripleButton(pause, show_com, inter.cam.grid, 10, 1)
-        .addSeparator(0.125)
-        ;
-      
-      tab.getShelf(0).addSeparator(0.25)
-        .addDrawer(10.25, 0.75)
-        .addModel("Label-SS4", "- Active Community -").setFont(int(ref_size/1.5)).getShelf()
-        ;
-        
-      selector_list = tab.getShelf(0)
-        .addSeparator(0.25)
-        .addList(5, 10, 1);
-      selector_list.addEventChange_Builder(new Runnable() { public void run() {
-        nList sl = ((nList)builder); 
-        if (sl.last_choice_index < list.size()) 
-          list.get(sl.last_choice_index).build_sheet_menu();
-      } } );
-      
-      selector_list.getShelf()
-        .addSeparator(0.0625)
-        ;
-      
-      selector_entry = new ArrayList<String>(); // mmain().data.getCountOfType("flt")
-      selector_value = new ArrayList<Community>(); // mmain().data.getCountOfType("flt")
+    tab.getShelf()
+      .addDrawer(10.25, 0.6)
+      .addModel("Label-S4", "- Simulation Control -").setFont(int(ref_size/1.4)).getShelf()
+      .addSeparator(0.125)
+      .addDrawerWatch(tick_counter, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerLargeFieldCtrl(SEED, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerFactValue(tick_by_frame, 2, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerIncrValue(auto_reset_turn, 1000, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerDoubleButton(auto_reset, auto_reset_rng_seed, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerDoubleButton(srun_scrsht, auto_reset_screenshot, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerTripleButton(srun_reset, srun_rngr, srun_nxtt, 10, 1)
+      .addSeparator(0.125)
+      .addDrawerTripleButton(pause, show_com, inter.cam.grid, 10, 1)
+      .addSeparator(0.125)
+      ;
     
-      update_com_selector_list();
+    tab.getShelf(0).addSeparator(0.25)
+      .addDrawer(10.25, 0.75)
+      .addModel("Label-SS4", "- Active Community -").setFont(int(ref_size/1.5)).getShelf()
+      ;
+      
+    selector_list = tab.getShelf(0)
+      .addSeparator(0.25)
+      .addList(5, 10, 1);
+    selector_list.addEventChange_Builder(new Runnable() { public void run() {
+      nList sl = ((nList)builder); 
+      if (sl.last_choice_index < list.size()) 
+        list.get(sl.last_choice_index).build_sheet_menu();
+    } } );
+    
+    selector_list.getShelf()
+      .addSeparator(0.0625)
+      ;
+    
+    selector_entry = new ArrayList<String>(); // mmain().data.getCountOfType("flt")
+    selector_value = new ArrayList<Community>(); // mmain().data.getCountOfType("flt")
+  
+    update_com_selector_list();
+    sheet_front.toLayerTop();
   }
   void update_com_selector_list() {
     selector_entry.clear();
@@ -439,8 +441,9 @@ abstract class Community extends Macro_Sheet {
       nList sl = ((nList)builder); 
       //logln("a "+sl.last_choice_index +"  "+ sim.list.size());
       if (sl.last_choice_index < sim.list.size()) 
-        selected_comu(sim.list.get(sl.last_choice_index));
+        //selected_comu(sim.list.get(sl.last_choice_index));
         selected_com.set(sim.list.get(sl.last_choice_index).name);
+        search_com();
     } } );
         
     selector_list.getShelf()
@@ -456,6 +459,7 @@ abstract class Community extends Macro_Sheet {
     update_com_selector_list();
     
     comPanelBuild(sheet_front);
+    sheet_front.toLayerTop();
   }
   void update_com_selector_list() {
     selector_entry.clear();
@@ -467,8 +471,23 @@ abstract class Community extends Macro_Sheet {
     if (selector_list != null) selector_list.setEntrys(selector_entry);
   }
   
+  void search_com() { 
+    //sim.inter.addEventNextFrame(new Runnable() {public void run() { 
+    //sim.inter.addEventNextFrame(new Runnable() {public void run() { 
+      //logln(value_bloc.ref + " search " + selected_com.get());
+      for (Community c : sim.list) {
+        //log(value_bloc.ref + " try " + c.value_bloc.ref);
+        if (c.name.equals(selected_com.get())) { 
+          //log(" found"); 
+        selected_comu(c); }
+        //logln("");
+      }
+    //}});
+    //}});
+  }
+  
   void selected_comu(Community c) {}
-
+  
   ArrayList<String> selector_entry;
   ArrayList<Community> selector_value;
   Community selected_value;
@@ -514,7 +533,7 @@ abstract class Community extends Macro_Sheet {
     pulse_add = newBoo(true, "pulse_add ", "pulse");
     pulse_add_delay = newInt(100, "pulse_add_delay ", "pulseT");
 
-    adding_cursor = new nCursor(sim.cam_gui, this, n, "add");
+    adding_cursor = new nCursor(this, n, "add");
 
     srun_add = newRun("add_entity", "add_pop", new Runnable() { 
       public void run() { 
@@ -525,10 +544,9 @@ abstract class Community extends Macro_Sheet {
     
     
     addEventSetupLoad(new Runnable() { public void run() { 
-      sim.inter.addEventNextFrame(new Runnable() {public void run() { 
-        for (Community c : sim.list) if (c.name.equals(selected_com.get())) selected_comu(c);
-      }}); } } );
-    
+      search_com(); } } );
+      
+    search_com();
 
     reset();
   }

@@ -106,13 +106,13 @@ class nWindowPanel extends nShelfPanel {
     runEvents(eventCollapseRun);
   }
   void popUp() { 
-    
+    boolean p = collapsed;
     collapsed = false;
     if (task.hide) task.reduc();
     grabber.show(); 
     if (taskpanel_button != null) taskpanel_button.setStandbyColor(color(70)); 
-    toLayerTop();
-    runEvents(eventCollapseRun);
+    if (p) toLayerTop();
+    if (p) runEvents(eventCollapseRun);
   }
   ArrayList<Runnable> eventCloseRun = new ArrayList<Runnable>();
   nWindowPanel addEventClose(Runnable r)       { eventCloseRun.add(r); return this; }
@@ -193,9 +193,15 @@ class nFrontTab extends nShelfPanel {
   ArrayList<Runnable> eventOpen = new ArrayList<Runnable>();
   nFrontTab addEventOpen(Runnable r)       { eventOpen.add(r); return this; }
   
+  nFrontTab toLayerTop() { 
+    super.toLayerTop(); 
+    
+    return this;
+  }
   nFrontTab show() {
     panel.show();
     front.grabber.setSX(panel.getLocalSX()); 
+    toLayerTop();
     return this; }
   
   nFrontTab hide() {
@@ -272,6 +278,7 @@ class nFrontPanel extends nWindowPanel {
         for (nFrontTab t : tabs) t.hide();
         current_tab = ((nFrontTab)builder);
         current_tab.show();
+        current_tab.toLayerTop();
         current_tab_id = current_tab.id;
         runEvents(current_tab.eventOpen);
         runEvents(eventTab);
@@ -293,6 +300,8 @@ class nFrontPanel extends nWindowPanel {
     moy_leng /= tab_widgets.size();
     for (nWidget w : tab_widgets) w.setSX(w.getLocalSX() * w.getText().length() / moy_leng);
     
+    for (nFrontTab ot : tabs) ot.hide();
+    tab.show();
     return tab;
   }
   
@@ -310,13 +319,19 @@ class nFrontPanel extends nWindowPanel {
     super.collapse(); 
   }
   void popUp() { 
+    boolean p = collapsed;
     super.popUp(); 
     for (nFrontTab t : tabs) t.hide();
     if (current_tab != null) {
       current_tab.show();
-      runEvents(current_tab.eventOpen); }
+      if (p) runEvents(current_tab.eventOpen); 
+    }
   }
-  nFrontPanel toLayerTop() { super.toLayerTop(); for (nFrontTab d : tabs) d.toLayerTop(); return this; }
+  nFrontPanel toLayerTop() { 
+    super.toLayerTop(); 
+    for (nFrontTab d : tabs) d.toLayerTop(); 
+    return this;
+  }
   nFrontPanel clear() { 
     for (nFrontTab d : tabs) d.clear();
     super.clear(); return this; }

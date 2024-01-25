@@ -17,7 +17,7 @@ class GrowerComu extends Community {
   sFlt L_MIN; //longeur minimum de chaque section
   sFlt L_MAX; //longeur max de chaque section MODIFIABLE PAR MENU MOVE minimum 1 , limité dans l'update de sont bp
   sFlt L_DIFFICULTY;
-  sFlt OLD_AGE;
+  sFlt OLD_AGE, TEEN_AGE;
   //int TEEN_AGE = OLD_AGE / 20;
 
   RandomTryParam growP;
@@ -27,6 +27,7 @@ class GrowerComu extends Community {
   RandomTryParam dieP;
   sFlt MAX_LINE_WIDTH; //epaisseur max des ligne, diminuer par l'age, un peut, se vois pas
   sFlt MIN_LINE_WIDTH; //epaisseur min des ligne
+  sFlt leaf_size_fact; 
   sFlt floc_prob;
   
   sBoo create_floc, use_organ;
@@ -47,6 +48,8 @@ class GrowerComu extends Community {
       .addSeparator(0.125)
       .addDrawerButton(srun_killg, 10, 1)
       .addSeparator(0.125)
+      .addDrawerFactValue(TEEN_AGE, 2, 10, 1)
+      .addSeparator(0.125)
       .addDrawerFactValue(OLD_AGE, 2, 10, 1)
       .addSeparator(0.125)
       .addDrawerActFactValue("grow", growP.ON, growP.DIFFICULTY, 2, 10, 1)
@@ -60,7 +63,7 @@ class GrowerComu extends Community {
       .addDrawerActFactValue("die", dieP.ON, dieP.DIFFICULTY, 2, 10, 1)
       .addSeparator(0.125)
       ;
-  sim_front.getTab(2).getShelf()
+    sim_front.getTab(2).getShelf()
       .addDrawerFactValue(DEVIATION, 2, 10, 1)
       .addSeparator(0.125)
       .addDrawerFactValue(L_MIN, 2, 10, 1)
@@ -70,12 +73,12 @@ class GrowerComu extends Community {
       .addDrawerFactValue(L_DIFFICULTY, 2, 10, 1)
       .addSeparator(0.125)
       ;
-      
+    sim_front.toLayerTop();
   }
   
   void selected_comu(Community c) { 
-    //logln(c.name + c.type_value.get());
-    if (c != null && c.type_value.get().equals("floc")) fcom = (FlocComu)c;
+    //logln(value_bloc.ref + " got com " + c.name + " " + c.type_value.get());
+    if (c != null && c.type_value.get().equals("floc")) { fcom = (FlocComu)c; }
   }
 
   GrowerComu(Simulation _c, String n, sValueBloc t) { 
@@ -84,6 +87,7 @@ class GrowerComu extends Community {
     L_MIN = newFlt(2.5, "lmin", "lmin");
     L_MAX = newFlt(40, "lmax", "lmax");
     L_DIFFICULTY = newFlt(1, "ldif", "ldif");
+    TEEN_AGE = newFlt(50, "young", "young");
     OLD_AGE = newFlt(100, "age", "age");
     floc_prob = newFlt(1, "floc_prob", "floc_prob");
 
@@ -102,12 +106,21 @@ class GrowerComu extends Community {
     
     MAX_LINE_WIDTH = menuFltSlide(1.5, 0.1, 3, "max_line_width");
     MIN_LINE_WIDTH = menuFltSlide(0.2, 0.1, 3, "min_line_width");
+    leaf_size_fact = menuFltSlide(1, 1, 4, "leaf_size_fact");
     
     srun_killg = newRun("kill_grower", "kill", new Runnable(list) { 
       public void run() { 
         for (Entity e : ((ArrayList<Entity>)builder)) {
           Grower g = (Grower)e;
           if (!g.end && g.sprouts == 0) { 
+            if (create_floc.get() && fcom != null && 
+                crandom(floc_prob.get()) > 0.9) {
+              Floc f = fcom.newEntity();
+              if (f != null) {
+                f.pos.x = g.pos.x;
+                f.pos.y = g.pos.y;
+              }
+            }
             g.end = true;
           }
         }
@@ -136,15 +149,15 @@ class GrowerComu extends Community {
     if (ng != null) ng.define(adding_cursor.pos(), adding_cursor.dir());
     int cost = 5;
     if (ng != null && sim.organ != null) {
-      if (sim.organ.active_entity.get() > cost - 1 && 
-          sim.organ.active_entity.get() <= sim.organ.list.size()) {
-        for (int i = 0 ; i < cost ; i ++) {
-          sim.organ.list.get(sim.organ.active_entity.get() - 1).destroy();
-          sim.organ.active_entity.add(-1);
-        }
-      }
-      if (first_reset && sim.organ.active_entity.get() <= cost + 1) sim.reset();
-      if (!first_reset && sim.organ.active_entity.get() <= cost + 1) { mmain().no_save.set(true); sim.resetRng(); }
+      //if (sim.organ.active_entity.get() > cost - 1 && 
+      //    sim.organ.active_entity.get() <= sim.organ.list.size()) {
+      //  for (int i = 0 ; i < cost ; i ++) {
+      //    sim.organ.list.get(sim.organ.active_entity.get() - 1).destroy();
+      //    sim.organ.active_entity.add(-1);
+      //  }
+      //}
+      //if (first_reset && sim.organ.active_entity.get() <= cost + 1) sim.reset();
+      //if (!first_reset && sim.organ.active_entity.get() <= cost + 1) { mmain().no_save.set(true); sim.resetRng(); }
       first_reset = false;
     }
     return ng;
@@ -242,8 +255,8 @@ class Grower extends Entity {
   }
   Grower tick() {
     age++;
-    if (age < com().OLD_AGE.get()/20) {
-      start = (float)age / (float)com().OLD_AGE.get()/20;
+    if (age < com().TEEN_AGE.get()) {
+      start = (float)age / (float)com().TEEN_AGE.get();
     } else start = 1;
 
     //grow
@@ -274,7 +287,7 @@ class Grower extends Entity {
     }
 
     // leaf
-    if (start == 1 && !end && com().leafP.test()) {
+    if (start == 1 && !end && age < com().OLD_AGE.get() / 2 && com().leafP.test()) {
       PVector _p = new PVector(0, 0);
       PVector _d = new PVector(0, 0);
       _d.add(grows).sub(pos);
@@ -340,6 +353,9 @@ class Grower extends Entity {
     pushMatrix();
     translate(pos.x, pos.y);
     if (end) {
+      scale(com().leaf_size_fact.get());
+      strokeWeight( (com().MAX_LINE_WIDTH.get()+1) / 
+                    (com.sim.inter.cam.cam_scale.get() * com().leaf_size_fact.get()) );
       PVector e2 = new PVector(e.x, e.y);
       e.div(2);
       e.rotate(-PI/16);
@@ -440,7 +456,7 @@ class Floc extends Entity {
   
   Floc init() {
     age = 0;
-    max_age = int(random(0.5, 1) * com().AGE.get());
+    max_age = int(random(0.3, 1.7) * com().AGE.get());
     halo_size = com().HALO_SIZE.get();
     halo_density = com().HALO_DENS.get();
     halo_size += random(com().HALO_SIZE.get());
@@ -448,7 +464,7 @@ class Floc extends Entity {
     pos = com().adding_cursor.pos();
     //pos.x = random(-com().startbox, com().startbox);
     //pos.y = random(-com().startbox, com().startbox);
-    speed = random(0.5, 1) * com().SPEED.get();
+    speed = random(0.3, 1.7) * com().SPEED.get();
     mov.x = speed; mov.y = 0;
     mov.rotate(random(PI * 2.0));
     return this;
@@ -573,6 +589,8 @@ class FlocComu extends Community {
       .addDrawerActFactValue("grower", create_grower, grow_prob, 2, 10, 1)
       .addSeparator(0.125)
       ;
+    
+    sim_front.toLayerTop();
   }
   
   void selected_comu(Community c) { 
@@ -723,6 +741,8 @@ class BoxComu extends Community {
     selector_value2 = new ArrayList<Community>(); // mmain().data.getCountOfType("flt")
     
     update_com_selector_list2();
+    
+    sim_front.toLayerTop();
   }
   void update_com_selector_list2() {
     selector_entry2.clear();

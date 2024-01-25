@@ -416,6 +416,37 @@ class nValuePicker extends nWindowPanel {
 }
 
 
+
+class nTextPop extends nWindowPanel {
+  
+  nWidget info;
+  ArrayList<Runnable> eventsChoose = new ArrayList<Runnable>();
+  nTextPop addEventChoose(Runnable r) { eventsChoose.add(r);  return this; } 
+  
+  nTextPop(nGUI _g, nTaskPanel _task, String t) { 
+    super(_g, _task, t); 
+    info = getShelf().addSeparator(0.25)
+      .addDrawer(10.25, 1)
+        .addModel("Label-S4").setTextAlignment(CENTER, CENTER);
+        
+    info.setText(t);
+  
+    getShelf()
+      .addSeparator(0.25)
+      .addDrawer(10.25, 1)
+        .addCtrlModel("Button-S2-P2", "OK")
+        .setRunnable(new Runnable() { public void run() { clear(); runEvents(eventsChoose); } }).getShelf();
+  }
+  nWindowPanel clear() { 
+    super.clear(); return this; }
+  nWindowPanel updateHeight() { 
+    super.updateHeight(); return this; }
+  nWindowPanel updateWidth() { 
+    super.updateWidth(); return this; }
+}
+
+
+
 class nTextPicker extends nWindowPanel {
   
   nWidget info;

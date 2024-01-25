@@ -66,6 +66,7 @@ class nGUI {
   nGUI updateView() { scale = base_width / view.size.x; return this; }
   nGUI setTheme(nTheme v) { theme = v; return this; }
   nGUI addEventFrame(Runnable r) { eventsFrame.add(r); return this; }
+  nGUI removeEventFrame(Runnable r) { eventsFrame.remove(r); return this; }
   nGUI addEventsFullScreen(Runnable r) { eventsFullScreen.add(r); return this; }
   nGUI addEventFound(Runnable r) { hoverable_pile.addEventFound(r); return this; }
   nGUI addEventNotFound(Runnable r) { hoverable_pile.addEventNotFound(r); return this; }
@@ -89,6 +90,7 @@ class nGUI {
   float scale = 1;
   float ref_size = 30;
   boolean isShown = true;
+  boolean field_used = false;
   
   Drawing_pile drawing_pile = new Drawing_pile();
   Hoverable_pile hoverable_pile = new Hoverable_pile();
@@ -103,7 +105,10 @@ class nGUI {
   void frame() {
     hoverable_pile.search(mouseVector, hoverpile_passif);
     if (is_starting) { is_starting = false; runEvents(eventsSetup); }
-    runEvents(eventsFrame); }
+    runEvents(eventsFrame); 
+    clearEvents(eventsFrame); 
+    //logln(""+eventsFrame.size());
+  }
   void draw() {
     if (isShown) drawing_pile.drawing(); }
 }
@@ -153,13 +158,15 @@ class nLinkedWidget extends nWidget {
     return this; }
   nLinkedWidget setLinkedValue(sFlt b) { 
     fval = b;
-    setText(str(fval.get()));
+    setText(trimStringFloat(fval.get()));
+    //println(fval.get());
     b.addEventChange(new Runnable(this) { public void run() { 
-      ((nLinkedWidget)builder).changeText(str(fval.get())); } } );
+      ((nLinkedWidget)builder).changeText(trimStringFloat(fval.get()));  } } );
     setField(true);
     addEventFieldChange(new Runnable(this) { public void run() { 
       String s = ((nLinkedWidget)builder).getText();
-      if (!(s.length() > 0 && float(s) == 0) && !str(float(s)).equals("NaN")) fval.set(float(s)); } } );
+      if (!str(float(s)).equals("NaN")) fval.set(float(s)); } } );
+      //!(s.length() > 0 && float(s) == 0) && 
     return this; }
   nLinkedWidget setLinkedValue(sVec b) { 
     vval = b;
@@ -405,6 +412,7 @@ class nWidget {
   
   nWidget setDrawable(Drawable d) { 
     gui.drawing_pile.drawables.remove(drawer); 
+    drawer.clear();
     drawer = d; 
     if (drawer != null) {
       drawer.setLayer(layer); 
@@ -422,8 +430,8 @@ class nWidget {
   }
   
   nWidget toLayerTop() {
-    drawer.toLayerTop();
-    hover.toLayerTop();
+    if (drawer != null) drawer.toLayerTop();
+    if (hover != null) hover.toLayerTop();
     return this;
   }
   
@@ -438,6 +446,7 @@ class nWidget {
   nWidget setFont(int s) { look.textFont = s; return this; }
   nWidget setTextAlignment(int sx, int sy) { textAlignX = sx; textAlignY = sy; return this; }
   nWidget setTextVisibility(boolean s) { show_text = s; return this; }
+  nWidget setTextAutoReturn(boolean s) { auto_line_return = s; return this; }
   nWidget setInfo(String s) { if (s != null) { infoText = s; showInfo = true; } return this; }
   nWidget setNoInfo() { showInfo = false; return this; }
   
@@ -499,6 +508,7 @@ class nWidget {
     textAlignX = w.textAlignX; textAlignY = w.textAlignY; show_text = w.show_text;
     shapeRound = w.shapeRound; shapeLosange = w.shapeLosange; 
     showInfo = w.showInfo; infoText = str_copy(w.infoText);
+    auto_line_return = w.auto_line_return;
     constrainDlength = w.constrainDlength; constrainD = w.constrainD;
     look.copy(w.look);
     setLayer(w.layer);
@@ -512,10 +522,15 @@ class nWidget {
   }
   
   void clear() {
+    //if (ndrawer != null) ndrawer.widgets.remove(this);
     for (nWidget w : childs) w.clear();
     runEvents(eventClear);
-    if (look != null) look.clear();
+    //if (gui != null) gui.removeEventFrame(frame_run);
+    frame_run.to_clear = true;
+    //if (look != null) look.clear(); 
+    //look = null;
     if (drawer != null) drawer.clear(); if (hover != null) hover.clear();
+    drawer = null; hover = null;
     eventPositionChange.clear(); eventShapeChange.clear(); eventLayerChange.clear(); 
     eventVisibilityChange.clear(); eventClear.clear(); eventFrameRun.clear(); 
     eventGrabRun.clear(); eventDragRun.clear(); eventLiberateRun.clear(); eventFieldChangeRun.clear();
@@ -560,10 +575,10 @@ class nWidget {
     return this; }
   nWidget setTrigger() { 
     triggerMode = true; switchMode = false; switchState = false; 
-    if (hover != null) hover.active = true; hoverHideState = hover.active; return this; }
+    if (hover != null) hover.active = true; if (hover != null) hoverHideState = hover.active; return this; }
   nWidget setSwitch() { 
     triggerMode = false; switchMode = true; switchState = false; 
-    if (hover != null) hover.active = true; hoverHideState = hover.active; return this; }
+    if (hover != null) hover.active = true; if (hover != null) hoverHideState = hover.active; return this; }
   
   //carefull!! dont work if excluded cleared before this
   private ArrayList<nWidget> excludes = new ArrayList<nWidget>();
@@ -752,6 +767,7 @@ class nWidget {
   private nDrawer ndrawer = null;
   
   private String label, infoText;
+  private boolean auto_line_return = false;
   private float mx = 0, my = 0, pmx = 0, pmy = 0;
   private int cursorPos = 0;
   private int cursorCount = 0;
@@ -793,9 +809,12 @@ class nWidget {
   ArrayList<Runnable> eventSwitchOffRun = new ArrayList<Runnable>();
   ArrayList<Runnable> eventFieldChangeRun = new ArrayList<Runnable>();
   
+  private Runnable frame_run;
+  
   void init(nGUI g) {
     gui = g;
-    gui.addEventFrame(new Runnable() { public void run() { frame(); } } );
+    frame_run = new Runnable() { public void run() { frame(); } };
+    gui.addEventFrame(frame_run);
     localrect = new Rect();
     globalrect = new Rect();
     phantomrect = new Rect();
@@ -806,63 +825,76 @@ class nWidget {
     label = new String();
     look = new nLook();
     drawer = new Drawable(g.drawing_pile) { public void drawing() {
-      if (((triggerMode || switchMode) && isClicked) || switchState) { fill(look.pressColor); } 
-      else if (isHovered && (triggerMode || switchMode))             { fill(look.hoveredColor); } 
-      else                                                           { fill(look.standbyColor); }
-      noStroke();
-      ellipseMode(CORNER);
-      if (shapeRound) ellipse(getX(), getY(), getSX(), getSY());
-      else if (shapeLosange) {quad(getX() + getSX()/2, getY(), 
-                                   getX() + getSX()  , getY() + getSY()/2, 
-                                   getX() + getSX()/2, getY() + getSY(), 
-                                   getX()            , getY() + getSY()/2  );}
-      else if (!DEBUG_NOFILL) rect(getX(), getY(), getSX(), getSY());
-      
-      noFill();
-      if (isField && isSelected) stroke(look.outlineSelectedColor);
-      else if (showOutline || (hoverOutline && isHovered)) stroke(look.outlineColor);
-      else noStroke();
-      float wf = 1;
-      if (constantOutlineWeight) { wf = 1 / gui.scale; strokeWeight(look.outlineWeight / gui.scale); }
-      else strokeWeight(look.outlineWeight);
-      
-      
-      if (shapeRound) ellipse(getX() + wf*look.outlineWeight/2, getY() + wf*look.outlineWeight/2, 
-           getSX() - wf*look.outlineWeight, getSY() - wf*look.outlineWeight);
-      else if (shapeLosange) {quad(getX() + getSX()/2, getY() + wf*look.outlineWeight/2, 
-                                   getX() + getSX() - wf*look.outlineWeight/2, getY() + getSY()/2, 
-                                   getX() + getSX()/2, getY() + getSY() - wf*look.outlineWeight/2, 
-                                   getX() + wf*look.outlineWeight/2, getY() + getSY()/2  );}
-      else rect(getX() + wf*look.outlineWeight/2, getY() + wf*look.outlineWeight/2, 
-           getSX() - wf*look.outlineWeight, getSY() - wf*look.outlineWeight);
-      
-      if (show_text) {
-        String l = label;
-        if (showCursor) {
-          String str = label.substring(0, cursorPos);
-          String end = label.substring(cursorPos, label.length());
-          if (cursorCount < cursorCycle / 2) l = str + "|" + end;
-          else l = str + " " + end;
-          cursorCount++;
-          if (cursorCount > cursorCycle) cursorCount = 0;
+      if (rectCollide(getRect(), gui.view) && !(getSX()*gui.scale < 3 && getSY()*gui.scale < 3)) {
+        if (((triggerMode || switchMode) && isClicked) || switchState) { fill(look.pressColor); } 
+        else if (isHovered && (triggerMode || switchMode))             { fill(look.hoveredColor); } 
+        else                                                           { fill(look.standbyColor); }
+        noStroke();
+        ellipseMode(CORNER);
+        if (shapeRound) ellipse(getX(), getY(), getSX(), getSY());
+        else if (shapeLosange) {quad(getX() + getSX()/2, getY(), 
+                                     getX() + getSX()  , getY() + getSY()/2, 
+                                     getX() + getSX()/2, getY() + getSY(), 
+                                     getX()            , getY() + getSY()/2  );}
+        else if (!DEBUG_NOFILL) rect(getX(), getY(), getSX(), getSY());
+        
+        noFill();
+        if (isField && isSelected) stroke(look.outlineSelectedColor);
+        else if (showOutline || (hoverOutline && isHovered)) stroke(look.outlineColor);
+        else noStroke();
+        float wf = 1;
+        if (constantOutlineWeight) { wf = 1 / gui.scale; strokeWeight(look.outlineWeight / gui.scale); }
+        else strokeWeight(look.outlineWeight);
+        
+        
+        if (shapeRound) ellipse(getX() + wf*look.outlineWeight/2, getY() + wf*look.outlineWeight/2, 
+             getSX() - wf*look.outlineWeight, getSY() - wf*look.outlineWeight);
+        else if (shapeLosange) {quad(getX() + getSX()/2, getY() + wf*look.outlineWeight/2, 
+                                     getX() + getSX() - wf*look.outlineWeight/2, getY() + getSY()/2, 
+                                     getX() + getSX()/2, getY() + getSY() - wf*look.outlineWeight/2, 
+                                     getX() + wf*look.outlineWeight/2, getY() + getSY()/2  );}
+        else rect(getX() + wf*look.outlineWeight/2, getY() + wf*look.outlineWeight/2, 
+             getSX() - wf*look.outlineWeight, getSY() - wf*look.outlineWeight);
+        
+        if (show_text && gui.scale >= 0.3) {
+          String l = label;
+          if (showCursor) {
+            String str = label.substring(0, cursorPos);
+            String end = label.substring(cursorPos, label.length());
+            if (cursorCount < cursorCycle / 2) l = str + "|" + end;
+            else l = str + " " + end;
+            cursorCount++;
+            if (cursorCount > cursorCycle) cursorCount = 0;
+          }
+          fill(look.textColor); 
+          textAlign(textAlignX, textAlignY);
+          textFont(getFont(look.textFont));
+          //int line = 0;
+          //for (int i = 0 ; i < l.length() ; i++) if (l.charAt(i) == '\n') line+=1;
+          float tx = getX();
+          float ty = getY();
+          if (textAlignY == CENTER)         
+            ty += (getLocalSY() / 2.0)
+                  - (look.textFont / 6.0)
+                    //- (line * look.textFont / 3)
+                  ;
+          else if (textAlignY == BOTTOM) 
+            ty += getLocalSY() - (look.textFont / 10);
+          if (textAlignX == LEFT)        tx += look.textFont / 4.0;
+          else if (textAlignX == CENTER) tx += getSX() / 2;
+          if (!auto_line_return) text(l, tx, ty);
+          else {
+            int max_l = int(getLocalSX() / (look.textFont / 1.7));
+            int printed_char = 0;
+            int line_cnt = 0;
+            while (printed_char < l.length()) {
+              String line_string = l.substring(line_cnt * max_l, min(max_l * (line_cnt+1), l.length()));
+              printed_char += line_string.length();
+              text(line_string, tx, ty + (line_cnt*look.textFont));
+              line_cnt++;
+            }
+          }
         }
-        fill(look.textColor); 
-        textAlign(textAlignX, textAlignY);
-        textFont(getFont(look.textFont));
-        //int line = 0;
-        //for (int i = 0 ; i < l.length() ; i++) if (l.charAt(i) == '\n') line+=1;
-        float tx = getX();
-        float ty = getY();
-        if (textAlignY == CENTER)         
-          ty += (getLocalSY() / 2.0)
-                - (look.textFont / 6.0)
-                  //- (line * look.textFont / 3)
-                ;
-        else if (textAlignY == BOTTOM) 
-          ty += getLocalSY() - (look.textFont / 10);
-        if (textAlignX == LEFT)        tx += getSY() / 2;
-        else if (textAlignX == CENTER) tx += getSX() / 2;
-        text(l, tx, ty);
       }
     } } ;
   }
@@ -881,7 +913,7 @@ class nWidget {
   }
   
   void frame() {
-    if (hover.mouseOver) {
+    if (hover != null && hover.mouseOver) {
       if (!isHovered) runEvents(eventMouseEnterRun);
       if (showInfo) gui.info.showText(infoText);
       isHovered = true;
@@ -939,14 +971,17 @@ class nWidget {
           prev_select_outline = showOutline;
           showOutline = true;
           if (isField) showCursor = true;
+          gui.field_used = true;
         } else {
           showOutline = prev_select_outline;
           if (isField) showCursor = false;
+          gui.field_used = false;
         }
       } else if (!isHovered && gui.in.getClick("MouseLeft") && isSelected) {
         showOutline = prev_select_outline;
         if (isField) showCursor = false;
         isSelected = false;
+        gui.field_used = false;
       }
     }
     if (isField && isSelected) {
@@ -960,11 +995,12 @@ class nWidget {
         runEvents(eventFieldChangeRun);
       }
       else if (gui.in.getClick("Enter")) {
-        String str = label.substring(0, cursorPos);
-        String end = label.substring(cursorPos, label.length());
-        label = str + '\n' + end;
-        cursorPos++;
-        runEvents(eventFieldChangeRun);
+              // it break the saving!!!
+        //String str = label.substring(0, cursorPos);
+        //String end = label.substring(cursorPos, label.length());
+        //label = str + '\n' + end;
+        //cursorPos++;
+        //runEvents(eventFieldChangeRun);
       }
       else if (gui.in.getClick("Backspace")) {}
       else if (gui.in.getClick("All")) {

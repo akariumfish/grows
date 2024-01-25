@@ -337,6 +337,8 @@ class sInterface {
       file_savebloc.clear(); 
       interface_bloc.preset_to_save_bloc(file_savebloc); 
       file_savebloc.save_to(savepath_value.get());
+    } else {
+      new nTextPop(screen_gui, taskpanel, "cant save on default file");
     } }
   //void full_data_load() {
   //  file_savebloc.clear();
