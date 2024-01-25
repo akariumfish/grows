@@ -654,21 +654,23 @@ class nWidget {
   nWidget centerY()    { alignX = false; stackX = false; placeLeft = false; placeRight = false; centerY = true;  changePosition(); return this; }
   
   nWidget setSwitchState(boolean s) { if (s) setOn(); else setOff(); return this; }
-  void setOn() {
+  nWidget setOn() {
     if (!switchState) {
       switchState = true;
       runEvents(eventSwitchOnRun);
       for (nWidget b : excludes) b.setOff(); }
+    return this;
   }
   void forceOn() {
     switchState = true;
     runEvents(eventSwitchOnRun);
     for (nWidget b : excludes) b.setOff(); }
     
-  void setOff() {
+  nWidget setOff() {
     if (switchState) {
       switchState = false;
-      runEvents(eventSwitchOffRun); } }
+      runEvents(eventSwitchOffRun); } 
+    return this; }
   void forceOff() {
     switchState = false;
     runEvents(eventSwitchOffRun); }

@@ -750,14 +750,14 @@ class Macro_Main extends Macro_Sheet {
       prevs_gr_p.set(select_grab_widg.getX(), select_grab_widg.getY());
       prevs_gr_p = inter.cam.screen_to_cam(prevs_gr_p);
     } else if (show_macro.get() && !to_empty_sheet) { //use screen point
-      PVector sc_pos = new PVector(mmain().screen_gui.view.pos.x + mmain().screen_gui.view.size.x * 2.0 / 3.0, 
-                                   mmain().screen_gui.view.pos.y + mmain().screen_gui.view.size.y / 3.0);
-      sc_pos = mmain().inter.cam.screen_to_cam(sc_pos);
-      sc_pos.x = (sc_pos.x - sc_pos.x%(ref_size * 0.5));
-      sc_pos.y = (sc_pos.y - sc_pos.y%(ref_size * 0.5));
-      prevs_gr_p.set(sc_pos.x - selected_sheet.grabber.getX(), sc_pos.y - selected_sheet.grabber.getY());
-      prevs_gr_p.x = (prevs_gr_p.x - prevs_gr_p.x%(ref_size * 0.5));
-      prevs_gr_p.y = (prevs_gr_p.y - prevs_gr_p.y%(ref_size * 0.5));
+      //PVector sc_pos = new PVector(mmain().screen_gui.view.pos.x + mmain().screen_gui.view.size.x * 1.0 / 2.0, 
+      //                             mmain().screen_gui.view.pos.y + mmain().screen_gui.view.size.y / 3.0);
+      //sc_pos = mmain().inter.cam.screen_to_cam(sc_pos);
+      //sc_pos.x = (sc_pos.x - sc_pos.x%(ref_size * 0.5));
+      //sc_pos.y = (sc_pos.y - sc_pos.y%(ref_size * 0.5));
+      //prevs_gr_p.set(sc_pos.x - selected_sheet.grabber.getX(), sc_pos.y - selected_sheet.grabber.getY());
+      //prevs_gr_p.x = (prevs_gr_p.x - prevs_gr_p.x%(ref_size * 0.5));
+      //prevs_gr_p.y = (prevs_gr_p.y - prevs_gr_p.y%(ref_size * 0.5));
     }
     
     //add macros and select them
@@ -967,8 +967,7 @@ class Macro_Main extends Macro_Sheet {
   }
   
   sBoo show_gui, show_macro, show_build_tool, show_sheet_tool, show_macro_tool, do_packet;
-  sStr new_temp_name, database_path; sRun del_select_run, copy_run, paste_run;
-  //sInt val_scale;
+  sStr new_temp_name, database_path; sRun del_select_run, copy_run, paste_run, reduc_run;
   sInterface inter;
   sValueBloc saved_template, saved_preset, database_setup_bloc;
   nGUI cam_gui, screen_gui;
@@ -995,9 +994,13 @@ class Macro_Main extends Macro_Sheet {
     selected_macro.clear();
     update_select_bound();
   }
+  void reduc_selected() {
+    for (Macro_Abstract m : selected_macro) m.changeOpenning();
+  }
   
 Macro_Main(sInterface _int) {
     super(_int);
+    mlogln("build macro main ");
     inter = _int; 
     access = inter.getAccess();
     cam_gui = inter.cam_gui; 
@@ -1041,6 +1044,9 @@ Macro_Main(sInterface _int) {
     copy_run = newRun("copy_run", "copy", new Runnable() { public void run() { copy_to_tmpl(); }});
     
     paste_run = newRun("paste_run", "paste", new Runnable() { public void run() { pastebin_tmpl(); }});
+    
+    reduc_run = newRun("switch_reduc_run", "switch_reduc", new Runnable() { public void run() { 
+      reduc_selected(); }});
     
     addSpecializedSheet(new SheetPrint());
     
@@ -1175,7 +1181,9 @@ Macro_Main(sInterface _int) {
       PVector p = new PVector(minx + (maxx - minx) / 2, miny + (maxy - miny) / 2);
       p = inter.cam.cam_to_screen(p);
       p.add(-select_grab_widg.getLocalSX()/2, -select_grab_widg.getLocalSY()/2);
-      select_grab_widg.show().setPosition(p.x, p.y);
+      if (selected_macro.size() > 1 || ref_size * gui.scale < 20) 
+        select_grab_widg.show().setPosition(p.x, p.y);
+      else select_grab_widg.hide();
     } else {
       select_bound_widg.hide();
       select_grab_widg.hide();

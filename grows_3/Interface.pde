@@ -36,7 +36,7 @@ class User {
 class sInterface {
   
   void quick_open() {
-    new nFilePicker(screen_gui, taskpanel, savepath_value, true, "0pen")
+    new nFilePicker(screen_gui, taskpanel, savepath_value, true, "0pen", true)
       .addFilter("sdata")
       .addEventChoose(new Runnable() { public void run() { 
         setup_load();
@@ -44,7 +44,7 @@ class sInterface {
   }
   
   void save_to() {
-    new nFilePicker(screen_gui, taskpanel, savepath_value, false, "Save to")
+    new nFilePicker(screen_gui, taskpanel, savepath_value, false, "Save to", true)
       .addFilter("sdata")
       .addEventChoose(new Runnable() { public void run() { 
         full_data_save();
@@ -69,7 +69,7 @@ class sInterface {
         .addDrawer(1)
           .addCtrlModel("Button-S4", "Select file")
           .setRunnable(new Runnable() { public void run() { 
-            new nFilePicker(screen_gui, taskpanel, filempath_value, true, "Select file to explore")
+            new nFilePicker(screen_gui, taskpanel, filempath_value, true, "Select file to explore", false)
               .addFilter("sdata");
           } } )
           .setInfo("choose a .sdata to explore in the manager")
@@ -180,24 +180,72 @@ class sInterface {
       files_panel.getShelf(0)
         .addSeparator(0.25)
         .addDrawer(0.75)
-          .addModel("Label-S4", "Templates and Presets :")
+          .addModel("Label-S4", "logs :")
             .setTextAlignment(LEFT, CENTER).getDrawer()
-          .addCtrlModel("Button_Small_Text_Outline-S3-P1", "Update")
+          .addCtrlModel("Button_Small_Text_Outline-S3-P1", "Update explorers")
           .setRunnable(new Runnable() { public void run() { 
             data_explorer.update(); file_explorer.update(); } } )
           .setPX(ref_size*13)
           .getShelf()
         .addSeparator(0.25)
         .addDrawer(1)
-          .addCtrlModel("Button_Small_Text_Outline-S3-P1", "Add to file")
-            .setRunnable(new Runnable() { public void run() { 
-              templ_prst_add_to_file();
-            } } ).setInfo("Add templates and presets to file")
+          //.addCtrlModel("Button_Small_Text_Outline-S3-P1", "Add to file")
+          //  .setRunnable(new Runnable() { public void run() { 
+          //    templ_prst_add_to_file();
+          //  } } ).setInfo("Add templates and presets to file")
+          //  .getDrawer()
+          //.addCtrlModel("Button_Small_Text_Outline-S3-P2", "Load file")
+          //  .setRunnable(new Runnable() { public void run() { 
+          //    templ_prst_get_from_file();
+          //  } } ).setInfo("Add file templates and presets")
+          //  .getDrawer()
+            
+          .addModel("Button_Small_Text_Outline-S1-P1", "LA")
+            .setSwitch()
+            .addEventSwitchOn(new Runnable() { public void run() { 
+              save_log_all = true; } } ).setInfo("log all-slow")
+            .addEventSwitchOff(new Runnable() { public void run() { 
+              save_log_all = false; } } )
             .getDrawer()
-          .addCtrlModel("Button_Small_Text_Outline-S3-P2", "Load file")
-            .setRunnable(new Runnable() { public void run() { 
-              templ_prst_get_from_file();
-            } } ).setInfo("Add file templates and presets")
+            
+          .addModel("Button_Small_Text_Outline-S1-P2", "LE")
+            .setSwitch().setSwitchState(log_ext_save.get()).setInfo("log at exit-saved param")
+            .addEventSwitchOn(new Runnable() { public void run() { 
+              save_log_exit = true; log_ext_save.set(save_log_exit); } } )
+            .addEventSwitchOff(new Runnable() { public void run() { 
+              save_log_exit = false; log_ext_save.set(save_log_exit); } } )
+            .getDrawer()
+            
+          .addModel("Button_Small_Text_Outline-S1-P4", "C")
+            .setSwitch().setOn()
+            .addEventSwitchOn(new Runnable() { public void run() { 
+              console_log = true; } } ).setInfo("log")
+            .addEventSwitchOff(new Runnable() { public void run() { 
+              console_log = false; } } )
+            .getDrawer()
+            
+          .addModel("Button_Small_Text_Outline-S1-P6", "M")
+            .setSwitch().setOn()
+            .addEventSwitchOn(new Runnable() { public void run() { 
+              DEBUG_MACRO = true; } } ).setInfo("macro logs")
+            .addEventSwitchOff(new Runnable() { public void run() { 
+              DEBUG_MACRO = false; } } )
+            .getDrawer()
+            
+          .addModel("Button_Small_Text_Outline-S1-P7", "")
+            //.setSwitch()
+            //.addEventSwitchOn(new Runnable() { public void run() { 
+            //  DEBUG_SAVE_FULL = true; } } ).setInfo("slogs")
+            //.addEventSwitchOff(new Runnable() { public void run() { 
+            //  DEBUG_SAVE_FULL = false; } } )
+            .getDrawer()
+            
+          .addModel("Button_Small_Text_Outline-S1-P9", "")
+            .setSwitch()
+            .addEventSwitchOn(new Runnable() { public void run() { 
+              DEBUG_NOFILL = true; DEBUG_HOVERPILE = true; } } )
+            .addEventSwitchOff(new Runnable() { public void run() { 
+              DEBUG_NOFILL = false; DEBUG_HOVERPILE = false; } } )
         ;
       data_explorer = files_panel.getShelf(1)
         .addSeparator(2.25)
@@ -363,7 +411,7 @@ class sInterface {
   nWindowPanel files_panel;
   String savepath = "save.sdata";
   sStr savepath_value, filempath_value;
-  sBoo auto_load;
+  sBoo auto_load, log_ext_save;
   Save_Bloc file_savebloc;
   sValueBloc explored_bloc, setup_bloc;
   nExplorer file_explorer, data_explorer;
@@ -408,6 +456,12 @@ class sInterface {
     show_taskpanel.addEventChange(new Runnable(this) { public void run() { 
       if (taskpanel != null && taskpanel.hide == show_taskpanel.get()) taskpanel.reduc();
     }});
+    
+    if (interface_bloc.getValue("log_ext_save") != null) {
+      log_ext_save = ((sBoo)interface_bloc.getValue("log_ext_save"));
+      save_log_exit = log_ext_save.get();
+    }
+    else log_ext_save = interface_bloc.newBoo("log_ext_save", "log_ext_save", false);
     
     build_default_ui(ref_size);
     
@@ -494,6 +548,11 @@ class sInterface {
         
         if (setup_bloc.getValue("show_taskpanel") != null) 
           show_taskpanel.set(((sBoo)setup_bloc.getValue("show_taskpanel")).get());
+        
+        if (setup_bloc.getValue("log_ext_save") != null) {
+          log_ext_save.set(((sBoo)setup_bloc.getValue("log_ext_save")).get());
+          save_log_exit = log_ext_save.get();
+        }
       }
       if (setup_bloc.getValue("auto_load") != null) 
         auto_load.set(((sBoo)setup_bloc.getValue("auto_load")).get());

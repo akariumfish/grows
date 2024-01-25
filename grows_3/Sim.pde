@@ -224,9 +224,28 @@ class Simulation extends Macro_Sheet {
 
   void draw_to_cam() { 
     if (show_com.get()) {
-      for (Community c : list) if (c.show_entity.get()) c.custom_cam_draw_pre_entity();
-      for (Community c : list) if (c.show_entity.get()) c.draw_Cam();
-      for (Community c : list) if (c.show_entity.get()) c.custom_cam_draw_post_entity();
+      //list faces organs
+      
+      if (faces.size() > 0 || list.size() > 0 || organs.size() > 0) {
+        int min = 0; 
+        if (faces.size() > 0) min = faces.get(0).val_draw_layer.get();
+        else if (list.size() > 0) min = list.get(0).val_draw_layer.get();
+        else if (organs.size() > 0) min = organs.get(0).val_draw_layer.get();
+        int max = min;
+        for (Face f : faces) {
+          min = min(min, f.val_draw_layer.get()); max = max(max, f.val_draw_layer.get()); }
+        for (Community f : list) {
+          min = min(min, f.val_draw_layer.get()); max = max(max, f.val_draw_layer.get()); }
+        for (Organism f : organs) {
+          min = min(min, f.val_draw_layer.get()); max = max(max, f.val_draw_layer.get()); }
+        for (int i = min ; i <= max ; i++) {
+          for (Face f : faces) if (f.val_draw_layer.get() == i) f.draw();
+          for (Organism f : organs) if (f.val_draw_layer.get() == i) f.draw_All();
+          for (Community f : list) if (f.val_draw_layer.get() == i) f.custom_cam_draw_pre_entity();
+          for (Community f : list) if (f.val_draw_layer.get() == i) f.draw_Cam();
+          for (Community f : list) if (f.val_draw_layer.get() == i) f.custom_cam_draw_post_entity();
+        }
+      }
     }
   }
   void draw_to_screen() { 
@@ -394,7 +413,8 @@ class Simulation extends Macro_Sheet {
   Tickable macromain_tickable;
 
   ArrayList<Community> list = new ArrayList<Community>();
-  Organism organ;
+  ArrayList<Face> faces = new ArrayList<Face>();
+  ArrayList<Organism> organs = new ArrayList<Organism>();
   
 }
 
@@ -513,6 +533,8 @@ abstract class Community extends Macro_Sheet {
   sBoo show_entity;
   sRun srun_add;
   sStr type_value, selected_com;
+  
+  sInt val_draw_layer;
 
   nCursor adding_cursor;
   
@@ -532,6 +554,8 @@ abstract class Community extends Macro_Sheet {
     show_entity = newBoo(true, "show_entity ", "show");
     pulse_add = newBoo(true, "pulse_add ", "pulse");
     pulse_add_delay = newInt(100, "pulse_add_delay ", "pulseT");
+    
+    val_draw_layer = menuIntIncr(0, 1, "val_draw_layer");
 
     adding_cursor = new nCursor(this, n, "add");
 

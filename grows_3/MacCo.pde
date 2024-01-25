@@ -132,6 +132,9 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
         else if (!elem.bloc.mmain().buildingLine && !buildingLine && sheet.mmain().selected_sheet == sheet) {
           if (type == OUTPUT) {
             buildingLine = true; elem.bloc.mmain().buildingLine = true;
+            
+            sheet.mmain().szone_clear_select();
+            
             for (Macro_Connexion i : sheet.child_connect) 
               if (i.type == INPUT) i.lens.setLook(gui.theme.getLook("MC_Connect_In_Actif")).setTrigger(); 
               else if (i.type == OUTPUT && i != (Macro_Connexion)builder) 
@@ -141,6 +144,9 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
           }
           else if (type == INPUT) {
             buildingLine = true; elem.bloc.mmain().buildingLine = true;
+            
+            sheet.mmain().szone_clear_select();
+            
             for (Macro_Connexion i : sheet.child_connect) 
               if (i.type == OUTPUT) i.lens.setLook(gui.theme.getLook("MC_Connect_Out_Actif")).setTrigger(); 
               else if (i.type == INPUT && i != (Macro_Connexion)builder) 

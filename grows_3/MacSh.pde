@@ -1,32 +1,56 @@
 
 /*
                   TO DO
+  
+  beug past template : sheet_co link foire 
+    pb choosing new name, searching beug (macro abstract or sheet.addByBlock)
+    
+    nobody see sim
+    sim see can
+    orther dont see can
+  
+  
+  list knows dengerous (beuged) actions
+  
+  
+  
+  sujet principaux dans la doc
+    data sval, svalblc save/load templ/prst
+    
+    macro sheet bloc co sheet_co
+    
+    list detailler bloc sp
+    
+    packet process
+  
+  change sheet selection went right click down
+    no more diff sheet bloc select in 2 click
+  
+  nExplorer : more entry and smaller height
+  
+  save log at crash? how to detect crash?
+  
+  distence mesuring tool
+  
+  to big trig et switch : when too dezoomed show a screen widget (on/off)
+    set button text (large font)
+    
+  bool flag destroyed widgets!!!! to filter irregular
+  
+  add min/max param to slide (/2 X2) > set minmax of sval
+    event limit change for synchro
                   
   bloc node : one point in and out at the same time
     use a custom macro_connect
     created by leftclick on empty space
                   
-  beug past template : sheet_co link foire 
-    pb probably in rename_build_spot
   
   debug MComment
     rebuild itself > change name, lose co, change place
     
-  logging system :
-    to all custom log methods :
-    add string to a global string has new line (or not)
-    went exiting sketch save logs if activated (boolean in papplet ctrled by svalue)
-    at crash? how to detect crash?
-  
   its needed to group shapes to limit object nb
   
-  on widget draw try collision with gui.view
-  
-  show selectgroup grabber only if more than 1 bloc selected
-  
   when manually adding try to stay on top of sheet back to keep it small
-  
-  when saving a group move its median to origin, when adding make a rect around all to find place
   
   MVar
     add a hideable (like com) param drawer : select variable type
@@ -64,9 +88,6 @@
   
   mesure and store the relative process time used by each special sheet
   
-  sort explorer blocs n values alfabeticaly
-    more entry and smaller height
-    
   hide majority of macro widgets when dezoom
 
 
@@ -295,21 +316,25 @@ class Macro_Sheet extends Macro_Abstract {
   }
   
   void add_link(String in, String out) {
+    mlogln(value_bloc.ref+ " add_link "+in+" "+out);
     String def = in+INFO_TOKEN+out+OBJ_TOKEN;
     links.set(links.get()+def);
     //redo_link();
+    //mlogln(value_bloc.ref+ " add_link "+in+" "+out+ " end");
   }
   void remove_link(String in, String out) {
+    mlogln(value_bloc.ref+ " remove_link "+in+" "+out);
     String[] links_list = splitTokens(links.get(), OBJ_TOKEN);
     String new_list = "";
     for (String l : links_list) {
       String[] link_l = splitTokens(l, INFO_TOKEN);
       String i = link_l[0]; String o = link_l[1];
-      //logln("try "+i+" "+o+" for "+in+" "+out);
+      mlogln("try "+i+" "+o+" for "+in+" "+out);
       if (!(i.equals(in) && o.equals(out))) new_list += l+OBJ_TOKEN;
     }
     links.set(new_list);
     //redo_link();
+    //mlogln(value_bloc.ref+ " remove_link "+in+" "+out+ " end");
   }
   void clear_link() {
     for (Macro_Connexion co1 : child_connect) co1.clear_link();
@@ -318,7 +343,7 @@ class Macro_Sheet extends Macro_Abstract {
     links.set("");
   }
   void redo_link() {
-    //logln("redo_link");
+    mlogln(value_bloc.ref+ " redo_link ");
     String[] links_list = splitTokens(links.get(), OBJ_TOKEN);
     for (Macro_Connexion co1 : child_connect) co1.clear_link_array();
     links.set("");
@@ -340,6 +365,7 @@ class Macro_Sheet extends Macro_Abstract {
         }
       }
     }
+    //mlogln(value_bloc.ref+ " redo_link end ");
   }
   
   //call by add_spot widget
@@ -373,6 +399,7 @@ class Macro_Sheet extends Macro_Abstract {
   }
   
   void add_spot(String side, Macro_Element elem) {
+    mlogln(value_bloc.ref+ " add_spot "+side+" "+elem.descr);
     if (elem.spot == null) {
       String[] spots_side_list = splitTokens(spots.get(), GROUP_TOKEN);
       String left_s = OBJ_TOKEN, right_s = OBJ_TOKEN;
@@ -403,8 +430,10 @@ class Macro_Sheet extends Macro_Abstract {
         else spot.hide();
       }
     }
+    //mlogln(value_bloc.ref+ " add_spot end ");
   }
   void remove_spot(String ref) {
+    mlogln(value_bloc.ref+ " remove_spot "+ref);
     String[] spots_side_list = splitTokens(spots.get(), GROUP_TOKEN);
     String left_s = OBJ_TOKEN, right_s = OBJ_TOKEN;
     if (spots_side_list.length == 2) { 
@@ -422,6 +451,7 @@ class Macro_Sheet extends Macro_Abstract {
     spots.set(new_str);
     
     redo_spot();
+    //mlogln(value_bloc.ref+ " remove_spot end ");
   }
   void clear_spot() { //clear using and clear spot drawers
     spots.set(OBJ_TOKEN+GROUP_TOKEN+OBJ_TOKEN);
@@ -445,7 +475,7 @@ class Macro_Sheet extends Macro_Abstract {
     cancel_new_spot();
   }
   void redo_spot() {
-    //logln("redo_spot");
+    mlogln(value_bloc.ref+ " redo_spot ");
     String[] spots_side_list = splitTokens(spots.get(), GROUP_TOKEN);
     String left_s = OBJ_TOKEN, right_s = OBJ_TOKEN;
     if (spots_side_list.length == 2) { 
@@ -468,7 +498,7 @@ class Macro_Sheet extends Macro_Abstract {
       for (Macro_Element t : child_elements) if (t.descr.equals(elem_ref)) { e = t; break; }
       if (e != null) add_spot("right", e);
     }
-    //logln("endredo");
+    //mlogln(value_bloc.ref+ " redo_spot end ");
   }
   //when a spot is used the ref of the element and the nb and side of the spot are saved into the string
   //when the sheet is open click on a spot to reassign it, 
@@ -580,7 +610,7 @@ class Macro_Sheet extends Macro_Abstract {
   ArrayList<Macro_Connexion> child_connect = new ArrayList<Macro_Connexion>(0);
   ArrayList<Macro_Element> child_elements = new ArrayList<Macro_Element>(0);
   ArrayList<Macro_Abstract> child_macro = new ArrayList<Macro_Abstract>(0);
-  ArrayList<Macro_Sheet> child_sheet = new ArrayList<Macro_Sheet>(0);
+  ArrayList<Macro_Sheet> child_sheet;
   
   nWidget back_front, deployer;
   Runnable szone_run;
@@ -597,10 +627,18 @@ class Macro_Sheet extends Macro_Abstract {
     
 Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) { 
     super(p, "sheet", n, _bloc); init(); 
+    
+    mlogln("build sheet "+n+" "+ _bloc);
+    
     if (_bloc == null) mmain().inter.addEventNextFrame(new Runnable(this) { public void run() { select(); } });
   }
   Macro_Sheet(sInterface _int) {
     super(_int);
+    
+    mlogln("build main sheet ");
+    
+    child_sheet = new ArrayList<Macro_Sheet>(0);
+    
     new_preset_name = setting_bloc.newStr("preset_name", "preset", "preset");
     
     specialize = setting_bloc.newStr("specialize", "specialize", "");
@@ -615,6 +653,7 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
     back_front = addModel("mc_ref");
     deployer = addModel("mc_ref"); }
   void init() {
+    child_sheet = new ArrayList<Macro_Sheet>(0);
     sheet.child_sheet.add(this);
     
     links = ((sStr)(setting_bloc.getValue("links"))); 
@@ -967,17 +1006,17 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
         }
       }});
       
-      mlogln("setup "+value_bloc.ref+" \n    nref "+new_ref + " \n searching for link/spot");
+      //mlogln("setup "+value_bloc.ref+" \n    nref "+new_ref + " \n searching for link/spot");
       
       // take apart saving string to apply name change then create corresponding link or spot
       if (bloc.getBloc("settings").getValue("links") != null) {
-        mlogln("setup sheet link found");
+        //mlogln("setup sheet link found");
         String link_s = ((sStr)bloc.getBloc("settings").getValue("links")).get();
         rename_build_link(link_s, new_ref);
       }
       //redo_spot();
       if (bloc.getBloc("settings").getValue("spots") != null) {
-        mlogln("setup sheet spot found");
+        //mlogln("setup sheet spot found");
         String spot_s = ((sStr)bloc.getBloc("settings").getValue("spots")).get();
         rename_build_spot(spot_s, new_ref);
       }
@@ -996,10 +1035,11 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
       
       mmain().szone_clear_select();
     }
+    mlogln(value_bloc.ref+" setupFromBloc end");
   }
   
   void rename_build_link(String link_s, String n_ref) {
-
+    //mlogln(value_bloc.ref+" rename_build_link");
     //  change bloc name in bloc links
     //String new_links = "";
     String[] change_list = splitTokens(n_ref, OBJ_TOKEN);
@@ -1029,19 +1069,20 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
         //redo_link();
       }
     }
+    //mlogln(value_bloc.ref+" rename_build_link end");
   }
   void rename_build_spot(String spots_s, String n_ref) {
-    //logln(value_bloc.ref+" rename spot strt");
+    //mlogln(value_bloc.ref+" rename_build_spot");
     String[] change_list = splitTokens(n_ref, OBJ_TOKEN);
     //String new_str = "";
     String[] spots_side_list = splitTokens(spots_s, GROUP_TOKEN);
     int side = 0;
     for (String spot_side : spots_side_list) {
-      //logln("doing side "+side);
+      //mlogln("doing side "+side);
       int elc = 0;
       String[] elem_list = splitTokens(spot_side, OBJ_TOKEN);
       for (String elm : elem_list) {
-        //logln(elc+" got spot elem "+elm);
+        //mlogln(elc+" got spot elem "+elm);
         elc++;
         String[] elem_descr_l = splitTokens(elm, BLOC_TOKEN);
         for (String change : change_list) {
@@ -1051,7 +1092,7 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
           }
         }
         String new_elem = BLOC_TOKEN+elem_descr_l[0]+BLOC_TOKEN+elem_descr_l[1];
-        //logln("renamed "+new_elem);
+        //mlogln("renamed "+new_elem);
         Macro_Element e = null;
         for (Macro_Element t : child_elements) if (t.descr.equals(new_elem)) { e = t; break; }
         if (e != null && side == 0) add_spot("left", e);
@@ -1060,11 +1101,11 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
       
       side++;
     }
-    //logln(value_bloc.ref+" rename spot end");
+    //mlogln(value_bloc.ref+" rename_build_spot end");
   }
   boolean is_addgroup_top_bloc = false;
   void addCopyofBlocContent(sValueBloc bloc, boolean addgroup_top_bloc) {
-    mlogln(value_bloc.ref+" addCopyofBlocContent");
+    mlogln(value_bloc.ref+" addCopyofBlocContent ");
     
     is_addgroup_top_bloc = addgroup_top_bloc;
     //to store name change
@@ -1076,7 +1117,7 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
       addCopyofBloc(b, is_addgroup_top_bloc);
     }});
     
-    mlogln(value_bloc.ref+" \n    nref "+new_ref + " \n searching for link/spot");
+    //mlogln(value_bloc.ref+" \n    nref "+new_ref + " \n searching for link/spot");
     
     // take apart saving string to apply name change then create corresponding link or spot
     
@@ -1117,31 +1158,41 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
       mlogln(value_bloc.ref+" addCopyofBloc " + bloc.ref);
       
       //add bloc
-      String n_ref = bloc.ref;
+      String n_ref = copy(bloc.ref);
       if (bloc.getBloc("settings") != null && bloc.getBloc("settings").getValue("title") != null)
         n_ref = ((sStr)(bloc.getBloc("settings").getValue("title"))).get();
-      int cn = 0;
-      boolean is_in_other_sheet = false;
-      if (sheet != this) for (Macro_Sheet m : sheet.child_sheet) if (m != this)
-        is_in_other_sheet = m.value_bloc.getBloc(n_ref) != null || is_in_other_sheet;
-      
-      for (Macro_Sheet m : child_sheet) if (m != this)
-        is_in_other_sheet = m.value_bloc.getBloc(n_ref) != null || is_in_other_sheet;
-      
+      String b_rf = copy(n_ref);
+      String suff_rf = copy(n_ref);
+      while (suff_rf.length() > 0 && suff_rf.charAt(0) != '_') 
+        suff_rf = suff_rf.substring(1, suff_rf.length());
+      int cn = -1;
+      boolean is_in_other_sheet = true;
+      mlogln("add bloc " + bloc.ref + " try his name " + n_ref + " found suffix " + suff_rf);
       while (value_bloc.getBloc(n_ref) != null || 
              (blocs_to_add.getBloc(n_ref) != null && blocs_to_add.getBloc(n_ref) != bloc) || 
              (sheet != this && sheet.value_bloc.getBloc(n_ref) != null) || 
              is_in_other_sheet) {
-        if (n_ref.length() > 0) while (n_ref.charAt(0) != '_') n_ref = n_ref.substring(1, n_ref.length());
-        n_ref = cn + n_ref;
+        if (cn >= 0) {
+          n_ref = cn + suff_rf;
+        }
         cn++;
+        
+        mlogln(" try new name " + n_ref);
         is_in_other_sheet = false;
+        
+        for (Map.Entry me : blocs_to_add.blocs.entrySet()) { 
+          sValueBloc svb = (sValueBloc)me.getValue();
+          if (!svb.ref.equals(bloc.ref)) 
+            is_in_other_sheet = svb.getBloc(n_ref) != null || is_in_other_sheet;
+        }
+        
         if (sheet != this) for (Macro_Sheet m : sheet.child_sheet) if (m != this)
           is_in_other_sheet = m.value_bloc.getBloc(n_ref) != null || is_in_other_sheet;
         for (Macro_Sheet m : child_sheet) if (m != this)
           is_in_other_sheet = m.value_bloc.getBloc(n_ref) != null || is_in_other_sheet;
       }
-      //logln("in "+value_bloc.ref+" new ref "+((sStr)(bloc.getBloc("settings").getValue("title"))).get()+" > "+n_ref);
+      mlogln(n_ref + " found his name");
+      
       sValueBloc nbloc = copy_bloc(bloc, value_bloc, n_ref);
       
       sValueBloc nbloc_child = mmain().inter.getTempBloc();
@@ -1205,6 +1256,7 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
       nbloc_child.clear();
       
       if (from_top_bloc && a != null && !mmain().is_setup_loading)  { a.szone_select(); }
+      //mlogln(value_bloc.ref+" addCopyofBloc end");
     } 
   }
   //b need to be child of value_bloc and have setting/type + spe if sheet , everything else can be created
@@ -1385,7 +1437,7 @@ interface Macro_Interf {
                                "windowpanel binary ctrl", "add a slider to the windowpanel", 
                                "save consecutive inputs as a graph displayed in a windowpanel", 
                                "can open sheet menu"};
-  final String[] bloc_info3 = {"color <> r / g / b", "", ""};
+  final String[] bloc_info3 = {"color <> r / g / b", "the big version", "the big version"};
 }
 
 

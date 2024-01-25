@@ -30,7 +30,7 @@ class GrowerComu extends Community {
   sFlt leaf_size_fact; 
   sFlt floc_prob;
   
-  sBoo create_floc, use_organ;
+  sBoo create_floc, use_organ, AGE_ON;
   sInt activeGrower;
   sRun srun_killg;
 
@@ -50,7 +50,7 @@ class GrowerComu extends Community {
       .addSeparator(0.125)
       .addDrawerFactValue(TEEN_AGE, 2, 10, 1)
       .addSeparator(0.125)
-      .addDrawerFactValue(OLD_AGE, 2, 10, 1)
+      .addDrawerActFactValue("age", AGE_ON, OLD_AGE, 2, 10, 1)
       .addSeparator(0.125)
       .addDrawerActFactValue("grow", growP.ON, growP.DIFFICULTY, 2, 10, 1)
       .addSeparator(0.125)
@@ -99,6 +99,7 @@ class GrowerComu extends Community {
 
     create_floc = newBoo(true, "create_floc", "create floc");
     use_organ = newBoo(true, "use_organ", "use_organ");
+    AGE_ON = newBoo(true, "AGE_ON", "AGE_ON");
     activeGrower = newInt(0, "active_grower", "growers nb");
     
     val_col_live = menuColor(color(220), "val_col_live");
@@ -148,7 +149,7 @@ class GrowerComu extends Community {
     Grower ng = newEntity();
     if (ng != null) ng.define(adding_cursor.pos(), adding_cursor.dir());
     int cost = 5;
-    if (ng != null && sim.organ != null) {
+    //if (ng != null && sim.organ != null) {
       //if (sim.organ.active_entity.get() > cost - 1 && 
       //    sim.organ.active_entity.get() <= sim.organ.list.size()) {
       //  for (int i = 0 ; i < cost ; i ++) {
@@ -159,7 +160,7 @@ class GrowerComu extends Community {
       //if (first_reset && sim.organ.active_entity.get() <= cost + 1) sim.reset();
       //if (!first_reset && sim.organ.active_entity.get() <= cost + 1) { mmain().no_save.set(true); sim.resetRng(); }
       first_reset = false;
-    }
+    //}
     return ng;
   }
   Grower newEntity() {
@@ -254,7 +255,7 @@ class Grower extends Entity {
     return this;
   }
   Grower tick() {
-    age++;
+    if (com().AGE_ON.get() || age <= com().TEEN_AGE.get()) age++;
     if (age < com().TEEN_AGE.get()) {
       start = (float)age / (float)com().TEEN_AGE.get();
     } else start = 1;

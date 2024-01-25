@@ -509,15 +509,16 @@ class nFilePicker extends nWindowPanel {
   nWidget info;
   
   sStr val_cible;
-  boolean autoclose = false, mitig_ac = false;
+  boolean autoclose = false, mitig_ac = false, filter_db = false;
   
   ArrayList<Runnable> eventsChoose = new ArrayList<Runnable>();
   nFilePicker addEventChoose(Runnable r) { eventsChoose.add(r);  return this; } 
   
-  nFilePicker(nGUI _g, nTaskPanel _task, sStr _sv, boolean _autoclose, String t) { 
+  nFilePicker(nGUI _g, nTaskPanel _task, sStr _sv, boolean _autoclose, String t, boolean _fdb) { 
     super(_g, _task, t); 
     val_cible = _sv;
     autoclose = _autoclose;
+    filter_db = _fdb;
     explorer_entry = new ArrayList<String>();
     ext_filter = new ArrayList<String>();
     
@@ -570,7 +571,7 @@ class nFilePicker extends nWindowPanel {
         while (i > 0 && s.charAt(i) != '.') { ext = s.charAt(i) + ext; i--; }
         boolean fn = false;
         for (String st : ext_filter) { fn = fn || st.equals(ext); }
-        if (fn && !s.equals("database.sdata")) explorer_entry.add(s);
+        if (fn && (!filter_db || !s.equals("database.sdata"))) explorer_entry.add(s);
       }
       explorer_list.setEntrys(explorer_entry);
       selectEntry(val_cible.get());
@@ -598,7 +599,7 @@ class nColorPanel extends nWindowPanel {
   //Runnable ok_run;
   sCol cval;
   nColorPanel(nGUI _g, nTaskPanel _task, sCol _cv) { 
-    super(_g, _task, "color"); 
+    super(_g, _task, _cv.bloc.ref + " " + _cv.ref); 
     cval = _cv;
     red = cval.getred(); gre = cval.getgreen(); blu = cval.getblue(); 
     getShelf()
@@ -1013,6 +1014,15 @@ class nExplorer extends nDrawer {
     selected_value = null;
     update_list();
   }
+  
+  final char[] alphabMin = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 
+                            'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+  final char[] alphabMag = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
+                            'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
+  final char[] alphNum = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+  
+  ArrayList<sValue> val_tmp = new ArrayList<sValue>();
+  ArrayList<sValueBloc> blc_tmp = new ArrayList<sValueBloc>();
   void update_list() {
     explorer_entry.clear();
     explorer_blocs.clear();
@@ -1023,16 +1033,64 @@ class nExplorer extends nDrawer {
         if (explored_bloc != starting_bloc) explorer_entry.add("..");
         else explorer_entry.add("");
       }
+               
+      blc_tmp.clear();
+      for (int i = 0; i < 10 ; i++) {
+        for (Map.Entry me : explored_bloc.blocs.entrySet()) {
+          sValueBloc tv = (sValueBloc)me.getValue();
+          if (tv.base_ref.charAt(0) == alphNum[i]) blc_tmp.add(tv); 
+        }
+      }
+      for (int i = 0; i < 26 ; i++) {
+        for (Map.Entry me : explored_bloc.blocs.entrySet()) {
+          sValueBloc tv = (sValueBloc)me.getValue();
+          if (tv.base_ref.charAt(0) == alphabMag[i]) blc_tmp.add(tv); 
+        }
+      }
+      for (int i = 0; i < 26 ; i++) {
+        for (Map.Entry me : explored_bloc.blocs.entrySet()) {
+          sValueBloc tv = (sValueBloc)me.getValue();
+          if (tv.base_ref.charAt(0) == alphabMin[i]) blc_tmp.add(tv); 
+        }
+      }
       for (Map.Entry me : explored_bloc.blocs.entrySet()) {
-        sValueBloc cvb = (sValueBloc)me.getValue();
+        sValueBloc tv = (sValueBloc)me.getValue();
+        if (!blc_tmp.contains(tv)) blc_tmp.add(tv); 
+      }
+      for (sValueBloc cvb : blc_tmp) {
         explorer_blocs.add(cvb); 
         explorer_entry.add(cvb.ref + " " + cvb.use);
-        //explorer_entry.add((String)me.getKey());
+      }
+      blc_tmp.clear();
+               
+      val_tmp.clear();
+      for (int i = 0; i < 10 ; i++) {
+        for (Map.Entry me : explored_bloc.values.entrySet()) {
+          sValue tv = (sValue)me.getValue();
+          if (tv.ref.charAt(0) == alphNum[i]) val_tmp.add(tv); 
+        }
+      }
+      for (int i = 0; i < 26 ; i++) {
+        for (Map.Entry me : explored_bloc.values.entrySet()) {
+          sValue tv = (sValue)me.getValue();
+          if (tv.ref.charAt(0) == alphabMag[i]) val_tmp.add(tv); 
+        }
+      }
+      for (int i = 0; i < 26 ; i++) {
+        for (Map.Entry me : explored_bloc.values.entrySet()) {
+          sValue tv = (sValue)me.getValue();
+          if (tv.ref.charAt(0) == alphabMin[i]) val_tmp.add(tv); 
+        }
       }
       for (Map.Entry me : explored_bloc.values.entrySet()) {
-        explorer_values.add((sValue)me.getValue()); 
-        explorer_entry.add("   - "+(String)me.getKey());
+        sValue tv = (sValue)me.getValue();
+        if (!val_tmp.contains(tv)) val_tmp.add(tv); 
       }
+      for (sValue v : val_tmp) {
+        explorer_values.add(v); 
+        explorer_entry.add("   - "+v.ref);
+      }
+      val_tmp.clear();
     }
     explorer_list.setEntrys(explorer_entry);
     update_info();

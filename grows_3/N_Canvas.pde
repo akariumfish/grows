@@ -41,7 +41,9 @@ class Face extends Macro_Sheet {
         translate(graph.getX() + graph.getSX()/2 - shape.pos.x, 
                   graph.getY() + graph.getSY()/2 - shape.pos.y);
         float hm = shape.dir.mag();
-        shape.dir.setMag(hm/4);
+        float thm = hm;
+        if (shape.nrad() > 2) thm = thm / (shape.nrad() / 2);
+        shape.dir.setMag(thm/4);
         shape.draw();
         shape.dir.setMag(hm);
         strokeWeight(3);
@@ -78,12 +80,15 @@ class Face extends Macro_Sheet {
   nCursor ref_cursor;
   sFlt val_scale, vpax, vpay, vpbx, vpby, vpcx, vpcy, val_linew, val_dens, val_disp;
   sCol val_fill, val_stroke;
+  sInt val_draw_layer;
   
   Face(Canvas m, sValueBloc b) { 
     super(m.mmain(), "Face", b);
     can = m;
     can.faces.add(this);
+    can.sim.faces.add(this);
     shape = new nBase();
+    val_draw_layer = menuIntIncr(0, 1, "val_draw_layer");
     val_scale = menuFltSlide(100, 10, 400, "scale");
     val_linew = menuFltSlide(0.05, 0.01, 0.2, "line_weight");
     shape.line_w = val_linew.get();
@@ -128,6 +133,7 @@ class Face extends Macro_Sheet {
   
   Face clear() {
     can.faces.remove(this);
+    can.sim.faces.remove(this);
     super.clear();
     return this;
   }
@@ -366,7 +372,15 @@ class Canvas extends Macro_Sheet {
       if (active_can == 0) draw(can1);
       else if (active_can == 1) draw(can2);
     }
-    for (Face f : faces) f.draw();
+    
+    //done in sim
+    //if (faces.size() > 0) {
+    //  int min = faces.get(0).val_draw_layer.get(), max = min;
+    //  for (Face f : faces) {
+    //    min = min(min, f.val_draw_layer.get()); max = max(max, f.val_draw_layer.get()); }
+    //  for (int i = min ; i <= max ; i++)
+    //  for (Face f : faces) if (f.val_draw_layer.get() == i) f.draw();
+    //}
   }
   
   void draw(PImage canvas) {
@@ -571,7 +585,7 @@ class Organism extends Macro_Sheet {
   
   Simulation sim;
 
-  Runnable tick_run, rst_run; Drawable cam_draw;
+  Runnable tick_run, rst_run; //Drawable cam_draw;
   
   ArrayList<Cell> list = new ArrayList<Cell>(); //contien les objet
 
@@ -581,6 +595,8 @@ class Organism extends Macro_Sheet {
   
   sCol val_fill1, val_fill2, val_stroke;
   
+  sInt val_draw_layer;
+  
   nCursor adding_cursor;
   
   sRun srun_reset;
@@ -588,7 +604,7 @@ class Organism extends Macro_Sheet {
   Organism(Simulation _s, String n, sValueBloc b) { 
     super(_s.inter.macro_main, n, b);
     sim = _s;
-    sim.organ = this;
+    sim.organs.add(this);
     cursors_list = new ArrayList<nCursor>();
     
     branch = menuFltFact(500, 2, "branch");
@@ -597,6 +613,8 @@ class Organism extends Macro_Sheet {
     lon = menuFltSlide(40, 5, 400, "length");
     blarg = menuFltSlide(0.3, 0.05, 3, "base larg");
     larg = menuFltFact(1, 1.02, "large");
+    
+    val_draw_layer = menuIntIncr(0, 1, "val_draw_layer");
     
     val_stroke = menuColor(color(10, 190, 40), "val_stroke");
     val_fill2 = menuColor(color(30, 90, 20), "val_fill2");
@@ -646,20 +664,21 @@ class Organism extends Macro_Sheet {
     
     tick_run = new Runnable() { public void run() { tick(); } };
     rst_run = new Runnable() { public void run() { reset(); } };
-    cam_draw = new Drawable() { public void drawing() { 
-      draw_All(); } };
+    //cam_draw = new Drawable() { public void drawing() { 
+    //  draw_All(); } };
     
     if (sim != null) sim.addEventTick(tick_run);
-    if (sim != null) sim.inter.addToCamDrawerPile(cam_draw);
+    //if (sim != null) sim.inter.addToCamDrawerPile(cam_draw);
     if (sim != null) sim.reset();
     if (sim != null) sim.addEventReset(rst_run);
   }
 
   Organism clear() {
+    sim.organs.remove(this);
     this.destroy_All();
     sim.removeEventTick(tick_run);
     sim.removeEventReset(rst_run);
-    cam_draw.clear();
+    //cam_draw.clear();
     super.clear();
     return this;
   }
@@ -775,6 +794,10 @@ class nBase extends nShape {
     face.p3 = new PVector(-1, -0.3);
     face.norma();
   }
+  float nrad() {
+    return max(max(face.p1.mag(), face.p2.mag()), face.p3.mag()); }
+  float rad() {
+    return dir.mag() * max(max(face.p1.mag(), face.p2.mag()), face.p3.mag()); }
   void drawcall() {
     triangle(face.p1.x, face.p1.y, face.p2.x, face.p2.y, face.p3.x, face.p3.y);
   }

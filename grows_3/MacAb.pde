@@ -102,27 +102,38 @@ Macro_Abstract(Macro_Sheet _sheet, String ty, String n, sValueBloc _bloc) {
     gui = _sheet.gui; ref_size = _sheet.ref_size; sheet = _sheet; 
     sheet_depth = sheet.sheet_depth + 1;
     
+    mlogln("build abstract "+ty+" "+n+" "+ _bloc);
+    
     if (_bloc == null) {
       String n_suff = "";
       if (n == null) n_suff = ty;
       else n_suff = n;
-      int cn = 0;
-      String n_ref = cn + "_" + n_suff;
-      
-      boolean is_in_other_sheet = false;
-      if (sheet != mmain()) for (Macro_Sheet m : sheet.child_sheet) if (m != this)
-        is_in_other_sheet = m.value_bloc.getBloc(n_ref) != null || is_in_other_sheet;
-      
-      while (sheet.value_bloc.getBloc(n_ref) != null ||
-             //(sheet != mmain() && sheet.sheet.value_bloc.getBloc(n_ref) != null) || 
-             is_in_other_sheet) {
-        cn++;
+      String n_ref = "0_" + n_suff;
+      if (!(sheet == mmain() && mmain().child_sheet != null && mmain().child_sheet.size() != 0 )) {
+        int cn = -1;
         n_ref = cn + "_" + n_suff;
-        
-        is_in_other_sheet = false;
-        if (sheet != mmain()) for (Macro_Sheet m : sheet.child_sheet) if (m != this)
-          is_in_other_sheet = m.value_bloc.getBloc(n_ref) != null || is_in_other_sheet;
-        
+        mlogln(n_suff + " search new name");
+        boolean is_in_other_sheet = true;
+        while (is_in_other_sheet ||
+               (sheet.sheet.value_bloc.getBloc(n_ref) != null) || // && sheet != mmain()
+               sheet.value_bloc.getBloc(n_ref) != null) {
+          cn++;
+          n_ref = cn + "_" + n_suff;
+          mlogln("try name " + n_ref);
+          
+          is_in_other_sheet = false;
+          if (sheet.child_sheet != null) for (Macro_Sheet m : sheet.child_sheet)
+            is_in_other_sheet = m.value_bloc.getBloc(n_ref) != null || is_in_other_sheet;
+          
+          /*if (sheet != mmain())*/ 
+          if (sheet.child_sheet != null && sheet.sheet.child_sheet != null) for (Macro_Sheet m : sheet.sheet.child_sheet) {
+            is_in_other_sheet = m.value_bloc.getBloc(n_ref) != null || is_in_other_sheet;
+            for (Macro_Sheet mc : m.child_sheet)
+              is_in_other_sheet = mc.value_bloc.getBloc(n_ref) != null || is_in_other_sheet;
+          }
+          
+        }
+        mlogln(n_ref + " found his name");
       }
       value_bloc = sheet.value_bloc.newBloc(n_ref);
       
@@ -148,8 +159,8 @@ Macro_Abstract(Macro_Sheet _sheet, String ty, String n, sValueBloc _bloc) {
     if (grab_pos == null) grab_pos = setting_bloc.newVec("position", "pos");
     else pos_given = true;
     
-    if (!pos_given && sheet != this) {
-      PVector sc_pos = new PVector(mmain().screen_gui.view.pos.x + mmain().screen_gui.view.size.x * 2.0 / 3.0, 
+    if (!pos_given && sheet != this && !(sheet.child_macro.size() == 0) ) {
+      PVector sc_pos = new PVector(mmain().screen_gui.view.pos.x + mmain().screen_gui.view.size.x * 1.0 / 2.0, 
                                    mmain().screen_gui.view.pos.y + mmain().screen_gui.view.size.y / 3.0);
       sc_pos = mmain().inter.cam.screen_to_cam(sc_pos);
       grab_pos.set(sc_pos.x - sheet.grabber.getX(), sc_pos.y - sheet.grabber.getY());
@@ -166,6 +177,9 @@ Macro_Abstract(Macro_Sheet _sheet, String ty, String n, sValueBloc _bloc) {
   }
   Macro_Abstract(sInterface _int) { // FOR MACRO_MAIN ONLY
     super(_int.cam_gui, _int.ref_size, 0.125);
+    
+    mlogln("build main abstract ");
+    
     gui = _int.cam_gui; 
     ref_size = _int.ref_size; 
     sheet = (Macro_Main)this;
@@ -453,6 +467,7 @@ Macro_Abstract(Macro_Sheet _sheet, String ty, String n, sValueBloc _bloc) {
 class Macro_Bloc extends Macro_Abstract {
   Macro_Bloc(Macro_Sheet _sheet, String t, String n, sValueBloc _bloc) {
     super(_sheet, t, n, _bloc);
+    mlogln("build bloc "+t+" "+n+" "+ _bloc);
     addShelf(); 
     addShelf();
   }

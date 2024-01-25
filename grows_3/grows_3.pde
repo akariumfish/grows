@@ -24,31 +24,60 @@ PApplet
 
 boolean DEBUG_HOVERPILE = false;
 boolean DEBUG_NOFILL = false;
-boolean DEBUG_MACRO = false;
+
+boolean DEBUG_MACRO = true;
 
 boolean DEBUG = true;
 
 int global_frame_count = 0;
-
-void log(String s) {
+ArrayList<String> logs = new ArrayList<String>();
+String current_log = "";
+boolean console_log = true, save_log_exit = false, save_log_all = false;
+String logpath = "log.txt";
+String[] loglist;
+void savelog() {
+  if (loglist == null || loglist.length < logs.size()) loglist = new String[logs.size() + 500]; 
+  int i = 0;
+  for (String s : logs) { loglist[i] = copy(s); i++; }
+  saveStrings(logpath, loglist);
+}
+void og(String s) {
+  if (current_log.length() == 0) print(global_frame_count+"::");
   if (DEBUG) print(s);
+  if (current_log.length() == 0) current_log += global_frame_count+"::";
+  current_log += s;
 }
 void logln(String s) {
-  if (DEBUG) println(global_frame_count+":"+s);
+  if (current_log.length() == 0) print(global_frame_count+"::");
+  if (console_log && DEBUG) println(s);
+  if (current_log.length() == 0) current_log += global_frame_count+"::";
+  current_log += s;
+  logs.add(copy(current_log));
+  current_log = "";
+  if (save_log_all) savelog();
 }
 void mlog(String s) {
-  if (DEBUG_MACRO) print(s);
+  if (current_log.length() == 0) print(global_frame_count+":M:");
+  if (console_log && DEBUG_MACRO) print(s);
+  if (current_log.length() == 0 && DEBUG_MACRO) current_log += global_frame_count+"::";
+  if (DEBUG_MACRO) current_log += s;
 }
 void mlogln(String s) {
-  if (DEBUG_MACRO) println(s);
+  if (current_log.length() == 0) print(global_frame_count+":M:");
+  if (console_log && DEBUG_MACRO) println(s);
+  if (current_log.length() == 0 && DEBUG_MACRO) current_log += global_frame_count+":M:";
+  if (DEBUG_MACRO) current_log += s;
+  logs.add(copy(current_log));
+  current_log = "";
+  if (save_log_all) savelog();
 }
 
 sInterface interf;
 
 void setup() {//executé au demarage
-  //size(1600, 900);//taille de l'ecran
+  size(1600, 900);//taille de l'ecran
   //surface.setLocation(200, 40);
-  fullScreen();
+  //fullScreen();
   noSmooth();//pas d'antialiasing
   //smooth();//anti aliasing
   surface.setResizable(true);
@@ -76,22 +105,20 @@ void setup() {//executé au demarage
   
   app_grab = new nWidget(interf.screen_gui, "Grows 3.0", 28, 0, 0, base_width - 40, 40)
     .setTrigger()
-    .addEventTrigger(new Runnable() { 
-    public void run() { mx = mouseX; my = mouseY; } } )
-    .addEventPressed(new Runnable() { 
-    public void run() { 
+    .addEventTrigger(new Runnable() { public void run() { mx = mouseX; my = mouseY; } } )
+    .addEventPressed(new Runnable() { public void run() { 
       sx = int(mouseX + sx - mx);
       sy = int(mouseY + sy - my);
       surface.setLocation(sx, sy); 
     } } );
   app_close = new nWidget(interf.screen_gui, "X", 28, base_width - 40, 0, 40, 40)
     .setTrigger()
-    .addEventTrigger(new Runnable() { 
-    public void run() { exit(); } } );
+    .addEventTrigger(new Runnable() { public void run() { 
+      exit(); if (save_log_exit) savelog(); } } );
   
-  interf.full_screen_run.run();
-  interf.full_screen_run.run();
-  interf.full_screen_run.run();
+  //interf.full_screen_run.run();
+  //interf.full_screen_run.run();
+  //interf.full_screen_run.run();
   surface.setLocation(200, 40);
 }
 

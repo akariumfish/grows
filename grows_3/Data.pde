@@ -819,10 +819,15 @@ void transfer_bloc_values(sValueBloc from, sValueBloc to) {
 
 boolean DEBUG_SAVE_FULL = false;
 void slog(String s) {
-  if (DEBUG_SAVE_FULL) print(s);
+  if (console_log && DEBUG_SAVE_FULL) print(s);
+  if (DEBUG_SAVE_FULL) current_log += s;
 }
 void slogln(String s) {
-  if (DEBUG_SAVE_FULL) println(s);
+  if (console_log && DEBUG_SAVE_FULL) println(s+":S:"+global_frame_count);
+  if (DEBUG_SAVE_FULL) current_log += s+":S:"+global_frame_count;
+  logs.add(copy(current_log));
+  current_log = "";
+  if (save_log_all) savelog();
 }
 
 /*
