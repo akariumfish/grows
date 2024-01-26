@@ -36547,7 +36547,7 @@ str
 shr
 lbl
 val
-fps 23.2
+fps 23.0
 0
 0
 2_gate
@@ -150823,7 +150823,7 @@ str
 shr
 lbl1
 val
-turn 1271
+turn 1020
 0
 0
 valTRIG1
@@ -163879,7 +163879,7 @@ int
 shr
 tick
 val
-1273
+1022
 0
 0
 tick seconde
@@ -163895,7 +163895,7 @@ flt
 shr
 tps
 val
-23.210833
+23.094688
 0
 0
 pause
@@ -164691,7 +164691,7 @@ int
 shr
 frsr
 val
-1272
+1021
 0
 0
 files_management
@@ -164799,7 +164799,7 @@ int
 shr
 sec
 val
-48
+38
 0
 0
 median_framerate
@@ -164815,7 +164815,7 @@ flt
 shr
 mfr
 val
-23.210833
+23.094688
 0
 0
 cam scale
@@ -251709,7 +251709,7 @@ str
 shr
 spath
 val
-save.sdata
+back.sdata
 0
 0
 log_ext_save
