@@ -86,6 +86,7 @@ void setup() {//executé au demarage
   
   setup_midi();
   
+  
   interf = new sInterface(40);
   
   Simulation simul = (Simulation)interf.addUniqueSheet(new SimPrint());
@@ -105,7 +106,8 @@ void setup() {//executé au demarage
       public void run() { interf.addEventNextFrame(new Runnable() { 
         public void run() { interf.setup_load(); } } ); } } );
   
-  app_grab = new nWidget(interf.screen_gui, "Grows 3.0", 28, 0, 0, base_width - 40, 40)
+  
+  app_grab = new nWidget(interf.screen_gui, "", 28, 0, 0, base_width - 40, 40)
     .setTrigger()
     .addEventTrigger(new Runnable() { public void run() { mx = mouseX; my = mouseY; } } )
     .addEventPressed(new Runnable() { public void run() { 
@@ -120,6 +122,8 @@ void setup() {//executé au demarage
       if (save_log_exit) savelog(); 
       interf.addEventTwoFrame(new Runnable() { 
         public void run() { exit(); } } ); } } );
+  
+  
   
   interf.full_screen_run.run();
   interf.full_screen_run.run();

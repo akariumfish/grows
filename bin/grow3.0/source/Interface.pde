@@ -402,6 +402,11 @@ class sInterface {
       show_taskpanel.set(!taskpanel.hide); }});
       
     savepath_value = new sStr(interface_bloc, savepath, "savepath", "spath");
+    savepath_value.addEventChange(new Runnable() { public void run() { 
+      app_grab.setText(version_title + "  -  "+savepath_value.get());
+      //init in inter.frame() > is_starting if bloc
+     } } );
+    
     filempath_value = new sStr(interface_bloc, "", "filempath", "fmpath");
     file_savebloc = new Save_Bloc(savepath);
     //filesManagement();
@@ -409,6 +414,7 @@ class sInterface {
   
   nWidget match_flag;
   nWindowPanel files_panel;
+  String version_title = "Grows 3.0";
   String savepath = "save.sdata";
   sStr savepath_value, filempath_value;
   sBoo auto_load, log_ext_save;
@@ -584,6 +590,7 @@ class sInterface {
 
     if (is_starting) { 
       is_starting = false; 
+      app_grab.setText(version_title + "  -  "+savepath_value.get());
       runEvents(eventsSetup);
     }
     runEvents(eventsFrame); // << sim runs here

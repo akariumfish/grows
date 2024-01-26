@@ -18,7 +18,7 @@ import java.io.InputStream;
 import java.io.OutputStream; 
 import java.io.IOException; 
 
-public class grows_3 extends PApplet {
+public class grows_3_1 extends PApplet {
 
 
 
@@ -108,6 +108,7 @@ public void setup() {//executé au demarage
   
   setup_midi();
   
+  
   interf = new sInterface(40);
   
   Simulation simul = (Simulation)interf.addUniqueSheet(new SimPrint());
@@ -127,7 +128,8 @@ public void setup() {//executé au demarage
       public void run() { interf.addEventNextFrame(new Runnable() { 
         public void run() { interf.setup_load(); } } ); } } );
   
-  app_grab = new nWidget(interf.screen_gui, "Grows 3.0", 28, 0, 0, base_width - 40, 40)
+  
+  app_grab = new nWidget(interf.screen_gui, "", 28, 0, 0, base_width - 40, 40)
     .setTrigger()
     .addEventTrigger(new Runnable() { public void run() { mx = mouseX; my = mouseY; } } )
     .addEventPressed(new Runnable() { public void run() { 
@@ -142,6 +144,8 @@ public void setup() {//executé au demarage
       if (save_log_exit) savelog(); 
       interf.addEventTwoFrame(new Runnable() { 
         public void run() { exit(); } } ); } } );
+  
+  
   
   interf.full_screen_run.run();
   interf.full_screen_run.run();
@@ -1925,6 +1929,11 @@ class sInterface {
       show_taskpanel.set(!taskpanel.hide); }});
       
     savepath_value = new sStr(interface_bloc, savepath, "savepath", "spath");
+    savepath_value.addEventChange(new Runnable() { public void run() { 
+      app_grab.setText(version_title + "  -  "+savepath_value.get());
+      //init in inter.frame() > is_starting if bloc
+     } } );
+    
     filempath_value = new sStr(interface_bloc, "", "filempath", "fmpath");
     file_savebloc = new Save_Bloc(savepath);
     //filesManagement();
@@ -1932,6 +1941,7 @@ class sInterface {
   
   nWidget match_flag;
   nWindowPanel files_panel;
+  String version_title = "Grows 3.0";
   String savepath = "save.sdata";
   sStr savepath_value, filempath_value;
   sBoo auto_load, log_ext_save;
@@ -2107,6 +2117,7 @@ class sInterface {
 
     if (is_starting) { 
       is_starting = false; 
+      app_grab.setText(version_title + "  -  "+savepath_value.get());
       runEvents(eventsSetup);
     }
     runEvents(eventsFrame); // << sim runs here
@@ -5264,26 +5275,29 @@ Macro_Main(sInterface _int) {
                   TO DO
   
   
+  
+  
+  
   add min/max param to slide (/2 X2) > set minmax of sval
     event limit change for synchro
   
   number formating!!!
   
+  when manually adding try to stay on top of sheet back to keep it small
+  
+  debug MComment
+    rebuild itself > change name, lose co, change place
+  
+  distence mesuring tool
+  
   bloc node : one point in and out at the same time
     use a custom macro_connect
     created by leftclick on empty space
   
-  distence mesuring tool
-  
-  when manually adding try to stay on top of sheet back to keep it small
+  its needed to group shapes to limit object nb
   
   to big trig et switch : when too dezoomed show a screen widget (on/off)
     set button text (large font)
-  
-  debug MComment
-    rebuild itself > change name, lose co, change place
-    
-  its needed to group shapes to limit object nb
   
   
   
@@ -9821,8 +9835,6 @@ class MSheetOut extends Macro_Bloc {
   public MSheetOut clear() {
     super.clear(); return this; }
 }
-
-
 
 
 
@@ -16647,7 +16659,7 @@ class nSelectZone {
  
   public void settings() {  fullScreen();  noSmooth(); }
   static public void main(String[] passedArgs) {
-    String[] appletArgs = new String[] { "grows_3" };
+    String[] appletArgs = new String[] { "grows_3_1" };
     if (passedArgs != null) {
       PApplet.main(concat(appletArgs, passedArgs));
     } else {

@@ -3,26 +3,29 @@
                   TO DO
   
   
+  
+  
+  
   add min/max param to slide (/2 X2) > set minmax of sval
     event limit change for synchro
   
   number formating!!!
   
+  when manually adding try to stay on top of sheet back to keep it small
+  
+  debug MComment
+    rebuild itself > change name, lose co, change place
+  
+  distence mesuring tool
+  
   bloc node : one point in and out at the same time
     use a custom macro_connect
     created by leftclick on empty space
   
-  distence mesuring tool
-  
-  when manually adding try to stay on top of sheet back to keep it small
+  its needed to group shapes to limit object nb
   
   to big trig et switch : when too dezoomed show a screen widget (on/off)
     set button text (large font)
-  
-  debug MComment
-    rebuild itself > change name, lose co, change place
-    
-  its needed to group shapes to limit object nb
   
   
   
