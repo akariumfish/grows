@@ -2,9 +2,12 @@
 /*
                   TO DO
   
+  add transparance: a in sColor
   
+  easy point of view save : when selecting a sheet the cam go to its center and adjust zoom if needed
   
-  
+  corrige error on group_grabber grid snaping, 
+    small constant misalignment, because of his size not multyple?
   
   add min/max param to slide (/2 X2) > set minmax of sval
     event limit change for synchro
@@ -12,9 +15,13 @@
   number formating!!!
   
   when manually adding try to stay on top of sheet back to keep it small
+    >> start add place search from existing bloc median pos (or 0) then try in spiral
   
   debug MComment
     rebuild itself > change name, lose co, change place
+    
+    only do rebuild on command : a bp switch between mode when all wanted param are set
+    to rebuild use a copy of sheet addbyblockmethods
   
   distence mesuring tool
   
@@ -59,12 +66,15 @@
   
   
   
+  b 
   
   
+  open finished bp, search file in sub folder, cant save on it again
+    save final bp to save in this folder (verify if new file name is existing to stop you from overwriting)
+    
+  for macro main toolpanel bp and basic sim features add shortcut menu
   
-  
-  
-  list knows dengerous (beuged) actions
+  list knows dangerous (bugged) actions
   
   sujet principaux dans la doc
     data sval, svalblc save/load templ/prst
@@ -88,13 +98,58 @@
   
   mesure and store the relative process time used by each special sheet
   
+  macro blocs and groups adding position can be controllable
+    can be relative or absolute depending on case
 
 
 
                     R & D
                     
-  Sending Object through link ??
-    more like temporary and restricted access > need timed, volatile container
+  sending sval and sbloc through link
+    output keep a packet as pointer to last send val, packet is passer
+    
+    need clean rythme
+      all activated outs call conected in for new val then deactive
+      all activated in gets val pass it to bloc then deactive
+      all activated bloc process the vals
+    thats 1 packet process update
+    repeat util no more new packet or too much time ellapsed, start again next turn
+    
+    >>>> reuse the mconnection structure
+      will just need to add a turn with priority of exe for the blocs
+    sval new methods 
+      bool isType()
+      packet asPacket()
+    sbloc new methods
+      packet asPacket()
+    packet new methods
+      sval asType()
+      sbloc asBloc()
+      bool isType()
+      bool isBloc()
+  
+  can send sbloc as cible for everything! solve the cursor or pairing proble
+  
+  spe blocs can iterate throug bloc contents on ticking
+  
+  simply put macro blocs for all svalue handling methods 
+    add macro from bloc too
+    
+  slow mo mode :    
+    real slow mode or just a slowed down recording of a finished packet process update ??
+    
+    real permit interaction and observation > 
+      objectif no number no words just visual for organic learnning
+    
+    permit to see the content sended through a link visualy
+      and his speed of evolution > show synchronisation and sequances
+    
+    along the one update bubble transit along the links 
+    then bloc lit up if activated ( intensity show process difficuty?? )
+    
+    for number / bool bubble is more or less filled (min max sval)
+    text trensit
+    color trensit
   
   infrastructure :
     structural model switchable (patch structure)
@@ -103,6 +158,8 @@
   mtemplate : load / save bang > run
   sheet selector : select sheet choosen by name on bang
   pack / unpack > build complex packet
+  
+  visualize sheet val content has phantom on the sheet back?
   
   unique macro bloc custom build by the special sheet, non deletable, non duplicable
     ex: Canvas :

@@ -414,7 +414,7 @@ class sInterface {
   
   nWidget match_flag;
   nWindowPanel files_panel;
-  String version_title = "Grows 3.0";
+  String version_title = "Grows 3.1";
   String savepath = "save.sdata";
   sStr savepath_value, filempath_value;
   sBoo auto_load, log_ext_save;

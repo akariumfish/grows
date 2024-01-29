@@ -11,7 +11,7 @@ see previews for sample results
 last relatively stable : grows2.9.5.exe in bin/grows2.9.5		( full screen )
 in image/ there is screenshots of the developement of this phase
 
-IF YOU JUST WANT TO TRY AND KNOW NOTHING ABOUT COMPUTERS (or your lazy) just send a mail to growsDev@gmail.com with subject "exe please" and i will mail the last stable executable to you.
+IF YOU JUST WANT TO TRY AND KNOW NOTHING ABOUT COMPUTERS (or you'r lazy) just send a mail to growsDev@gmail.com with subject "exe please" and i will mail the last stable executable to you.
 
 If someone can help me setup a better solution for standard user download, it would be very appreciated.
 
@@ -52,7 +52,7 @@ New in 3.0
         group select/move/copy/paste/delete
         template and preset database
         basic save file, presets and template
-        
+
 New in 2.9:
         Box Community,
         parameters for floc grow and box interaction,
@@ -64,5 +64,6 @@ New in 2.9:
         new basic bloc,
         better file manager,
         open file and save as shortcuts
+
 
 contact growsDev@gmail.com
