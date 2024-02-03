@@ -224,7 +224,6 @@ class Simulation extends Macro_Sheet {
 
   void draw_to_cam() { 
     if (show_com.get()) {
-      //list faces organs
       
       if (faces.size() > 0 || list.size() > 0 || organs.size() > 0) {
         int min = 0; 
@@ -557,7 +556,7 @@ abstract class Community extends Macro_Sheet {
     
     val_draw_layer = menuIntIncr(0, 1, "val_draw_layer");
 
-    adding_cursor = new nCursor(this, n, "add");
+    adding_cursor = new nCursor(this, n, "add", true);
 
     srun_add = newRun("add_entity", "add_pop", new Runnable() { 
       public void run() { 

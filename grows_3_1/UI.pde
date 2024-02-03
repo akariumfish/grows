@@ -120,6 +120,12 @@ class nGUI {
 //liens avec les svalues
 class nLinkedWidget extends nWidget { 
   nLinkedWidget setLinkedValue(sValue b) { 
+    if (val != null) val.removeEventChange(val_run);
+    val = b;
+    clearEventTrigger();
+    clearEventSwitchOn();
+    clearEventSwitchOff();
+    clearEventFieldChange();
     if (b.type.equals("flt")) setLinkedValue((sFlt)b);
     if (b.type.equals("int")) setLinkedValue((sInt)b);
     if (b.type.equals("boo")) setLinkedValue((sBoo)b);
@@ -127,6 +133,8 @@ class nLinkedWidget extends nWidget {
     if (b.type.equals("run")) setLinkedValue((sRun)b);
     if (b.type.equals("vec")) setLinkedValue((sVec)b);
     return this; }
+  Runnable val_run;
+  sValue val;
   sBoo bval; sInt ival; sFlt fval; sStr sval; sRun rval; sVec vval;
   String base_text = "";
   nLinkedWidget(nGUI g) { super(g); }
@@ -138,19 +146,23 @@ class nLinkedWidget extends nWidget {
     setTrigger();
     return this; }
   nLinkedWidget setLinkedValue(sBoo b) { 
-    bval = b;
-    setSwitch();
-    if (b.get()) setOn();
-    b.addEventChange(new Runnable(this) { public void run() { 
-      ((nLinkedWidget)builder).setSwitchState(bval.get()); } } );
-    addEventSwitchOn(new Runnable() { public void run() { bval.set(true); } } );
-    addEventSwitchOff(new Runnable() { public void run() { bval.set(false); } } );
+    if (b != null) {
+      bval = b;
+      setSwitch();
+      if (b.get()) setOn();
+      val_run = new Runnable(this) { public void run() { 
+        ((nLinkedWidget)builder).setSwitchState(bval.get()); } } ;
+      b.addEventChange(val_run);
+      addEventSwitchOn(new Runnable() { public void run() { bval.set(true); } } );
+      addEventSwitchOff(new Runnable() { public void run() { bval.set(false); } } );
+    }
     return this; }
   nLinkedWidget setLinkedValue(sInt b) { 
     ival = b;
     setText(str(ival.get()));
-    b.addEventChange(new Runnable(this) { public void run() { 
-      ((nLinkedWidget)builder).changeText(str(ival.get())); } } );
+    val_run = new Runnable(this) { public void run() { 
+      ((nLinkedWidget)builder).changeText(str(ival.get())); } };
+    b.addEventChange(val_run);
     setField(true);
     addEventFieldChange(new Runnable(this) { public void run() { 
       String s = ((nLinkedWidget)builder).getText();
@@ -160,8 +172,9 @@ class nLinkedWidget extends nWidget {
     fval = b;
     setText(trimStringFloat(fval.get()));
     //println(fval.get());
-    b.addEventChange(new Runnable(this) { public void run() { 
-      ((nLinkedWidget)builder).changeText(trimStringFloat(fval.get()));  } } );
+    val_run = new Runnable(this) { public void run() { 
+      ((nLinkedWidget)builder).changeText(trimStringFloat(fval.get()));  } };
+    b.addEventChange(val_run);
     setField(true);
     addEventFieldChange(new Runnable(this) { public void run() { 
       String s = ((nLinkedWidget)builder).getText();
@@ -172,8 +185,9 @@ class nLinkedWidget extends nWidget {
     vval = b;
     setGrabbable();
     setPosition(vval.x(), vval.y());
-    b.addEventChange(new Runnable(this) { public void run() { 
-      ((nLinkedWidget)builder).setPosition(vval.x(), vval.y()); } } );
+    val_run = new Runnable(this) { public void run() { 
+      ((nLinkedWidget)builder).setPosition(vval.x(), vval.y()); } };
+    b.addEventChange(val_run);
     addEventPositionChange(new Runnable(this) { public void run() { 
       vval.set(((nLinkedWidget)builder).getLocalX(), ((nLinkedWidget)builder).getLocalY()); } } );
     return this; }
@@ -181,8 +195,9 @@ class nLinkedWidget extends nWidget {
     if (sval == null) base_text = getText();
     sval = b;
     setText(base_text + sval.get());
-    b.addEventChange(new Runnable(this) { public void run() { 
-      ((nLinkedWidget)builder).changeText(base_text + sval.get()); } } );
+    val_run = new Runnable(this) { public void run() { 
+      ((nLinkedWidget)builder).changeText(base_text + sval.get()); } };
+    b.addEventChange(val_run);
     setField(true);
     addEventFieldChange(new Runnable(this) { public void run() { 
       String s = ((nLinkedWidget)builder).getText();
@@ -193,6 +208,8 @@ class nLinkedWidget extends nWidget {
 //liens avec les svalues
 class nWatcherWidget extends nWidget {
   nWatcherWidget setLinkedValue(sValue b) { 
+    if (val != null) val.removeEventChange(val_run);
+    val = b;
     if (b.type.equals("flt")) setLinkedValue((sFlt)b);
     if (b.type.equals("int")) setLinkedValue((sInt)b);
     if (b.type.equals("boo")) setLinkedValue((sBoo)b);
@@ -200,43 +217,51 @@ class nWatcherWidget extends nWidget {
     if (b.type.equals("vec")) setLinkedValue((sVec)b);
     if (b.type.equals("col")) setLinkedValue((sCol)b);
     return this; }
+  Runnable val_run;
+  sValue val;
   sBoo bval; sInt ival; sFlt fval; sStr sval; sVec vval; sCol cval;
   String base_text = "";
   nWatcherWidget(nGUI g) { super(g); }
   nWatcherWidget setLinkedValue(sInt b) { 
     ival = b; setText(str(ival.get()));
-    b.addEventChange(new Runnable(this) { public void run() { 
-      ((nWatcherWidget)builder).setText(str(ival.get())); } } );
+    val_run = new Runnable(this) { public void run() { 
+      ((nWatcherWidget)builder).setText(str(ival.get())); } };
+    b.addEventChange(val_run);
     return this; }
   nWatcherWidget setLinkedValue(sFlt b) { 
     fval = b; setText(trimStringFloat(fval.get()));
-    b.addEventChange(new Runnable(this) { public void run() { 
-      ((nWatcherWidget)builder).setText(trimStringFloat(fval.get())); } } );
+    val_run = new Runnable(this) { public void run() { 
+      ((nWatcherWidget)builder).setText(trimStringFloat(fval.get())); } };
+    b.addEventChange(val_run);
     return this; }
   nWatcherWidget setLinkedValue(sBoo b) { 
     bval = b; 
     if (bval.get()) setText("true"); else setText("false");
-    b.addEventChange(new Runnable(this) { public void run() { 
+    val_run = new Runnable(this) { public void run() { 
       if (bval.get()) ((nWatcherWidget)builder).setText("true");
-      else ((nWatcherWidget)builder).setText("false"); } } );
+      else ((nWatcherWidget)builder).setText("false"); } };
+    b.addEventChange(val_run);
     return this; }
   nWatcherWidget setLinkedValue(sStr b) { 
     if (sval == null) base_text = getText();
     sval = b;
     setText(base_text + sval.get());
-    b.addEventChange(new Runnable(this) { public void run() { 
-      ((nWatcherWidget)builder).changeText(base_text + sval.get()); } } );
+    val_run = new Runnable(this) { public void run() { 
+      ((nWatcherWidget)builder).changeText(base_text + sval.get()); } };
+    b.addEventChange(val_run);
     return this; }
   nWatcherWidget setLinkedValue(sCol b) { 
     cval = b; setStandbyColor(cval.get());
-    b.addEventChange(new Runnable(this) { public void run() { 
-      ((nWatcherWidget)builder).setStandbyColor(cval.get()); } } );
+    val_run = new Runnable(this) { public void run() { 
+      ((nWatcherWidget)builder).setStandbyColor(cval.get()); } };
+    b.addEventChange(val_run);
     return this; }
   nWatcherWidget setLinkedValue(sVec b) { 
     vval = b; 
     setText(trimStringFloat(vval.x()) + "," + trimStringFloat(vval.y()));
-    b.addEventChange(new Runnable(this) { public void run() { 
-      ((nWatcherWidget)builder).setText(trimStringFloat(vval.x()) + "," + trimStringFloat(vval.y())); } } );
+    val_run = new Runnable(this) { public void run() { 
+      ((nWatcherWidget)builder).setText(trimStringFloat(vval.x()) + "," + trimStringFloat(vval.y())); } };
+    b.addEventChange(val_run);
     return this; }
 }
 
@@ -316,10 +341,10 @@ class nLook {
 
 
 class nSlide extends nWidget {
-  nSlide setLinkedValue(sValue v) {
+  //nSlide setLinkedValue(sValue v) {
     
-    return this;
-  }
+  //  return this;
+  //}
   nSlide setValue(float v) {
     if (v < 0) v = 0; if (v > 1) v = 1;
     curs.setPX(v * (bar.getLocalSX() - curs.getLocalSX()));
@@ -350,6 +375,7 @@ class nSlide extends nWidget {
           curs.setPX(bar.getLocalSX() - curs.getLocalSX());
         cursor_value = curs.getLocalX() / (bar.getLocalSX() - curs.getLocalSX());
         runEvents(eventSlide, cursor_value);
+        runEvents(eventSlide);
       }})
       .addEventLiberate(new Runnable() { public void run() {
         runEvents(eventLiberate);
@@ -409,6 +435,8 @@ class nWidget {
   nWidget clearEventSwitchOff()  { eventSwitchOffRun.clear(); return this; }
   
   nWidget addEventFieldChange(Runnable r) { eventFieldChangeRun.add(r); return this; }
+  nWidget removeEventFieldChange(Runnable r) { eventFieldChangeRun.remove(r); return this; }
+  nWidget clearEventFieldChange() { eventFieldChangeRun.clear(); return this; }
   
   nWidget setDrawable(Drawable d) { 
     gui.drawing_pile.drawables.remove(drawer); 

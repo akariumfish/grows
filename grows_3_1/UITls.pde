@@ -64,122 +64,218 @@
 
 
 class nCursor extends nWidget {
-  float x() { return pval.x(); }
-  float y() { return pval.y(); }
-  PVector dir() { if (dval.get().mag() > ref_size) return new PVector(dval.x(), dval.y()).setMag(1); 
+  float x() { if (pval != null) return pval.x(); else return 0; }
+  float y() { if (pval != null) return pval.y(); else return 0; }
+  PVector dir() { if (dval != null && dval.get().mag() > ref_size) 
+                    return new PVector(dval.x(), dval.y()).setMag(1); 
                   else return new PVector(1, 0).rotate(random(2*PI)); }
-  PVector pos() { return new PVector(pval.x(), pval.y()); }
+  PVector pos() { 
+    if (pval != null) return new PVector(pval.x(), pval.y()); 
+    else return new PVector(); }
   nGUI gui;
   float ref_size;
-  sVec pval, dval;
-  sBoo show;
-  String ref;
+  sVec pval = null;
+  sVec dval = null;
+  sBoo show = null;
+  sValueBloc s_bloc = null;
+  String ref; 
+  String shr;
   nWidget refwidget, thiswidget, pointwidget;
-  nWidget screen_widget;
+  nWidget screen_widget, screenpoint_widget;
   Macro_Sheet sheet;
   Camera cam;
   Runnable move_run, zoom_run;
+  boolean show_dir = true;
   
-  void update_view() {
-    if (cam.cam_scale.get() < 0.25) { 
-      if (show.get()) { screen_widget.show(); toLayerTop(); }
-      //screen_widget.setGrabbable();
-      pointwidget.hide();
-      thiswidget.hide();
-    } else { 
-      screen_widget.hide();
-      //screen_widget.setPassif();
-      if (show.get()) { 
-        pointwidget.show();
-        thiswidget.show();
-        toLayerTop();
-      }
-    }
-  }
+  ArrayList<Runnable> eventClearRuns = new ArrayList<Runnable>();
+  nCursor addEventClear(Runnable r) { eventClearRuns.add(r); return this; }
   
-  nCursor(Macro_Sheet _sheet, String r, String s) {
+  //nCursor(Macro_Main mm, sValueBloc blc, String r, boolean sd) {
+  //  super(mm.gui);
+  //  show_dir = sd;
+  //  sheet = mm;
+  //  cam = mm.inter.cam;
+  //  new nConstructor(sheet.gui.theme, sheet.gui.theme.ref_size);
+  //  thiswidget = this;
+  //  gui = sheet.gui; ref_size = sheet.gui.theme.ref_size; 
+    
+  //  build_ui();
+    
+  //  int c = 0;
+  //  while (blc.getBloc(r+"_"+c) != null) { c++; }
+  //  s_bloc = blc.newBloc(r+"_"+c);
+  //  ref = r+"_"+c; shr = ref;
+  //  pval = s_bloc.newVec("pos", "pos");
+  //  show = s_bloc.newBoo(false, "show", "show"); //!!!!! is hided by default
+  //  dval = s_bloc.newVec("dir", "dir");
+    
+  //  pval.addEventDelete(new Runnable() { public void run() { clear(); } } );
+  //  pval.addEventChange(new Runnable() { public void run() {
+  //    thiswidget.setPosition(pval.x()-ref_size, pval.y()-ref_size);
+  //    PVector p = cam.cam_to_screen(pval.get());
+  //    screen_widget.setPosition(p.x-ref_size/4, p.y-ref_size/4); }});
+  //  show.addEventChange(new Runnable(show) {public void run() { update_view(); }});
+  //  dval.addEventChange(new Runnable() {public void run() {
+  //    if (dval.get().mag() > ref_size*2) dval.set(dval.get().setMag(ref_size*2));
+  //    pointwidget.setPosition(dval.x()-ref_size/4, dval.y()-ref_size/4); 
+  //    screenpoint_widget.setPosition(dval.x()-ref_size/4, dval.y()-ref_size/4); }});
+  //}
+  //nCursor(Macro_Main mm, sValueBloc blc, boolean sd) {
+  //  super(mm.gui);
+  //  show_dir = sd;
+  //  sheet = mm;
+  //  cam = mm.inter.cam;
+  //  new nConstructor(sheet.gui.theme, sheet.gui.theme.ref_size);
+  //  thiswidget = this;
+  //  gui = sheet.gui; ref_size = sheet.gui.theme.ref_size; 
+    
+  //  build_ui();
+    
+  //  if (blc.getValue("pos") != null && blc.getValue("show") != null && blc.getValue("dir") != null) {
+  //    s_bloc = blc;
+  //    pval = (sVec)blc.getValue("pos");
+  //    show = (sBoo)blc.getValue("show"); //!!!!! is hided by default
+  //    dval = (sVec)blc.getValue("dir");
+  //    ref = blc.ref; shr = ref;
+      
+  //    pval.addEventDelete(new Runnable() { public void run() { clear(); } } );
+  //    pval.addEventChange(new Runnable() { public void run() {
+  //      thiswidget.setPosition(pval.x()-ref_size, pval.y()-ref_size);
+  //      PVector p = cam.cam_to_screen(pval.get());
+  //      screen_widget.setPosition(p.x-ref_size/4, p.y-ref_size/4); }});
+  //    show.addEventChange(new Runnable(show) {public void run() { update_view(); }});
+  //    dval.addEventChange(new Runnable() {public void run() {
+  //      if (dval.get().mag() > ref_size*2) dval.set(dval.get().setMag(ref_size*2));
+  //      pointwidget.setPosition(dval.x()-ref_size/4, dval.y()-ref_size/4); 
+  //      screenpoint_widget.setPosition(dval.x()-ref_size/4, dval.y()-ref_size/4); }});
+  //  }
+  //}
+  
+  nCursor(Macro_Sheet _sheet, String r, String s, boolean sd) {
     super(_sheet.gui);
+    show_dir = sd;
     sheet = _sheet;
     cam = sheet.mmain().inter.cam;
     new nConstructor(sheet.gui.theme, sheet.gui.theme.ref_size);
     thiswidget = this;
-    gui = sheet.gui; ref_size = sheet.gui.theme.ref_size; ref = r;
+    gui = sheet.gui; ref_size = sheet.gui.theme.ref_size; 
+    ref = r; shr = s;
+    
+    build_ui();
+    
+    pval = sheet.newVec(s+"_cursor_pos", s+"_pos");
+    show = sheet.newBoo(false, s+"_cursor_show", s+"_show"); //!!!!! is hided by default
+    dval = sheet.newVec(s+"_cursor_dir", s+"_dir");
+    
+    dval.addEventChange(new Runnable() {public void run() {
+      if (dval.get().mag() > ref_size*2) dval.set(dval.get().setMag(ref_size*2));
+      pointwidget.setPosition(dval.x()-ref_size/4, dval.y()-ref_size/4); 
+      screenpoint_widget.setPosition(dval.x()-ref_size/4, dval.y()-ref_size/4); }});
+    
+    pval.addEventDelete(new Runnable() { public void run() { clear(); } } );
+    pval.addEventChange(new Runnable() { public void run() {
+      thiswidget.setPosition(pval.x()-ref_size, pval.y()-ref_size);
+      PVector p = cam.cam_to_screen(pval.get());
+      screen_widget.setPosition(p.x-ref_size/4, p.y-ref_size/4); }});
+      
+    show.addEventChange(new Runnable(show) {public void run() { update_view(); }});
+    
+  }
+  
+  void build_ui() {
+    
     copy(gui.theme.getModel("Cursor"));
     refwidget = gui.theme.newWidget(gui, "ref").setParent(this).setPosition(ref_size, ref_size);
     setSize(ref_size*2, ref_size*2);
     setPosition(-ref_size, -ref_size);
-    setText(r).setFont(int(ref_size/2.0)).setTextAlignment(LEFT, CENTER);
+    setText(ref).setFont(int(ref_size/2.0)).setTextAlignment(LEFT, CENTER);
     setGrabbable();
-    addEventDrag(new Runnable() {public void run() {pval.set(refwidget.getX(), refwidget.getY());}});
-    pval = sheet.newVec(s+"_cursor_position", s+"_pos");
-    pval.addEventDelete(new Runnable(pval) { public void run() { clear(); } } );
-    pval.addEventChange(new Runnable(pval) { public void run() {
-      sVec v = ((sVec)builder);
-      thiswidget.setPosition(v.x()-ref_size, v.y()-ref_size);
-      
-      PVector p = cam.cam_to_screen(pval.get());
-      screen_widget.setPosition(p.x-ref_size/4, p.y-ref_size/4); }});
-    move_run = new Runnable() {public void run() { 
-      PVector p = cam.cam_to_screen(pval.get());
-      screen_widget.setPosition(p.x-ref_size/4, p.y-ref_size/4);
-    }};
-    zoom_run = new Runnable() {public void run() { 
-      update_view();
-      PVector p = cam.cam_to_screen(pval.get());
-      screen_widget.setPosition(p.x-ref_size/4, p.y-ref_size/4);
-    }};
-    cam.addEventMove(move_run);
-    cam.addEventZoom(zoom_run);
     
     screen_widget = gui.theme.newWidget(sheet.mmain().screen_gui, "Cursor")
-      .setSize(ref_size/2, ref_size/2)
-      .setPosition(-ref_size/4, -ref_size/4)
-      //.setPassif()
-      .setGrabbable()
-      .setText(r)
-      .setFont(int(ref_size / 2.0))
-      .setTextAlignment(LEFT, DOWN)
-      .addEventDrag(new Runnable() {public void run() {
+      .setSize(ref_size/2, ref_size/2).setPosition(-ref_size/4, -ref_size/4)
+      .setGrabbable().setText(ref)
+      .setFont(int(ref_size / 2.0)).setTextAlignment(LEFT, DOWN);
+    
+    screenpoint_widget = gui.theme.newWidget(sheet.mmain().screen_gui, "Pointer")
+      .setPosition(-ref_size/4, -ref_size/4).setSize(ref_size/2, ref_size/2).hide();
+    screenpoint_widget.setParent(screen_widget).setGrabbable().setConstrainDistance(ref_size*2).toLayerTop();
+    
+    pointwidget = gui.theme.newWidget(gui, "Pointer").setPosition(-ref_size/4, -ref_size/4).setSize(ref_size/2, ref_size/2);
+    pointwidget.setParent(refwidget).setGrabbable().setConstrainDistance(ref_size*2).hide().toLayerTop();
+    
+    addEventDrag(new Runnable() {public void run() { 
+      if (pval != null) pval.set(refwidget.getX(), refwidget.getY()); }});
+    
+    screen_widget.addEventDrag(new Runnable() {public void run() {
         PVector p = new PVector(screen_widget.getX()+ref_size/4, screen_widget.getY()+ref_size/4);
         p = cam.screen_to_cam(p);
-        pval.set(p.x, p.y);
+        if (pval != null) pval.set(p.x, p.y);
       }});
-      ;
-      
-    show = sheet.newBoo(false, s+"_cursor_show", s+"_show"); //!!!!! is hided by default
-   
-    pointwidget = gui.theme.newWidget(gui, "Pointer").setPosition(-ref_size/4, -ref_size/4).setSize(ref_size/2, ref_size/2);
-    pointwidget.setParent(refwidget).setGrabbable().setConstrainDistance(ref_size*2).toLayerTop();
-    dval = sheet.newVec(s+"_cursor_pointer", s+"_dir");
-    dval.addEventChange(new Runnable(dval) {public void run() {
-      sVec v = ((sVec)builder);
-      if (v.get().mag() > ref_size*2) v.set(v.get().setMag(ref_size*2));
-      pointwidget.setPosition(v.x()-ref_size/4, v.y()-ref_size/4); }});
     pointwidget.addEventDrag(new Runnable() {public void run() {
-      dval.set(pointwidget.getLocalX() + ref_size/4, pointwidget.getLocalY() + ref_size/4);
+      if (dval != null) dval.set(pointwidget.getLocalX() + ref_size/4, pointwidget.getLocalY() + ref_size/4);
     }});
-      
-    pointwidget.addEventLiberate(new Runnable() {public void run() {
-      if (dval.get().mag() < ref_size) dval.set(0, 0); }});
+    screenpoint_widget.addEventDrag(new Runnable() {public void run() {
+      if (dval != null) dval.set(screenpoint_widget.getLocalX() + ref_size/4, screenpoint_widget.getLocalY() + ref_size/4);
+    }}); 
     
-    if (show.get()) { thiswidget.show(); pointwidget.show(); } else { thiswidget.hide(); pointwidget.hide(); }
-    show.addEventChange(new Runnable(show) {public void run() {
-    sBoo v = ((sBoo)builder);
-      if (v.get()) { thiswidget.show(); pointwidget.show(); screen_widget.show(); } 
-    else { thiswidget.hide(); pointwidget.hide(); screen_widget.hide(); } }});
+    pointwidget.addEventLiberate(new Runnable() {public void run() {
+      if (dval != null && dval.get().mag() < ref_size) dval.set(0, 0); }});
+    screenpoint_widget.addEventLiberate(new Runnable() {public void run() {
+      if (dval != null && dval.get().mag() < ref_size) dval.set(0, 0); }});
+    
+    move_run = new Runnable() {public void run() { 
+      if (pval != null) {
+        PVector p = cam.cam_to_screen(pval.get());
+        screen_widget.setPosition(p.x-ref_size/4, p.y-ref_size/4); } }};
+    zoom_run = new Runnable() {public void run() { 
+      update_view();
+      if (pval != null) {
+        PVector p = cam.cam_to_screen(pval.get());
+        screen_widget.setPosition(p.x-ref_size/4, p.y-ref_size/4); } }};
+    cam.addEventMove(move_run);
+    cam.addEventZoom(zoom_run);
     
     sheet.mmain().inter.addEventNextFrame(new Runnable() {public void run() {
       update_view();
     }});
   }
+  
+  void update_view() {
+    if (cam.cam_scale.get() < 0.25) { 
+      if (show != null && show.get()) { 
+        screen_widget.show(); 
+        if (show_dir) screenpoint_widget.show(); 
+        else screenpoint_widget.hide(); 
+        toLayerTop(); }
+      else { screen_widget.hide(); screenpoint_widget.hide(); }
+      
+      pointwidget.hide();
+      thiswidget.hide();
+    } else { 
+      screen_widget.hide();
+      screenpoint_widget.hide();
+      if (show != null && show.get()) { 
+        if (show_dir) pointwidget.show();
+        else pointwidget.hide(); 
+        thiswidget.show();
+        toLayerTop();
+      } else {
+        pointwidget.hide(); 
+        thiswidget.hide();
+      }
+    }
+  }
+  
   void clear() { 
+    runEvents(eventClear);
     cam.removeEventMove(move_run);
     cam.removeEventZoom(zoom_run);
-    refwidget.clear(); pointwidget.clear(); screen_widget.clear(); super.clear(); 
-    show.clear(); dval.clear(); pval.doEvent(false); pval.clear(); }
+    refwidget.clear(); pointwidget.clear(); screen_widget.clear(); screenpoint_widget.clear(); super.clear(); 
+    show.clear(); dval.clear(); pval.doEvent(false); pval.clear(); 
+  }
   nCursor toLayerTop() { 
     super.toLayerTop(); refwidget.toLayerTop(); pointwidget.toLayerTop(); 
-    screen_widget.toLayerTop(); 
+    screen_widget.toLayerTop(); screenpoint_widget.toLayerTop(); 
     return this; }
 }
 
@@ -594,14 +690,14 @@ class nFilePicker extends nWindowPanel {
 
 class nColorPanel extends nWindowPanel {
   //nColorPanel setOkEvent_Builder(Runnable r) { ok_run = r; ok_run.builder = this; return this; }
-  nWidget color_widget, red_widget, gre_widget, blu_widget;
-  float red, gre, blu;
+  nWidget color_widget, red_widget, gre_widget, blu_widget, alp_widget;
+  float red, gre, blu, alp;
   //Runnable ok_run;
   sCol cval;
   nColorPanel(nGUI _g, nTaskPanel _task, sCol _cv) { 
-    super(_g, _task, _cv.bloc.ref + " " + _cv.ref); 
+    super(_g, _task, "color "+_cv.bloc.ref + " " + _cv.ref); 
     cval = _cv;
-    red = cval.getred(); gre = cval.getgreen(); blu = cval.getblue(); 
+    red = cval.getred(); gre = cval.getgreen(); blu = cval.getblue(); alp = cval.getalpha(); 
     getShelf()
       .addDrawer(10.25, 1)
         .addWidget(new nSlide(gui, ref_size*7.375, ref_size).setValue(cval.getred() / 255)
@@ -619,11 +715,16 @@ class nColorPanel extends nWindowPanel {
             blu = v*255; update(); blu_widget.setText(trimStringFloat(blu)); } } )
           .setPosition(0, 0) ).getShelf()
       .addDrawer(10.25, 1)
+        .addWidget(new nSlide(gui, ref_size*7.375, ref_size).setValue(cval.getalpha() / 255)
+          .addEventSlide(new Runnable() { public void run(float v) { 
+            alp = v*255; update(); alp_widget.setText(trimStringFloat(alp)); } } )
+          .setPosition(0, 0) ).getShelf()
+      .addDrawer(10.25, 1)
         .addCtrlModel("Button-S2-P3", "OK")
           .setRunnable(new Runnable() { public void run() { clear(); } }).getDrawer()
           ;
         
-    color_widget = getDrawer(0,3).addModel("Label-S3-P1")
+    color_widget = getDrawer(0,4).addModel("Label-S3-P1")
           .setStandbyColor(color(red, gre, blu));
     red_widget = getDrawer(0,0)
         .addModel("Label_Small_Outline-S2", str(red)).setPX(7.5*ref_size);
@@ -631,20 +732,18 @@ class nColorPanel extends nWindowPanel {
         .addModel("Label_Small_Outline-S2", str(gre)).setPX(7.5*ref_size);
     blu_widget = getDrawer(0,2)
         .addModel("Label_Small_Outline-S2", str(blu)).setPX(7.5*ref_size);
+    alp_widget = getDrawer(0,3)
+        .addModel("Label_Small_Outline-S2", str(alp)).setPX(7.5*ref_size);
     
     if (cval == null) clear();
   } 
   void update() { 
     if (cval != null) {
-      color_widget.setStandbyColor(color(red, gre, blu)); 
-      cval.set(color(red, gre, blu)); }
+      color_widget.setStandbyColor(color(red, gre, blu, alp)); 
+      cval.set(color(red, gre, blu, alp)); }
     else clear(); }
   nWindowPanel clear() { 
     super.clear(); return this; }
-  nWindowPanel updateHeight() { 
-    super.updateHeight(); return this; }
-  nWindowPanel updateWidth() { 
-    super.updateWidth(); return this; }
 }
 
 
@@ -652,28 +751,110 @@ class nColorPanel extends nWindowPanel {
 
 
 class nNumPanel extends nWindowPanel {
+  sValue val;
   sInt ival; sFlt fval;
   nNumPanel(nGUI _g, nTaskPanel _task, sFlt _cv) { 
-    super(_g, _task, "number"); 
+    super(_g, _task, "float "+_cv.bloc.ref + " " + _cv.ref); 
     fval = _cv; if (fval == null) clear();
+    field_run = new Runnable() { public void run() { 
+      String s = field_widget.getText();
+      if (s.length() > 0 && !str(float(s)).equals("NaN")) 
+        fval.set(float(s)); 
+    } };
     build_ui(fval);
   } 
   nNumPanel(nGUI _g, nTaskPanel _task, sInt _cv) { 
-    super(_g, _task, "number"); 
+    super(_g, _task, "int "+_cv.bloc.ref + " " + _cv.ref); 
     ival = _cv; if (ival == null) clear();
+    field_run = new Runnable() { public void run() { 
+      String s = field_widget.getText();
+      if (s.length() > 0 && !str(int(s)).equals("NaN")) 
+        ival.set(int(s)); 
+    } };
     build_ui(ival);
   } 
   
-  nWidget field_widget;
+  nWidget field_widget, min_v, max_v;
+  nSlide slide;
+  Runnable slide_run, val_run, field_run;
   
   void build_ui(sValue v) {
+    
+    val = v;
+    
     getShelf().addDrawer(10.25, 1).getShelf()
+      .addDrawer(10.25, 1).getShelf()
+      .addDrawer(10.25, 1).getShelf()
       .addDrawer(10.25, 1).addCtrlModel("Button-S2-P3", "OK")
         .setRunnable(new Runnable() { public void run() { clear(); } }).getDrawer();
-    field_widget = getDrawer(0,0).addLinkedModel("Field-S4")
-      .setLinkedValue(v);
+    
+    field_widget = getDrawer(0,0).addModel("Field-S4");
+    field_widget.setText(str(val.asFloat()))
+      .setField(true)
+      .addEventFieldChange(field_run);
+    
+    slide_run = new Runnable() { public void run(float v) { 
+      val.setscale(v);
+    } };
+    val_run = new Runnable() { public void run() { 
+      slide.setValue(val.getscale());
+      field_widget.changeText(str(val.asFloat()));
+    } };
+    
+    v.addEventChange(val_run);
+    
+    slide = (nSlide)getDrawer(0,1).addWidget(new nSlide(gui, ref_size * 10, ref_size * 1));
+    slide.setValue(val.getscale()).addEventSlide(slide_run);
+    
+    max_v = getDrawer(0,2).addModel("Label_Outline-S1-P7").setSX(ref_size*2.125)
+      .setText(str(val.getmax()));
+    min_v = getDrawer(0,2).addModel("Label_Outline-S1-P2", "min:").setSX(ref_size*2.125)
+      .setText(str(val.getmin()));
+    
+    getDrawer(0,2).addCtrlModel("Button-N1-P1", "-").setRunnable(new Runnable() { public void run() { 
+      val.set_min(val.getmin()-1); up_limit_view(); } }).setInfo("min -1");
+    getDrawer(0,2).addCtrlModel("Button-N1-P4", "+").setRunnable(new Runnable() { public void run() { 
+      val.set_min(val.getmin()+1); up_limit_view(); } }).setInfo("min +1");
+    getDrawer(0,2).addCtrlModel("Button-N2-P1", "-").setRunnable(new Runnable() { public void run() { 
+      val.set_min(val.getmin()-10); up_limit_view(); } }).setInfo("min -10");
+    getDrawer(0,2).addCtrlModel("Button-N2-P4", "+").setRunnable(new Runnable() { public void run() { 
+      val.set_min(val.getmin()+10); up_limit_view(); } }).setInfo("min +10");
+    
+    getDrawer(0,2).addCtrlModel("Button-N3-P1", "/").setRunnable(new Runnable() { public void run() { 
+      val.set_min(val.getmin()/1.41); up_limit_view(); } }).setInfo("min /1.41");
+    getDrawer(0,2).addCtrlModel("Button-N3-P4", "x").setRunnable(new Runnable() { public void run() { 
+      val.set_min(val.getmin()*1.41); up_limit_view(); } }).setInfo("min x1.41");
+    getDrawer(0,2).addCtrlModel("Button-N4-P1", "/").setRunnable(new Runnable() { public void run() { 
+      val.set_min(val.getmin()/2); up_limit_view(); } }).setInfo("min /2");
+    getDrawer(0,2).addCtrlModel("Button-N4-P4", "x").setRunnable(new Runnable() { public void run() { 
+      val.set_min(val.getmin()*2); up_limit_view(); } }).setInfo("min x2");
+    
+    getDrawer(0,2).addCtrlModel("Button-N1-P6", "-").setRunnable(new Runnable() { public void run() { 
+      val.set_max(val.getmax()-1); up_limit_view(); } }).setInfo("max -1");
+    getDrawer(0,2).addCtrlModel("Button-N1-P9", "+").setRunnable(new Runnable() { public void run() { 
+      val.set_max(val.getmax()+1); up_limit_view(); } }).setInfo("max +1");
+    getDrawer(0,2).addCtrlModel("Button-N2-P6", "-").setRunnable(new Runnable() { public void run() { 
+      val.set_max(val.getmax()-10); up_limit_view(); } }).setInfo("max -10");
+    getDrawer(0,2).addCtrlModel("Button-N2-P9", "+").setRunnable(new Runnable() { public void run() { 
+      val.set_max(val.getmax()+10); up_limit_view(); } }).setInfo("max +10");
+      
+    getDrawer(0,2).addCtrlModel("Button-N3-P6", "/").setRunnable(new Runnable() { public void run() { 
+      val.set_max(val.getmax()/1.41); up_limit_view(); } }).setInfo("max /1.41");
+    getDrawer(0,2).addCtrlModel("Button-N3-P9", "x").setRunnable(new Runnable() { public void run() { 
+      val.set_max(val.getmax()*1.41); up_limit_view(); } }).setInfo("max x1.41");
+    getDrawer(0,2).addCtrlModel("Button-N4-P6", "/").setRunnable(new Runnable() { public void run() { 
+      val.set_max(val.getmax()/2); up_limit_view(); } }).setInfo("max /2");
+    getDrawer(0,2).addCtrlModel("Button-N4-P9", "x").setRunnable(new Runnable() { public void run() { 
+      val.set_max(val.getmax()*2); up_limit_view(); } }).setInfo("max x2");
+    
+  }
+  void up_limit_view() {
+    min_v.setText(str(val.getmin())); 
+    max_v.setText(str(val.getmax())); 
+    val.setscale(slide.cursor_value);
   }
   nWindowPanel clear() { 
+    val.removeEventChange(val_run);
     super.clear(); return this; }
   nWindowPanel updateHeight() { 
     super.updateHeight(); return this; }
@@ -682,11 +863,17 @@ class nNumPanel extends nWindowPanel {
 }
 
 
+
+
+
+
+
+
 class nBoolPanel extends nWindowPanel {
   nWidget widget;
   sBoo val;
   nBoolPanel(nGUI _g, nTaskPanel _task, sBoo _cv) { 
-    super(_g, _task, "boolean"); 
+    super(_g, _task, "bool "+_cv.bloc.ref + " " + _cv.ref); 
     val = _cv;
     
     if (val == null) clear();
@@ -699,7 +886,7 @@ class nBoolPanel extends nWindowPanel {
           .setPX(2.375*ref_size).getDrawer()
           ;
     
-    widget = getDrawer(0,0).addLinkedModel("Button-S3")
+    widget = getDrawer(0,0).addLinkedModel("Button-S3-P1")
       .setLinkedValue(val)
       ;
   } 
@@ -719,7 +906,7 @@ class nTextPanel extends nWindowPanel implements Macro_Interf {
   Runnable val_run;
   int larg = 20;
   nTextPanel(nGUI _g, nTaskPanel _task, sStr _cv) { 
-    super(_g, _task, "text"); 
+    super(_g, _task, "string "+_cv.bloc.ref + " " + _cv.ref); 
     cval = _cv;
     
     if (cval == null) clear();

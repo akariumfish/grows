@@ -201,7 +201,7 @@ class sInterface {
           //  .getDrawer()
             
           .addModel("Button_Small_Text_Outline-S1-P1", "LA")
-            .setSwitch()
+            .setSwitch().setSwitchState(save_log_all)
             .addEventSwitchOn(new Runnable() { public void run() { 
               save_log_all = true; } } ).setInfo("log all-slow")
             .addEventSwitchOff(new Runnable() { public void run() { 
@@ -217,7 +217,7 @@ class sInterface {
             .getDrawer()
             
           .addModel("Button_Small_Text_Outline-S1-P4", "C")
-            .setSwitch().setOn()
+            .setSwitch().setSwitchState(console_log)
             .addEventSwitchOn(new Runnable() { public void run() { 
               console_log = true; } } ).setInfo("log")
             .addEventSwitchOff(new Runnable() { public void run() { 
@@ -225,23 +225,23 @@ class sInterface {
             .getDrawer()
             
           .addModel("Button_Small_Text_Outline-S1-P6", "M")
-            .setSwitch().setOn()
+            .setSwitch().setSwitchState(DEBUG_MACRO)
             .addEventSwitchOn(new Runnable() { public void run() { 
               DEBUG_MACRO = true; } } ).setInfo("macro logs")
             .addEventSwitchOff(new Runnable() { public void run() { 
               DEBUG_MACRO = false; } } )
             .getDrawer()
             
-          .addModel("Button_Small_Text_Outline-S1-P7", "")
-            //.setSwitch()
-            //.addEventSwitchOn(new Runnable() { public void run() { 
-            //  DEBUG_SAVE_FULL = true; } } ).setInfo("slogs")
-            //.addEventSwitchOff(new Runnable() { public void run() { 
-            //  DEBUG_SAVE_FULL = false; } } )
-            .getDrawer()
+          //.addModel("Button_Small_Text_Outline-S1-P7", "")
+          //  //.setSwitch()
+          //  //.addEventSwitchOn(new Runnable() { public void run() { 
+          //  //  DEBUG_SAVE_FULL = true; } } ).setInfo("slogs")
+          //  //.addEventSwitchOff(new Runnable() { public void run() { 
+          //  //  DEBUG_SAVE_FULL = false; } } )
+          //  .getDrawer()
             
           .addModel("Button_Small_Text_Outline-S1-P9", "")
-            .setSwitch()
+            .setSwitch().setSwitchState(DEBUG_NOFILL)
             .addEventSwitchOn(new Runnable() { public void run() { 
               DEBUG_NOFILL = true; DEBUG_HOVERPILE = true; } } )
             .addEventSwitchOff(new Runnable() { public void run() { 
@@ -308,7 +308,8 @@ class sInterface {
         if (file_explorer.starting_bloc.getBloc("Template").getBloc(bloc.ref) == null)
           file_explorer.starting_bloc.getBloc("Template").newBloc(b, bloc.ref);
       }});
-    }if (file_explorer.starting_bloc.getBloc("Preset") != null) {
+    }
+    if (file_explorer.starting_bloc.getBloc("Preset") != null) {
       macro_main.saved_preset.runBlocIterator(new Iterator<sValueBloc>() { public void run(sValueBloc bloc) { 
         Save_Bloc b = new Save_Bloc("");
         bloc.preset_to_save_bloc(b);

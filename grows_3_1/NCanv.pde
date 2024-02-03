@@ -21,11 +21,11 @@ class Face extends Macro_Sheet {
       
       nDrawer dr = sheet_front.getTab(2).getShelf()
         .addSeparator(0.125)
-        .addDrawerButton(ref_cursor.show, 10, 1)
-        .addSeparator(0.125)
         .addDrawerFactValue(val_dens, 2, 10, 1)
         .addSeparator(0.125)
         .addDrawerFactValue(val_disp, 2, 10, 1)
+        .addSeparator(0.125)
+        .addDrawerDoubleButton(val_halo_type, val_halo_type2, 10, 1)
         .addSeparator(0.125)
         .addDrawer(10.25, 6.25);
       
@@ -81,6 +81,10 @@ class Face extends Macro_Sheet {
   sFlt val_scale, vpax, vpay, vpbx, vpby, vpcx, vpcy, val_linew, val_dens, val_disp;
   sCol val_fill, val_stroke;
   sInt val_draw_layer;
+  sBoo val_halo_type, val_halo_type2;
+  
+  
+  ArrayList<nCursor> duplication_cursors = new ArrayList<nCursor>();
   
   Face(Canvas m, sValueBloc b) { 
     super(m.mmain(), "Face", b);
@@ -94,6 +98,8 @@ class Face extends Macro_Sheet {
     shape.line_w = val_linew.get();
     val_dens = newFlt(0.5, "val_dens", "val_dens");
     val_disp = newFlt(5, "val_disp", "val_disp");
+    val_halo_type = newBoo(false, "val_halo_type", "val_halo_type");
+    val_halo_type2 = newBoo(false, "val_halo_type2", "val_halo_type2");
     vpax = newFlt(shape.face.p1.x, "vpax", "vpax");
     vpay = newFlt(shape.face.p1.y, "vpay", "vpay");
     vpbx = newFlt(shape.face.p2.x, "vpbx", "vpbx");
@@ -115,18 +121,27 @@ class Face extends Macro_Sheet {
     
     val_scale.addEventChange(new Runnable() { public void run() { shape.dir.setMag(val_scale.get()); }});
     val_linew.addEventChange(new Runnable() { public void run() { shape.line_w = val_linew.get(); }});
-    ref_cursor = new nCursor(this, "center", "center");
+    
+    ref_cursor = menuCursor("center", true);
     //ref_cursor.show.set(true);
-    ref_cursor.pval.addEventChange(new Runnable() { public void run() { 
+    if (ref_cursor.pval != null) ref_cursor.pval.addEventChange(new Runnable() { public void run() { 
       shape.pos.set(ref_cursor.pval.get()); }});
-    ref_cursor.dval.addEventChange(new Runnable() { public void run() {
+    if (ref_cursor.dval != null) ref_cursor.dval.addEventChange(new Runnable() { public void run() {
       shape.dir.set(shape.dir.mag(), 0);
       shape.dir.rotate(ref_cursor.dval.get().heading());
     }});
   }
   
   void tick() {
-    can.draw_halo(shape.pos, val_scale.get()*val_disp.get(), val_dens.get(), val_fill.get());
+    if (!val_halo_type.get()) {
+      if (!val_halo_type2.get()) {
+        can.draw_halo(shape.pos, val_scale.get()*val_disp.get(), val_dens.get(), val_fill.get());
+      } else { can.draw_halo(shape.pos, val_scale.get()*val_disp.get(), val_dens.get(), val_fill.get()); }
+    } else { 
+      if (!val_halo_type2.get()) {
+        can.draw_shape_line(shape, val_scale.get()*val_disp.get(), val_dens.get(), val_stroke.get());
+      } else { can.draw_shape_fill(shape, val_scale.get()*val_disp.get(), val_dens.get(), val_fill.get()); }
+    }
   }
   
   void draw() { shape.draw(); }
@@ -260,19 +275,19 @@ class Canvas extends Macro_Sheet {
     } });
     
     val_show_grab.addEventChange(new Runnable() { public void run() { 
-      ref_cursor.show.set(val_show.get() && val_show_grab.get());
+      if (ref_cursor.show != null) ref_cursor.show.set(val_show.get() && val_show_grab.get());
     } });
     val_show.addEventChange(new Runnable() { public void run() { 
-      ref_cursor.show.set(val_show.get() && val_show_grab.get());
+      if (ref_cursor.show != null) ref_cursor.show.set(val_show.get() && val_show_grab.get());
     } });
     
-    ref_cursor = new nCursor(this, "center", "center");
-    ref_cursor.show.set(val_show.get() && val_show_grab.get());
-    ref_cursor.pval.set(val_pos.get());
-    ref_cursor.pval.addEventChange(new Runnable() { public void run() { 
+    ref_cursor = menuCursor("Canvas", false);
+    if (ref_cursor.show != null) ref_cursor.show.set(val_show.get() && val_show_grab.get());
+    if (ref_cursor.pval != null) ref_cursor.pval.set(val_pos.get());
+    if (ref_cursor.pval != null) ref_cursor.pval.addEventChange(new Runnable() { public void run() { 
       val_pos.set(ref_cursor.pval.get()); }});
     val_pos.addEventChange(new Runnable() { public void run() { 
-      ref_cursor.pval.set(val_pos.get()); }});
+      if (ref_cursor.pval != null) ref_cursor.pval.set(val_pos.get()); }});
     
     tick_run = new Runnable() { public void run() { tick(); } };
     rst_run = new Runnable() { public void run() { reset(); } };
@@ -333,6 +348,15 @@ class Canvas extends Macro_Sheet {
       else canvas.pixels[i] = decay(canvas.pixels[i]);
     }
   }
+  private void med_pim(PImage canvas1, PImage canvas2) {
+    for (int i = 0 ; i < canvas1.pixels.length ; i++) {
+      color c = color( (red(canvas1.pixels[i]) + red(canvas2.pixels[i])) / 2.0, 
+                       (green(canvas1.pixels[i]) + green(canvas2.pixels[i])) / 2.0, 
+                       (blue(canvas1.pixels[i]) + blue(canvas2.pixels[i])) / 2.0 );
+      canvas1.pixels[i] = c;
+      canvas2.pixels[i] = c;
+    }
+  }
   
   void tick() {
     if (fcom != null) {
@@ -347,6 +371,7 @@ class Canvas extends Macro_Sheet {
     if (active_can == 0) {
       if (can_st <= 0) {
         active_can = 1;
+        med_pim(can1, can2);
         clear_pim(can1);
         can_st = can_div.get();
       } else can_st--;
@@ -354,6 +379,7 @@ class Canvas extends Macro_Sheet {
     else if (active_can == 1) {
       if (can_st <= 0) {
         active_can = 0;
+        med_pim(can1, can2);
         clear_pim(can2);
         can_st = can_div.get();
       } else can_st--;
@@ -392,6 +418,46 @@ class Canvas extends Macro_Sheet {
     popMatrix();
   }
   
+  void draw_shape_fill(nBase sh, float halo_size, float halo_density, color c) {
+    for (float px = int(sh.pos.x - sh.rad() - halo_size) ; 
+         px < int(sh.pos.x + sh.rad() + halo_size) ; px+=val_scale.get())
+      for (float py = int(sh.pos.y - sh.rad() - halo_size) ; 
+           py < int(sh.pos.y + sh.rad() + halo_size) ; py+=val_scale.get()) {
+      PVector p = new PVector(px, py);
+      float l1 = distancePointToLine(px, py, sh.p1().x, sh.p1().y, sh.p2().x, sh.p2().y);
+      float l2 = distancePointToLine(px, py, sh.p3().x, sh.p3().y, sh.p2().x, sh.p2().y);
+      float l3 = distancePointToLine(px, py, sh.p1().x, sh.p1().y, sh.p3().x, sh.p3().y);
+      float m = min(l1, l2, l3);
+      if (point_in_trig(sh.p1(), sh.p2(), sh.p3(), p)) m = 0;
+      if (m < halo_size) { //get and try distence of current pix
+        //the color to add to the current pix is function of his distence to the center
+        //the decreasing of the quantity of color to add is soothed
+        float a = (halo_density) * soothedcurve(1.0, m / halo_size);
+        if (active_can == 0) addpix(can2, px, py, color(red(c)*a, green(c)*a, blue(c)*a));
+        if (active_can == 1) addpix(can1, px, py, color(red(c)*a, green(c)*a, blue(c)*a));
+      }
+    }
+  }
+  void draw_shape_line(nBase sh, float halo_size, float halo_density, color c) {
+    for (float px = int(sh.pos.x - sh.rad() - halo_size) ; 
+         px < int(sh.pos.x + sh.rad() + halo_size) ; px+=val_scale.get())
+      for (float py = int(sh.pos.y - sh.rad() - halo_size) ; 
+           py < int(sh.pos.y + sh.rad() + halo_size) ; py+=val_scale.get()) {
+      
+      float l1 = distancePointToLine(px, py, sh.p1().x, sh.p1().y, sh.p2().x, sh.p2().y);
+      float l2 = distancePointToLine(px, py, sh.p3().x, sh.p3().y, sh.p2().x, sh.p2().y);
+      float l3 = distancePointToLine(px, py, sh.p1().x, sh.p1().y, sh.p3().x, sh.p3().y);
+      float m = min(l1, l2, l3);
+      if (m < halo_size) { //get and try distence of current pix
+        //the color to add to the current pix is function of his distence to the center
+        //the decreasing of the quantity of color to add is soothed
+        float a = (halo_density) * soothedcurve(1.0, m / halo_size);
+        if (active_can == 0) addpix(can2, px, py, color(red(c)*a, green(c)*a, blue(c)*a));
+        if (active_can == 1) addpix(can1, px, py, color(red(c)*a, green(c)*a, blue(c)*a));
+      }
+    }
+  }
+  
   void draw_halo(PVector pos, float halo_size, float halo_density, color c) {
     //walk a box of pix around entity containing the halo (pos +/- halo radius)
     for (float px = int(pos.x - halo_size) ; px < int(pos.x + halo_size) ; px+=val_scale.get())
@@ -420,7 +486,9 @@ class Canvas extends Macro_Sheet {
     int pi = canvas.width * int(y) + int(x);
     if (pi >= 0 && pi < canvas.pixels.length) {
       color oc = canvas.pixels[pi];
-      canvas.pixels[pi] = color(min(255, red(oc) + red(nc)), min(255, green(oc) + green(nc)), min(255, blue(oc) + blue(nc)));
+      canvas.pixels[pi] = color(min(255, max(red(oc), red(nc))), 
+                                min(255, max(green(oc),green(nc))), 
+                                min(255, max(blue(oc), blue(nc))) );
     }
   }
   //color getpix(PImage canvas, PVector v) { return getpix(canvas, v.x, v.y); }
@@ -472,13 +540,6 @@ class Canvas extends Macro_Sheet {
 
 
 
-class OrganismPrint extends Sheet_Specialize {
-  Simulation sim;
-  OrganismPrint(Simulation s) { super("Organism"); sim = s; }
-  Organism get_new(Macro_Sheet s, String n, sValueBloc b) { return new Organism(sim, n, b); }
-  Organism get_new(Macro_Sheet s, String n, Organism b) { return new Organism(sim, n, b); }
-}
-
 /*
 organism
   cell group limited in size
@@ -510,77 +571,27 @@ shape interaction
 */
 
 
+class OrganismPrint extends Sheet_Specialize {
+  Simulation sim;
+  OrganismPrint(Simulation s) { super("Organism"); sim = s; }
+  Organism get_new(Macro_Sheet s, String n, sValueBloc b) { return new Organism(sim, n, b); }
+  Organism get_new(Macro_Sheet s, String n, Organism b) { return new Organism(sim, n, b); }
+}
+
 class Organism extends Macro_Sheet {
   
   void build_custom_menu(nFrontPanel sheet_front) {
-    nFrontTab tab = sheet_front.addTab("Cursors");
-
-    selector_list = tab.getShelf(0)
-      .addSeparator(0.125)
-      .addDrawer(10.25, 1)
-        .addCtrlModel("Auto_Ctrl_Button-S3-P1", "new cursor")
-        .setRunnable(new Runnable(this) { public void run() { 
-          nCursor nc = new nCursor(((Macro_Sheet)builder), 
-                                   "cursor_"+cursors_list.size(), "curs"+cursors_list.size());
-          cursors_list.add(nc);
-          //nc.show.set(true);
-          update_curs_selector_list();
-        } } ).getDrawer()
-        .addCtrlModel("Auto_Ctrl_Button-S3-P2", "delete cursor")
-        .setRunnable(new Runnable(this) { public void run() { 
-          if (selected_cursor != null) { 
-            cursors_list.remove(selected_cursor); selected_cursor.clear(); selected_cursor = null; }
-          update_curs_selector_list();
-        } } )
-        .getShelf()
-      .addDrawer(10.25, 1)
-        .addLinkedModel("Auto_Ctrl_Button-S3-P1", "add cursor show")
-        .setLinkedValue(adding_cursor.show).getDrawer()
-        //.addCtrlModel("Auto_Ctrl_Button-S3-P2", "duplicate")
-        //.setLinkedValue(srun_duplic)
-        .getShelf()
-      .addSeparator(0.125)
-      .addList(4, 10, 0.8);
-    selector_list.addEventChange_Builder(new Runnable() { public void run() {
-      nList sl = ((nList)builder); 
-      nCursor c = null;
-      if (sl.last_choice_index < cursors_list.size()) 
-        c = cursors_list.get(sl.last_choice_index);
-      if (c != null) { 
-        if (selected_cursor != null) selected_cursor.hide(); 
-        selected_cursor = c; 
-        selected_cursor.show();
-      }
+    if (sheet_front != null) {
       
-    } } );
-    
-    selector_entry = new ArrayList<String>();
-    selector_value = new ArrayList<nCursor>();
-    
-    selector_list.getShelf()
-      .addSeparator(0.0625)
-      ;
-    update_curs_selector_list();
-    sheet_front.toLayerTop();
-  }
-  void update_curs_selector_list() {
-    selector_entry.clear();
-    selector_value.clear();
-    for (nCursor v : cursors_list) { 
-      selector_entry.add(v.ref); 
-      selector_value.add(v);
+      sheet_front.getTab(2).getShelf()
+        .addSeparator(0.125)
+        .addDrawerButton(adding_cursor.show, 10, 1)
+        .addSeparator(0.125);
+        
+      sheet_front.toLayerTop();
     }
-    if (selector_list != null) selector_list.setEntrys(selector_entry);
   }
 
-  ArrayList<nCursor> cursors_list;
-  
-  ArrayList<String> selector_entry;
-  ArrayList<nCursor> selector_value;
-  nCursor selected_cursor;
-  String selected_entry;
-  nList selector_list;
-  
   sRun srun_duplic;
   
   Simulation sim;
@@ -601,13 +612,16 @@ class Organism extends Macro_Sheet {
   
   sRun srun_reset;
   
+  sObj face_obj;
+  
+  Face face_source;
+  
   Organism(Simulation _s, String n, sValueBloc b) { 
     super(_s.inter.macro_main, n, b);
     sim = _s;
     sim.organs.add(this);
-    cursors_list = new ArrayList<nCursor>();
     
-    branch = menuFltFact(500, 2, "branch");
+    branch = menuFltFact(10, 2, "branch");
     shrt = menuFltFact(0.95, 1.02, "shortening");
     dev = menuFltFact(4, 2, "deviation");
     lon = menuFltSlide(40, 5, 400, "length");
@@ -624,8 +638,8 @@ class Organism extends Macro_Sheet {
     
     organ_init();
     
-    adding_cursor = new nCursor(this, n, "add");
-    cursors_list.add(adding_cursor);
+    adding_cursor = menuCursor("add", true);
+    
   }
   Organism(Simulation _s, String n, Organism b) { 
     super(_s.inter.macro_main, n, null);
@@ -646,15 +660,21 @@ class Organism extends Macro_Sheet {
     
     organ_init();
     
-    adding_cursor = new nCursor(this, n, "add");
+    adding_cursor = menuCursor("add", true);
     adding_cursor.pval.set(b.adding_cursor.pval.get());
     adding_cursor.pval.add(ref_size * 4, 0);
-    cursors_list.add(adding_cursor);
   }
   
   void organ_init() {
     
-    selected_cursor = adding_cursor;
+    face_obj = newObj("face_obj", "face_obj");
+    face_obj.addEventChange(new Runnable() { public void run() {
+      if (face_obj.isSheet()) {
+        Macro_Sheet ms = face_obj.asSheet();
+        if (ms.specialize.get().equals("Face")) face_source = (Face)ms;
+      }
+    }});
+    
     
     active_entity = menuIntWatch(0, "active_entity");
     
@@ -684,10 +704,10 @@ class Organism extends Macro_Sheet {
   }
   
   void duplicate() {
-    if (selected_cursor != null) {
-      Organism m = (Organism)sheet_specialize.add_new(sim, null, this);
-      m.setPosition(selected_cursor.pos().x, selected_cursor.pos().y);
-    }
+    //if (selected_cursor != null) {
+    //  Organism m = (Organism)sheet_specialize.add_new(sim, null, this);
+    //  m.setPosition(selected_cursor.pos().x, selected_cursor.pos().y);
+    //}
   }
   
   void init_array() {
@@ -754,14 +774,14 @@ nBase
 
 
 class nFace {
-  float standard_aire = 10;
+  //float standard_aire = 10;
   PVector p1,p2,p3;
-  void norma() {
-    //float a = standard_aire; //trig aire
-    //p1.mult(standard_aire/a);
-    //p2.mult(standard_aire/a);
-    //p3.mult(standard_aire/a);
-  }
+  //void norma() {
+  //  float a = standard_aire; //trig aire
+  //  p1.mult(standard_aire/a);
+  //  p2.mult(standard_aire/a);
+  //  p3.mult(standard_aire/a);
+  //}
 }
 
 abstract class nShape {
@@ -792,12 +812,24 @@ class nBase extends nShape {
     face.p1 = new PVector(1, 0);
     face.p2 = new PVector(0, 0.3);
     face.p3 = new PVector(-1, -0.3);
-    face.norma();
+    //face.norma();
   }
   float nrad() {
     return max(max(face.p1.mag(), face.p2.mag()), face.p3.mag()); }
   float rad() {
     return dir.mag() * max(max(face.p1.mag(), face.p2.mag()), face.p3.mag()); }
+  PVector p1() { 
+    PVector p = new PVector(face.p1.x, face.p1.y);
+    p.rotate(dir.heading()); p.setMag(face.p1.mag()*dir.mag()); p.add(pos);
+    return p; }
+  PVector p2() { 
+    PVector p = new PVector(face.p2.x, face.p2.y);
+    p.rotate(dir.heading()); p.setMag(face.p2.mag()*dir.mag()); p.add(pos);
+    return p; }
+  PVector p3() { 
+    PVector p = new PVector(face.p3.x, face.p3.y);
+    p.rotate(dir.heading()); p.setMag(face.p3.mag()*dir.mag()); p.add(pos);
+    return p; }
   void drawcall() {
     triangle(face.p1.x, face.p1.y, face.p2.x, face.p2.y, face.p3.x, face.p3.y);
   }
@@ -824,11 +856,16 @@ class Cell {
       age = 0; 
       state = 0;
       shape = new nBase();
-      
-      shape.face.p1.set(1, 0);
-      shape.face.p2.set(0, com().blarg.get());
-      shape.face.p3.set(-1, -com().blarg.get());
-    
+      if (com().face_source != null) {
+        nBase fb = com().face_source.shape;
+        shape.face.p1.set(fb.face.p1.x, fb.face.p1.y * com().blarg.get());
+        shape.face.p2.set(fb.face.p2.x, fb.face.p2.y * com().blarg.get());
+        shape.face.p3.set(fb.face.p3.x, fb.face.p3.y * com().blarg.get());
+      } else {
+        shape.face.p1.set(1, 0);
+        shape.face.p2.set(0, com().blarg.get());
+        shape.face.p3.set(-1, -com().blarg.get());
+      }
       shape.dir.setMag(com().lon.get());
       float inf = float(com().active_entity.get()) / float(com().max_entity.get());
       float inf2 = (float(com().max_entity.get()) - float(com().active_entity.get())) / 
@@ -880,8 +917,12 @@ class Cell {
     } else if (state == 1) {
       if (crandom(com().branch.get()) > 0.5) {
         com().newEntity(this);
-        state = 2;
+        //nCursor c = com().newCursor("branch_"+com().cursor_count, true);
+        //c.pval.set(shape.pos.x + shape.dir.x, shape.pos.y + shape.dir.y);
+        //c.dval.set(shape.dir.x, shape.dir.y);
+        //c.show.set(true);
       }
+      state = 2;
     } else if (state == 2) {
       
     }

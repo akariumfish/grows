@@ -25,7 +25,7 @@ PApplet
 boolean DEBUG_HOVERPILE = false;
 boolean DEBUG_NOFILL = false;
 
-boolean DEBUG_MACRO = true;
+boolean DEBUG_MACRO = false;
 
 boolean DEBUG = true;
 
@@ -42,13 +42,13 @@ void savelog() {
   saveStrings(logpath, loglist);
 }
 void og(String s) {
-  if (current_log.length() == 0) print(global_frame_count+"::");
-  if (DEBUG) print(s);
+  if (console_log && DEBUG && current_log.length() == 0) print(global_frame_count+"::");
+  if (console_log && DEBUG) print(s);
   if (current_log.length() == 0) current_log += global_frame_count+"::";
   current_log += s;
 }
 void logln(String s) {
-  if (current_log.length() == 0) print(global_frame_count+"::");
+  if (console_log && DEBUG && current_log.length() == 0) print(global_frame_count+"::");
   if (console_log && DEBUG) println(s);
   if (current_log.length() == 0) current_log += global_frame_count+"::";
   current_log += s;
@@ -57,13 +57,13 @@ void logln(String s) {
   if (save_log_all) savelog();
 }
 void mlog(String s) {
-  if (current_log.length() == 0) print(global_frame_count+":M:");
+  if (console_log && DEBUG_MACRO && current_log.length() == 0) print(global_frame_count+":M:");
   if (console_log && DEBUG_MACRO) print(s);
   if (current_log.length() == 0 && DEBUG_MACRO) current_log += global_frame_count+"::";
   if (DEBUG_MACRO) current_log += s;
 }
 void mlogln(String s) {
-  if (current_log.length() == 0) print(global_frame_count+":M:");
+  if (console_log && DEBUG_MACRO && current_log.length() == 0) print(global_frame_count+":M:");
   if (console_log && DEBUG_MACRO) println(s);
   if (current_log.length() == 0 && DEBUG_MACRO) current_log += global_frame_count+":M:";
   if (DEBUG_MACRO) current_log += s;
@@ -93,9 +93,9 @@ void setup() {//executé au demarage
   Canvas canv = (Canvas) interf.addUniqueSheet(new CanvasPrint(simul));
   interf.addSpecializedSheet(new FacePrint(canv));
   interf.addSpecializedSheet(new OrganismPrint(simul));
-  interf.addSpecializedSheet(new GrowerPrint(simul));
-  interf.addSpecializedSheet(new FlocPrint(simul));
-  interf.addSpecializedSheet(new BoxPrint(simul));
+  //interf.addSpecializedSheet(new GrowerPrint(simul));
+  //interf.addSpecializedSheet(new FlocPrint(simul));
+  //interf.addSpecializedSheet(new BoxPrint(simul));
   
   
   //logln("end models: "+interf.gui_theme.models.size());
@@ -305,6 +305,20 @@ float distancePointToLine(float x, float y, float x1, float y1, float x2, float 
   float px = x1 + (r * (x2-x1));
   float py = y1 + (r * (y2-y1));
   return distancePointToPoint(x, y, px, py);
+}
+float crss(PVector a, PVector b) { return a.x*b.y-a.y*b.x; }
+
+boolean point_in_trig(PVector A, PVector B, PVector C, PVector P)
+{
+    PVector ab = new PVector(B.x - A.x, B.y - A.y);
+    PVector ac = new PVector(C.x - A.x, C.y - A.y);
+    PVector pa = new PVector(A.x - P.x, A.y - P.y);
+
+    if (ac.y == 0.0) ac.y = 0.00001;
+
+    float w1 = crss(pa, ac) / crss(ac, ab);
+    float w2 = (-1 * pa.y - w1 * ab.y) / ac.y;
+    return w1 >= 0 && w2 >= 0 && (w1 + w2) <= 1;
 }
 
 float distancePointToPoint(float xa, float ya, float xb, float yb) {

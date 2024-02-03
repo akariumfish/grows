@@ -529,35 +529,56 @@ class Macro_Main extends Macro_Sheet {
     if (build_tool != null) build_tool.clear();
     build_tool = new nToolPanel(screen_gui, ref_size, 0.125, true, true);
     build_tool.addShelf();
-    int c = 0;
-    for (String t : bloc_types3) { build_tool.getShelf(0).addDrawer(2.5, 0.75)
-      .addCtrlModel("Menu_Button_Small_Outline-S2.5/0.75", t)
-        .setRunnable(new Runnable(t) { public void run() { selected_sheet.addByType(((String)builder)); }})
+    for (int i = 0 ; i < bloc_builders.size() ; i++) if (bloc_builders.get(i).show_in_buildtool) {
+      nDrawer dr = build_tool.getShelf(0).addDrawer(2.5, 0.75);
+      dr.addCtrlModel("Menu_Button_Small_Outline-S2.5/0.75", bloc_builders.get(i).type)
+        .setRunnable(new Runnable(bloc_builders.get(i).type) { public void run() { 
+          selected_sheet.addByType(((String)builder)); }})
         .setFont(int(ref_size/2)).setTextAlignment(LEFT, CENTER)
-        .setInfo(bloc_info3[c])
+        .setPX(ref_size*0.0)
+        .setInfo(bloc_builders.get(i).descr)
         ;
-      c++;
     }
     build_tool.addShelf();
-    c = 0;
-    for (String t : bloc_types2) { build_tool.getShelf(1).addDrawer(2.5, 0.75)
+    //int c = 0;
+    for (String t : bloc_types4) { build_tool.getShelf(1).addDrawer(2.5, 0.75)
       .addCtrlModel("Menu_Button_Small_Outline-S2.5/0.75", t)
         .setRunnable(new Runnable(t) { public void run() { selected_sheet.addByType(((String)builder)); }})
         .setFont(int(ref_size/2)).setTextAlignment(LEFT, CENTER)
-        .setInfo(bloc_info2[c])
+        //.setInfo(bloc_info4[c])
         ;
-      c++;
+      //c++;
     }
-    build_tool.addShelf();
-    c = 0;
-    for (String t : bloc_types1) { build_tool.getShelf(2).addDrawer(2.5, 0.75)
-      .addCtrlModel("Menu_Button_Small_Outline-S2.5/0.75", t)
-        .setRunnable(new Runnable(t) { public void run() { selected_sheet.addByType(((String)builder)); }})
-        .setFont(int(ref_size/2)).setTextAlignment(LEFT, CENTER)
-        .setInfo(bloc_info1[c])
-        ;
-      c++;
-    }
+    //build_tool.addShelf();
+    //int c = 0;
+    //for (String t : bloc_types3) { build_tool.getShelf(0).addDrawer(2.5, 0.75)
+    //  .addCtrlModel("Menu_Button_Small_Outline-S2.5/0.75", t)
+    //    .setRunnable(new Runnable(t) { public void run() { selected_sheet.addByType(((String)builder)); }})
+    //    .setFont(int(ref_size/2)).setTextAlignment(LEFT, CENTER)
+    //    .setInfo(bloc_info3[c])
+    //    ;
+    //  c++;
+    //}
+    //build_tool.addShelf();
+    //c = 0;
+    //for (String t : bloc_types2) { build_tool.getShelf(1).addDrawer(2.5, 0.75)
+    //  .addCtrlModel("Menu_Button_Small_Outline-S2.5/0.75", t)
+    //    .setRunnable(new Runnable(t) { public void run() { selected_sheet.addByType(((String)builder)); }})
+    //    .setFont(int(ref_size/2)).setTextAlignment(LEFT, CENTER)
+    //    .setInfo(bloc_info2[c])
+    //    ;
+    //  c++;
+    //}
+    //build_tool.addShelf();
+    //c = 0;
+    //for (String t : bloc_types1) { build_tool.getShelf(2).addDrawer(2.5, 0.75)
+    //  .addCtrlModel("Menu_Button_Small_Outline-S2.5/0.75", t)
+    //    .setRunnable(new Runnable(t) { public void run() { selected_sheet.addByType(((String)builder)); }})
+    //    .setFont(int(ref_size/2)).setTextAlignment(LEFT, CENTER)
+    //    .setInfo(bloc_info1[c])
+    //    ;
+    //  c++;
+    //}
     if (!show_build_tool.get()) build_tool.reduc();
     build_tool.addEventReduc(new Runnable() { public void run() { 
       show_build_tool.set(!build_tool.hide); }});
@@ -587,6 +608,27 @@ class Macro_Main extends Macro_Sheet {
       .addDrawerDoubleButton(inter.quickload_run, inter.quicksave_run, 10, 1)
       .addSeparator(0.25)
       ;
+    selector_list = tab.getShelf(0)
+      .addSeparator(0.125)
+      .addDrawer(10.25, 1).addModel("Label-S3", "Cursors :").setTextAlignment(LEFT, CENTER).getShelf()
+      .addSeparator(0.25)
+      .addList(4, 10, 1);
+    selector_list.addEventChange_Builder(new Runnable() { public void run() {
+      nList sl = ((nList)builder); 
+      //if (sl.last_choice_index < cursors_list.size()) {
+      //  nCursor cr = cursors_list.get(sl.last_choice_index);
+      //  if (selected_value != cr) { cr.show.set(true); }
+      //  else cr.show.set(!cr.show.get());
+      //  selected_value = cr;
+      //  inter.cam.cam_pos
+      //    .set(-(cr.pval.get().x) * inter.cam.cam_scale.get(), 
+      //         -(cr.pval.get().y) * inter.cam.cam_scale.get() );
+      //}
+    } } );
+    selector_list.getShelf()
+      .addSeparator(0.25)
+      ;
+    update_cursor_selector_list();
     
     tab = sheet_front.addTab("Explorer");
     tab.getShelf()
@@ -622,9 +664,17 @@ class Macro_Main extends Macro_Sheet {
       .addSeparator(0.125)
       .addDrawer(10.25, 1).addModel("Label-S3", "Templates :").setTextAlignment(LEFT, CENTER).getDrawer()
       .addCtrlModel("Button-S2-P3", "Delete").setRunnable(new Runnable() { public void run() { 
-        if (template_explorer.selected_bloc != null) template_explorer.selected_bloc.clear(); template_explorer.update(); } } ).setInfo("delete selected template").getShelf()
+        if (template_explorer.selected_bloc != null) template_explorer.selected_bloc.clear(); 
+        template_explorer.update(); } } ).setPX(ref_size*4.875).setInfo("delete selected template").getDrawer()
+      .addCtrlModel("Button-S2-P3", "DBdel").setRunnable(new Runnable() { public void run() { 
+        if (template_explorer.selected_bloc != null) 
+          remove_from_database(template_explorer.selected_bloc.ref);
+        template_explorer.update(); } } ).setPX(ref_size*7.5).setInfo("remove selected template from database").getShelf()
+      .addDrawer(10.25, 1).addModel("Label-S3", "Special sheet default : base_sheet")
+        .setTextAlignment(LEFT, CENTER).getShelf()
       .addSeparator()
       ;
+      
     template_explorer = tab.getShelf()
       .addSeparator()
       .addExplorer()
@@ -641,11 +691,11 @@ class Macro_Main extends Macro_Sheet {
     tab.getShelf()
       .addSeparator()
       .addDrawer(10, 1)
-      .addModel("Label-S3", "New template :").setTextAlignment(LEFT, CENTER).getDrawer()
+      .addModel("Label-S3", "New Tmplt Name :").setTextAlignment(LEFT, CENTER).getDrawer()
       .addLinkedModel("Field-S3-P2").setLinkedValue(new_temp_name).getShelf()
       .addSeparator(0.125)
       .addDrawer(10, 1)
-      .addCtrlModel("Button-S3-P1", "New Tmplt").setRunnable(new Runnable() { public void run() { 
+      .addCtrlModel("Button-S3-P1", "New").setRunnable(new Runnable() { public void run() { 
         new_tmpl(); template_explorer.update(); } } )
       .setInfo("save selected as new template").getDrawer()
       .addCtrlModel("Button-S3-P2", "Paste").setRunnable(new Runnable() { public void run() { 
@@ -657,8 +707,75 @@ class Macro_Main extends Macro_Sheet {
     template_explorer.getShelf()
       .addSeparator(0.25)
         ;
+        
+        
+    tab = sheet_front.addTab("Blocs");
+    tab.getShelf()
+      .addSeparator(0.125)
+      .addDrawer(10.25, 1).addModel("Label-S3", "Blocs :").setTextAlignment(LEFT, CENTER)
+      .getShelf()
+      .addSeparator()
+      ;
+    
+    for (int i = 0 ; i < bloc_builders.size() ; i++) {
+      nDrawer dr = tab.getShelf().addDrawer(10, 0.75);
+      dr.addCtrlModel("Menu_Button_Small_Outline-S2.5/0.75", bloc_builders.get(i).type)
+        .setRunnable(new Runnable(bloc_builders.get(i).type) { public void run() { 
+          selected_sheet.addByType(((String)builder)); }})
+        .setFont(int(ref_size/2)).setTextAlignment(LEFT, CENTER)
+        .setPX(ref_size*0.0)
+        .setInfo(bloc_builders.get(i).descr)
+        ;
+    }
+    tab.getShelf()
+      .addSeparator()
+      ;
+    for (int i = 0 ; i < max(bloc_types1.length, bloc_types2.length, bloc_types3.length) ; i++) {
+      nDrawer dr = tab.getShelf().addDrawer(10, 0.75);
+      if (i < bloc_types1.length) {
+        dr.addCtrlModel("Menu_Button_Small_Outline-S2.5/0.75", bloc_types1[i])
+          .setRunnable(new Runnable(bloc_types1[i]) { public void run() { selected_sheet.addByType(((String)builder)); }})
+          .setFont(int(ref_size/2)).setTextAlignment(LEFT, CENTER)
+          .setInfo(bloc_info1[i])
+          ;
+      }
+      if (i < bloc_types2.length) {
+        dr.addCtrlModel("Menu_Button_Small_Outline-S2.5/0.75", bloc_types2[i])
+          .setRunnable(new Runnable(bloc_types2[i]) { public void run() { selected_sheet.addByType(((String)builder)); }})
+          .setFont(int(ref_size/2)).setTextAlignment(LEFT, CENTER)
+          .setPX(ref_size*2.675)
+          .setInfo(bloc_info2[i])
+          ;
+      }
+      if (i < bloc_types3.length) {
+        dr.addCtrlModel("Menu_Button_Small_Outline-S2.5/0.75", bloc_types3[i])
+          .setRunnable(new Runnable(bloc_types3[i]) { public void run() { selected_sheet.addByType(((String)builder)); }})
+          .setFont(int(ref_size/2)).setTextAlignment(LEFT, CENTER)
+          .setPX(ref_size*5.25)
+          .setInfo(bloc_info3[i])
+          ;
+      }
+    }
     
   }
+  void update_cursor_selector_list() {
+    if (selector_entry == null) selector_entry = new ArrayList<String>();
+    if (selector_value == null) selector_value = new ArrayList<nCursor>(); 
+    selector_entry.clear();
+    selector_value.clear();
+    for (nCursor v : cursors_list) { 
+      selector_entry.add(v.ref); 
+      selector_value.add(v);
+    }
+    if (selector_list != null) selector_list.setEntrys(selector_entry);
+  }
+  
+  ArrayList<String> selector_entry;
+  ArrayList<nCursor> selector_value;
+  nCursor selected_value;
+  String selected_entry;
+  nList selector_list;
+
   
   void new_tmpl() {
     if (selected_macro.size() > 0) {
@@ -669,10 +786,12 @@ class Macro_Main extends Macro_Sheet {
       sValueBloc bloc = saved_template.newBloc(nn);
       for (Macro_Abstract m : selected_macro) copy_bloc(m.value_bloc, bloc);
       sStr tmp_link = new sStr(bloc, "", "links", "links");
+      sStr tmp_spot = new sStr(bloc, "", "spots", "spots");
       for (Macro_Abstract m : selected_macro) {
         tmp_link.set(tmp_link.get() + m.resum_link());
+        tmp_spot.set(m.resum_spot(tmp_spot.get()));
       }
-      
+      tmp_spot.set(tmp_spot.get() + GROUP_TOKEN);
       //positionning
       //for (Map.Entry me : bloc.blocs.entrySet()) {
       //  sValueBloc vb = ((sValueBloc)me.getValue());
@@ -857,26 +976,7 @@ class Macro_Main extends Macro_Sheet {
     saved_template.empty();
     saved_preset.empty();
     
-    Save_Bloc sb = new Save_Bloc("");
-    sb.load_from(database_path.get());
-    
-    if (database_setup_bloc != null) database_setup_bloc.clear();
-    database_setup_bloc = inter.data.newBloc(sb, "db_setup");
-    if (database_setup_bloc == null) database_setup_bloc = inter.data.newBloc("db_setup");
-    
-    if (database_setup_bloc.getBloc("Template") != null) {
-      database_setup_bloc.getBloc("Template").runBlocIterator(new Iterator<sValueBloc>() { public void run(sValueBloc bloc) { 
-        Save_Bloc b = new Save_Bloc("");
-        bloc.preset_to_save_bloc(b);
-        if (!bloc.base_ref.equals("copy")) saved_template.newBloc(b, bloc.ref);
-      }});
-    }if (database_setup_bloc.getBloc("Preset") != null) {
-      database_setup_bloc.getBloc("Preset").runBlocIterator(new Iterator<sValueBloc>() { public void run(sValueBloc bloc) { 
-        Save_Bloc b = new Save_Bloc("");
-        bloc.preset_to_save_bloc(b);
-        saved_preset.newBloc(b, bloc.ref);
-      }});
-    }
+    load_database();
     
     if (b.getBloc("Template") != null) {
       b.getBloc("Template").runBlocIterator(new Iterator<sValueBloc>() { public void run(sValueBloc bloc) { 
@@ -909,6 +1009,73 @@ class Macro_Main extends Macro_Sheet {
       
     szone_clear_select();
     is_setup_loading = false;
+  }
+  
+  void load_database() {
+    Save_Bloc sb = new Save_Bloc("");
+    sb.load_from(database_path.get());
+    
+    if (database_setup_bloc != null) database_setup_bloc.clear();
+    database_setup_bloc = inter.data.newBloc(sb, "db_setup");
+    if (database_setup_bloc == null) database_setup_bloc = inter.data.newBloc("db_setup");
+    
+    if (database_setup_bloc.getBloc("Template") != null) {
+      database_setup_bloc.getBloc("Template").runBlocIterator(new Iterator<sValueBloc>() { public void run(sValueBloc bloc) { 
+        Save_Bloc b = new Save_Bloc("");
+        bloc.preset_to_save_bloc(b);
+        if (saved_template.getBloc(bloc.ref) == null && !bloc.base_ref.equals("copy")) 
+          saved_template.newBloc(b, bloc.ref);
+      }});
+    }if (database_setup_bloc.getBloc("Preset") != null) {
+      database_setup_bloc.getBloc("Preset").runBlocIterator(new Iterator<sValueBloc>() { public void run(sValueBloc bloc) { 
+        Save_Bloc b = new Save_Bloc("");
+        bloc.preset_to_save_bloc(b);
+        if (saved_preset.getBloc(bloc.ref) == null) saved_preset.newBloc(b, bloc.ref);
+      }});
+    }
+  }
+  
+  String to_remove = "";
+  void remove_from_database(String tr) {
+    to_remove = tr;
+    if (saved_template.getBloc(to_remove) != null) saved_template.getBloc(to_remove).clear();
+    
+    //if (saved_preset.getBloc(to_remove) != null) saved_preset.getBloc(to_remove).clear();
+      
+    sValueBloc vb = inter.getTempBloc();
+    sValueBloc tb = copy_bloc(saved_template, vb);
+    sValueBloc pb = copy_bloc(saved_preset, vb);
+    
+    Save_Bloc sb = new Save_Bloc("");
+    sb.load_from(database_path.get());
+    
+    if (database_setup_bloc != null) database_setup_bloc.clear();
+    database_setup_bloc = inter.data.newBloc(sb, "db_setup");
+    if (database_setup_bloc == null) database_setup_bloc = inter.data.newBloc("db_setup");
+    
+    if (database_setup_bloc.getBloc("Template") != null) {
+      database_setup_bloc.getBloc("Template").runBlocIterator(new Iterator<sValueBloc>(tb) { public void run(sValueBloc bloc) { 
+        Save_Bloc b = new Save_Bloc("");
+        bloc.preset_to_save_bloc(b);
+        if (((sValueBloc)builder).getBloc(bloc.ref) == null && !bloc.base_ref.equals("copy") && 
+            !bloc.ref.equals(to_remove)) 
+          ((sValueBloc)builder).newBloc(b, bloc.ref);
+      }});
+    }
+    if (database_setup_bloc.getBloc("Preset") != null) {
+      database_setup_bloc.getBloc("Preset").runBlocIterator(new Iterator<sValueBloc>(pb) { public void run(sValueBloc bloc) { 
+        Save_Bloc b = new Save_Bloc("");
+        bloc.preset_to_save_bloc(b);
+        if (((sValueBloc)builder).getBloc(bloc.ref) == null
+            //&& !bloc.ref.equals(to_remove) 
+            ) 
+          ((sValueBloc)builder).newBloc(b, bloc.ref);
+      }});//
+    }
+    
+    vb.preset_to_save_bloc(sb); 
+    sb.save_to(database_path.get());
+    to_remove = "";
   }
   
   void saving_database() {
@@ -986,6 +1153,9 @@ class Macro_Main extends Macro_Sheet {
   ArrayList<MMIDI> midi_macros = new ArrayList<MMIDI>();
   ArrayList<MPanel> pan_macros = new ArrayList<MPanel>();
   ArrayList<MTool> tool_macros = new ArrayList<MTool>();
+  
+  ArrayList<nCursor> cursors_list = new ArrayList<nCursor>();
+  
   int pan_nb = 0, tool_nb = 0;
   Macro_Sheet last_link_sheet = null;
   
@@ -1000,9 +1170,26 @@ class Macro_Main extends Macro_Sheet {
     for (Macro_Abstract m : selected_macro) m.changeOpenning();
   }
   
+  ArrayList<MAbstract_Builder> bloc_builders = new ArrayList<MAbstract_Builder>();
+  void add_bloc_builders(MAbstract_Builder m) {
+    bloc_builders.add(m);
+  }
+  
 Macro_Main(sInterface _int) {
     super(_int);
     mlogln("build macro main ");
+    
+    boolean b = true;
+    b = b;
+    b = b;
+    b = b;
+    b = b;
+    //add_bloc_builders(new MBasic_Builder());
+    add_bloc_builders(new MSheetView_Builder());
+    add_bloc_builders(new MSheetObj_Builder());
+    add_bloc_builders(new MValue_Builder());
+    
+    
     inter = _int; 
     access = inter.getAccess();
     cam_gui = inter.cam_gui; 
@@ -1012,6 +1199,8 @@ Macro_Main(sInterface _int) {
     saved_preset = inter.interface_bloc.newBloc("Preset");
     new_temp_name = setting_bloc.newStr("new_temp_name", "new_temp_name", "template");
     database_path = setting_bloc.newStr("database_path", "database_path", "database.sdata");
+    
+    load_database();
     
     show_macro = setting_bloc.newBoo("show_macro", "show", true);
     show_macro.addEventChange(new Runnable(this) { public void run() { 
@@ -1181,8 +1370,9 @@ Macro_Main(sInterface _int) {
       select_bound_widg.setPosition(minx, miny);
       select_bound_widg.setSize(maxx - minx, maxy - miny);
       PVector p = new PVector(minx + (maxx - minx) / 2, miny + (maxy - miny) / 2);
+      p.add(-p.x%ref_size/2, -p.y%ref_size/2);
       p = inter.cam.cam_to_screen(p);
-      p.add(-select_grab_widg.getLocalSX()/2, -select_grab_widg.getLocalSY()/2);
+      //p.add(-select_grab_widg.getLocalSX()/2, -select_grab_widg.getLocalSY()/2);
       if (selected_macro.size() > 1 || ref_size * gui.scale < 20) 
         select_grab_widg.show().setPosition(p.x, p.y);
       else select_grab_widg.hide();
@@ -1200,7 +1390,8 @@ Macro_Main(sInterface _int) {
     s.mmain = this;
     s.unique = true;
     build_macro_menus();
-    return s.add_new(this, null, null);
+    Macro_Sheet ms = s.add_new(this, null, null);
+    return ms;
   }
   
   void noteOn(int channel, int pitch, int velocity) {

@@ -2,10 +2,6 @@
 /*
                   TO DO
   
-  add transparance: a in sColor
-  
-  easy point of view save : when selecting a sheet the cam go to its center and adjust zoom if needed
-  
   corrige error on group_grabber grid snaping, 
     small constant misalignment, because of his size not multyple?
   
@@ -42,18 +38,18 @@
   hide majority of macro widgets when dezoom
   bloc a faire:
     cursor bloc : 
-        (like menu) named, listed in mmain so global, 
-        the bloc point to an existing cursor or can build a new
-        custom setlinkedPosition(svec) setlinkedDir(svec) setlinkedShow(sboo)
-        constrain (dir pos mag ..)
-        registered independently from theirs sheet and easily accessible for
-          new comus start
-          global effect field
-          multi comu objectif
-        
-        auto follow / point to objects, instent or chasing
-        memorize path for display
-        dif shape / look
+      (like menu) named, listed in mmain so global, 
+      the bloc point to an existing cursor or can build a new
+      custom setlinkedPosition(svec) setlinkedDir(svec) setlinkedShow(sboo)
+      constrain (dir pos mag ..)
+      registered independently from theirs sheet and easily accessible for
+        new comus start
+        global effect field
+        multi comu objectif
+      
+      auto follow / point to objects, instent or chasing
+      memorize path for display
+      dif shape / look
     MVar
       add a hideable (like com) param drawer : select variable type
       int str and vec better handling 
@@ -66,7 +62,7 @@
   
   
   
-  b 
+  
   
   
   open finished bp, search file in sub folder, cant save on it again
@@ -478,7 +474,7 @@ class Macro_Sheet extends Macro_Abstract {
         getShelf(1).insertDrawer(right_spot_drawer);
       }
       
-      elem.set_spot(spot);
+      elem.set_spot(spot,side);
       String new_str = "";
       new_str += left_s+GROUP_TOKEN+right_s;
       spots.set(new_str);
@@ -680,14 +676,19 @@ class Macro_Sheet extends Macro_Abstract {
   
  
   
-  
+void delayed_open() {
+  mmain().inter.addEventTwoFrame(new Runnable(this) { public void run() { open(); } });
+}
     
 Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) { 
     super(p, "sheet", n, _bloc); init(); 
     
     mlogln("build sheet "+n+" "+ _bloc);
     
-    if (_bloc == null) mmain().inter.addEventNextFrame(new Runnable(this) { public void run() { select(); } });
+    if (_bloc == null 
+        && !unclearable
+        ) 
+      mmain().inter.addEventNextFrame(new Runnable(this) { public void run() { select(); } });
   }
   Macro_Sheet(sInterface _int) {
     super(_int);
@@ -799,7 +800,37 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
   
   Macro_Sheet addEventsBuildMenu(Runnable r) { eventsBuildMenu.add(r); return this; }
   ArrayList<Runnable> eventsBuildMenu = new ArrayList<Runnable>();
-
+  
+  int cursor_count = 0;
+  nCursor newCursor(String r, boolean b) {
+    cursor_count++;
+    nCursor c = new nCursor(this, r, r, b);
+    mmain().cursors_list.add(c);
+    mmain().update_cursor_selector_list();
+    c.addEventClear(new Runnable(c) { public void run() { 
+      mmain().cursors_list.remove(((nCursor)builder)); 
+      mmain().update_cursor_selector_list(); }});
+    return c;
+  }
+  nCursor menuCursor(String r, boolean b) {
+    cursor_count++;
+    nCursor c = new nCursor(this, r, r, b);
+    addEventsBuildMenu(new Runnable(c) { public void run() { 
+      if (custom_tab != null) custom_tab.getShelf()
+        .addDrawer(10, 1)
+        .addLinkedModel("Auto_Button-S2-P3", "show").setLinkedValue(((nCursor)builder).show).getDrawer()
+        .addModel("Label_Small_Text-S1-P1", "Cursor: " + ((nCursor)builder).ref)
+          .setTextAlignment(LEFT, CENTER).getDrawer()
+        .getShelf()
+        .addSeparator(0.125);
+    } });
+    mmain().cursors_list.add(c);
+    mmain().update_cursor_selector_list();
+    c.addEventClear(new Runnable(c) { public void run() { 
+      mmain().cursors_list.remove(((nCursor)builder)); 
+      mmain().update_cursor_selector_list(); }});
+    return c;
+  }
   sInt menuIntSlide(int v, int _min, int _max, String r) {
     sInt f = newInt(v, r, r);
     f.set_limit(_min, _max);
@@ -811,8 +842,8 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
         .setLinkedValue(((sInt)builder))
         .setTextAlignment(CENTER, CENTER).getDrawer()
       .addWidget(new nSlide(custom_tab.gui, ref_size * 6, ref_size * 0.75)
-        .setValue( float( ((sInt)builder).get() - ((sInt)builder).getmin() ) / 
-                   float( ((sInt)builder).getmax() - ((sInt)builder).getmin() ) )
+        .setValue( ( ((sInt)builder).get() - ((sInt)builder).getmin() ) / 
+                   ( ((sInt)builder).getmax() - ((sInt)builder).getmin() ) )
         .addEventSlide(new Runnable(((sInt)builder)) { public void run(float c) { 
           ((sInt)builder).set( int( ((sInt)builder).getmin() + 
                                     c * (((sInt)builder).getmax() - ((sInt)builder).getmin()) ) ); 
@@ -1336,6 +1367,8 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
   
   Macro_Abstract addByType(String t) { return addByType(t, null); }
   Macro_Abstract addByType(String t, sValueBloc b) { 
+    for (MAbstract_Builder m : mmain().bloc_builders)
+      if (t.equals(m.type)) return m.build(this, b);
     if (t.equals("data")) return addData(b);
     else if (t.equals("in")) return addSheetIn(b);
     else if (t.equals("out")) return addSheetOut(b);
@@ -1459,7 +1492,11 @@ Macro_Sheet(Macro_Sheet p, String n, sValueBloc _bloc) {
 }
 
 
-
+abstract class MAbstract_Builder {
+  String type, descr; boolean show_in_buildtool = false;
+  MAbstract_Builder(String t, String d) { type = t; descr = d; }
+  Macro_Abstract build(Macro_Sheet s, sValueBloc b) { return null; }
+}
 
 
 interface Macro_Interf {
@@ -1472,6 +1509,9 @@ interface Macro_Interf {
                                 "midi", "preset", "tool", "tooltri", "toolbin", "toolNC", "pan", 
                                 "panbin", "pansld", "pangrph", "menu"}; //"cursor", "pancstm", "tmpl", 
   final String[] bloc_types3 = {"colRGB", "btrig", "bswitch"};
+  
+  final String[] bloc_types4 = {"com", "in", "out", "trig", "btrig", "switch", "gate", "pulse", "not", "bin", 
+                                "bool", "calc", "comp", "var", "chan", "data", "menu"};
                                 
   final String[] bloc_info1 = {"commentary", "sheet input", "sheet output", 
                                "trigger > bang", "switch > bool", "can control msg circulation", 
@@ -1515,6 +1555,13 @@ static abstract class Sheet_Specialize {
     prints.add(this); 
     count++;
   }
+  Sheet_Specialize(String n, String dt) { name = n;  
+    prints.add(this); 
+    count++;
+    default_template = dt;
+  }
+  
+  String default_template = "base_sheet";
   
   Macro_Sheet add_new(Macro_Sheet s, sValueBloc b, Macro_Sheet p ) { 
     if (mmain.canAccess(build_access) && (!unique || (unique && sheet_count == -1))) { 
@@ -1523,7 +1570,17 @@ static abstract class Sheet_Specialize {
       if (b == null && p == null) m = get_new(s, name + "_" + sheet_count, (sValueBloc)null);
       else if (b != null) m = get_new(s, b.base_ref, (sValueBloc)b);
       else if (p != null) m = get_new(s, p.value_bloc.base_ref, p);
-      m.sheet_specialize = this; m.specialize.set(name); if (unique) m.unclearable = true;
+      if (m != null) {
+        m.sheet_specialize = this; m.specialize.set(name); if (unique) m.unclearable = true;
+        m.open();
+        if (b == null && default_template.length() > 0 && mmain.saved_template.getBloc(default_template) != null) {
+          Macro_Sheet prev_select = mmain.selected_sheet;
+          m.select();
+          mmain.paste_tmpl(mmain.saved_template.getBloc(default_template));
+          prev_select.select();
+          m.delayed_open();
+        }
+      }
       return m; } 
     else return null; }
   protected abstract Macro_Sheet get_new(Macro_Sheet s, String n, sValueBloc b);
@@ -1533,7 +1590,7 @@ static abstract class Sheet_Specialize {
 
 
 class SheetPrint extends Sheet_Specialize {
-  SheetPrint() { super("sheet"); }
+  SheetPrint() { super("sheet", ""); }
   Macro_Sheet get_new(Macro_Sheet s, String n, sValueBloc b) { return new Macro_Sheet(s, n, b); }
 }
 

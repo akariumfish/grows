@@ -379,6 +379,7 @@ Macro_Abstract(Macro_Sheet _sheet, String ty, String n, sValueBloc _bloc) {
   }
   
   String resum_link() { return ""; }
+  String resum_spot(String spots) { return spots; }
   
   
   sBoo newBoo(boolean d, String r, String s) { return newBoo(r, s, d); }
@@ -416,6 +417,10 @@ Macro_Abstract(Macro_Sheet _sheet, String ty, String n, sValueBloc _bloc) {
     sRun v = ((sRun)(value_bloc.getValue(r))); 
     if (v == null) v = value_bloc.newRun(r, s, d);
     else v.set(d);
+    return v; }
+  sObj newObj(String r, String s) {
+    sObj v = ((sObj)(value_bloc.getValue(r))); 
+    if (v == null) v = value_bloc.newObj(r, s);
     return v; }
     
   
@@ -505,6 +510,18 @@ class Macro_Bloc extends Macro_Abstract {
     addElement(c, m); 
     return m;
   }
+  nCtrlWidget addTrigS(int c, String l, Runnable r) { 
+    Macro_Element m = new Macro_Element(this, "", "MC_Element_Single", null, NO_CO, NO_CO, true);
+    addElement(c, m); 
+    return m.addCtrlModel("MC_Element_SButton", l).setRunnable(r);
+  }
+  nCtrlWidget addTrigSwtchS(int c, String sw_txt, sBoo vb, String bp_txt, Runnable r) { 
+    Macro_Element m = new Macro_Element(this, "", "MC_Element_Single", null, NO_CO, NO_CO, true);
+    addElement(c, m); 
+    nCtrlWidget cw = m.addCtrlModel("MC_Element_SButton", bp_txt).setRunnable(r);
+    m.addLinkedModel("MC_Element_MiniButton", sw_txt).setLinkedValue(vb);
+    return cw;
+  }
   Macro_Element addEmptyL(int c) { 
     Macro_Element m = new Macro_Element(this, "", "MC_Element_Double", null, NO_CO, NO_CO, false);
     addElement(c, m); 
@@ -565,6 +582,17 @@ class Macro_Bloc extends Macro_Abstract {
     addElement(c, m); 
     return m.connect;
   }
+
+  Macro_Connexion addInput(int c, String t, Runnable r) { 
+    return addInput(c, t).addEventReceive(r);
+  }
+  Macro_Connexion addOutput(int c, String t, Runnable r) { 
+    return addOutput(c, t).addEventReceive(r);
+  }
+  
+  Macro_Connexion addInputBang(int c, String t, Runnable r) { 
+    return addInput(c, t).setFilterBang().addEventReceiveBang(r); }
+  
   Macro_Element addSheetInput(int c, String t) { 
     Macro_Element m = new Macro_Element(this, "", "MC_Element_Single", t, OUTPUT, INPUT, true);
     if (m.sheet_connect != null) m.sheet_connect.direct_connect(m.connect);
@@ -606,6 +634,20 @@ class Macro_Bloc extends Macro_Abstract {
       //  r += m.sheet_connect.descr + INFO_TOKEN + co.descr + OBJ_TOKEN;
     }
     return r; 
+  }
+  String resum_spot(String spots) { 
+    String[] spots_side_list = splitTokens(spots, GROUP_TOKEN);
+    String left_s = OBJ_TOKEN, right_s = OBJ_TOKEN;
+    if (spots_side_list.length == 2) { 
+      left_s = copy(spots_side_list[0]); right_s = copy(spots_side_list[1]); }
+    
+    for (Macro_Element m : elements) {
+      if (m.spot != null && m.side.equals("left")) 
+        left_s += m.descr + OBJ_TOKEN;
+      if (m.spot != null && m.side.equals("right")) 
+        right_s += m.descr + OBJ_TOKEN;
+    }
+    return left_s + GROUP_TOKEN + right_s; 
   }
   
   ArrayList<Macro_Element> elements = new ArrayList<Macro_Element>();

@@ -17,6 +17,8 @@ Macro_Packet newPacketCol(color p) { return new Macro_Packet("col")
 
 Macro_Packet newPacketStr(String p) { return new Macro_Packet("str").addMsg(copy(p)); }
 
+Macro_Packet newPacketSheet(Macro_Sheet m) { return new Macro_Packet("sheet").setSheet(m); }
+
 Macro_Packet newPacketBool(boolean b) { 
   String r; 
   if (b) r = "T"; else r = "F"; 
@@ -62,8 +64,27 @@ class Macro_Packet {
                              trimStringFloat(green(asCol()))+","+
                              trimStringFloat(blue(asCol()));
     else if (isStr()) return asStr();
+    else if (isBloc()) return asBloc().ref;
+    else if (isValue()) return asValue().ref;
+    else if (isSheet()) return asSheet().value_bloc.ref;
     return "";
   }
+  
+  sValueBloc bloc = null;
+  Macro_Packet setBloc(sValueBloc b) { bloc = b; return this; }
+  boolean isBloc() { return def.equals("bloc"); }
+  sValueBloc  asBloc()   { if (isBloc()) return bloc; else return null; }
+  
+  sValue val = null;
+  Macro_Packet setValue(sValue b) { val = b; return this; }
+  boolean isValue() { return def.equals("value"); }
+  sValue  asValue()   { if (isValue()) return val; else return null; }
+  
+  Macro_Sheet psheet = null;
+  Macro_Packet setSheet(Macro_Sheet b) { psheet = b; return this; }
+  boolean isSheet() { return def.equals("sheet"); }
+  Macro_Sheet  asSheet()   { if (isSheet()) return psheet; else return null; }
+  
 }
 
 
@@ -115,9 +136,9 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
     else if (!is_sheet_co && type == OUTPUT) descr += "_OUT";
     else if (is_sheet_co && type == INPUT) descr += "_sheet_IN";
     else if (is_sheet_co && type == OUTPUT) descr += "_sheet_OUT";
-    val_self = ((sObj)(elem.bloc.setting_bloc.getValue(descr))); 
-    if (val_self == null) val_self = elem.bloc.setting_bloc.newObj(descr, this);
-    else val_self.set(this);
+    //val_self = ((sObj)(elem.bloc.setting_bloc.getValue(descr))); 
+    //if (val_self == null) val_self = elem.bloc.setting_bloc.newObj(descr, this);
+    //else val_self.set(this);
     lens = addModel("MC_Connect_Default").setTrigger()
       .setSize(ref_size*14/16, ref_size*14/16)
       .setPosition(-ref_size*5/16, -ref_size*5/16)
@@ -529,6 +550,9 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
           last_packet = packet_received.get(i);
           process_resum = process_resum + last_packet.getText() + " ";
           for (Runnable r : eventReceiveRun) r.run();
+          
+          if (last_packet.isBang()) runEvents(eventReceiveBangRun);
+          
           if (direct_co != null && direct_co.type == OUTPUT) direct_co.send(last_packet);
           if (direct_co != null && direct_co.type == INPUT) direct_co.receive(packet_sender.get(i), last_packet);
           msg_view.setText(last_packet.getText());
@@ -553,6 +577,10 @@ class Macro_Connexion extends nBuilder implements Macro_Interf {
   ArrayList<Runnable> eventReceiveRun = new ArrayList<Runnable>();
   Macro_Connexion addEventReceive(Runnable r)    { eventReceiveRun.add(r); return this; }
   Macro_Connexion removeEventReceive(Runnable r) { eventReceiveRun.remove(r); return this; }
+  
+  ArrayList<Runnable> eventReceiveBangRun = new ArrayList<Runnable>();
+  Macro_Connexion addEventReceiveBang(Runnable r)    { eventReceiveBangRun.add(r); return this; }
+  
   
   Macro_Connexion direct_co = null;
   void direct_connect(Macro_Connexion o) { direct_co = o; }
@@ -631,9 +659,9 @@ class Macro_Element extends nDrawer implements Macro_Interf {
     //elem_widgets.remove(back);
     
     descr = BLOC_TOKEN+bloc.value_bloc.ref+BLOC_TOKEN+"_elem_"+bloc.elements.size();
-    val_self = ((sObj)(bloc.setting_bloc.getValue(descr+"_self"))); 
-    if (val_self == null) val_self = bloc.setting_bloc.newObj(descr+"_self", this);
-    else val_self.set(this);
+    //val_self = ((sObj)(bloc.setting_bloc.getValue(descr+"_self"))); 
+    //if (val_self == null) val_self = bloc.setting_bloc.newObj(descr+"_self", this);
+    //else val_self.set(this);
     
     back.addEventTrigger(new Runnable(this) { public void run() { 
           bloc.sheet.selecting_element((Macro_Element)builder); } });
@@ -646,8 +674,9 @@ class Macro_Element extends nDrawer implements Macro_Interf {
     //if (sheet_connect != null) sheet_connect.hide(); 
     //if (connect != null) connect.hide(); 
   }
-  
-  void set_spot(nWidget _spot) { 
+  String side = "";
+  void set_spot(nWidget _spot, String sd) { 
+    side = sd;
     spot = _spot; spot.setLook("MC_Element_At_Spot").setPassif(); back.setLook("MC_Element_At_Spot").setPassif(); 
     spot.setText(bloc.value_bloc.base_ref);
     sheet_viewable = false; 

@@ -108,16 +108,33 @@ abstract class sValue {
     shrt = svb.getData("shr");
     has_changed = true;
   }
+  sValue set_min(float mi) { return this; }
+  sValue set_max(float ma) { return this; }
+  float getmin() { return 0; }
+  float getmax() { return 0; }
+  float getscale() { return 0; }
+  void setscale(float v) { ; }
+  
+  float asFloat() { return 0; }
+  
+  Macro_Packet asPacket() { return new Macro_Packet("value").setValue(this); }
+  
 }
 
 
 class sInt extends sValue {
   boolean limited_min = false, limited_max = false; int min, max;
   sInt set_limit(int mi, int ma) { limited_min = true; limited_max = true; min = mi; max = ma; return this; }
-  sInt set_min(int mi) { limited_min = true; min = mi; return this; }
-  sInt set_max(int ma) { limited_max = true; max = ma; return this; }
-  int getmin() { return min; }
-  int getmax() { return max; }
+  
+  sInt set_min(float mi) { limited_min = true; min = int(mi); return this; }
+  sInt set_max(float ma) { limited_max = true; max = int(ma); return this; }
+  float getmin() { return min; }
+  float getmax() { return max; }
+  float getscale() { return float(val - min) / float(max - min); }
+  void setscale(float v) { set(min + int( v * (max - min) )); }
+  
+  float asFloat() { return float(val); }
+  
   String getString() { return str(val); }
   void clear() { super.clear(); val = def; }
   int val = 0, def;
@@ -138,11 +155,18 @@ class sInt extends sValue {
 
 class sFlt extends sValue {
   boolean limited_min = false, limited_max = false; float min, max;
-  sFlt set_limit(float mi, float ma) { limited_min = true; limited_max = true; min = mi; max = ma; return this; }
+  sFlt set_limit(float mi, float ma) { 
+    limited_min = true; limited_max = true; min = mi; max = ma; return this; }
+  
   sFlt set_min(float mi) { limited_min = true; min = mi; return this; }
   sFlt set_max(float ma) { limited_max = true; max = ma; return this; }
   float getmin() { return min; }
   float getmax() { return max; }
+  float getscale() { return (val - min) / (max - min); }
+  void setscale(float v) { set(min + v * (max - min)); }
+  
+  float asFloat() { return val; }
+  
   String getString() { return trimStringFloat(val); }
   void clear() { super.clear(); val = def; }
   float val = 0, def;
@@ -249,6 +273,7 @@ class sCol extends sValue {
   float getred() { return red(val); }
   float getgreen() { return green(val); }
   float getblue() { return blue(val); }
+  float getalpha() { return alpha(val); }
   color get() { return val; }
   sCol set(color c) { 
     if (c != val) {
@@ -259,6 +284,10 @@ class sCol extends sValue {
   }
   sCol set(int r, int g, int b) { 
     set(color(r,g,b));
+    return this;
+  }
+  sCol set(int r, int g, int b, int a) { 
+    set(color(r,g,b,a));
     return this;
   }
   void save_to_bloc(Save_Bloc svb) { super.save_to_bloc(svb);
@@ -282,9 +311,33 @@ class sObj extends sValue {
   String getString() { return ref; }
   void clear() { super.clear(); }
   private Object val = null;
+  private boolean is_value = false, is_bloc = false, is_sheet = false;
+  boolean isValue() { return is_value; }
+  boolean isBloc() { return is_bloc; }
+  boolean isSheet() { return is_sheet; }
   sObj(sValueBloc b, String n, Object r) { super(b, "obj", n, "obj");  val = r; }
-  sObj set(Object r) { val = r; return this; }
+  sObj set(Object r) { 
+    if (r instanceof sValue) return set((sValue)r); 
+    if (r instanceof sValueBloc) return set((sValueBloc)r);  
+    if (r instanceof Macro_Sheet) return set((Macro_Sheet)r);  
+    is_value = false; is_bloc = false; is_sheet = false;
+    if (val != r) { val = r; doChange(); } 
+    return this; }
+  sObj set(sValue r) { 
+    is_value = true; is_bloc = false; is_sheet = false; 
+    if (val != r) { val = r; doChange(); } return this; }
+  sObj set(sValueBloc r) { 
+    is_value = false; is_bloc = true; is_sheet = false; 
+    if (val != r) { val = r; doChange(); } return this; }
+  sObj set(Macro_Sheet r) { 
+    is_value = false; is_bloc = false; is_sheet = true; 
+    if (val != r) { val = r; doChange(); } return this; }
   Object get() { return val; }
+  
+  sValue asValue() { if (isValue()) return (sValue)val; else return null; }
+  sValueBloc asBloc() { if (isBloc()) return (sValueBloc)val; else return null; }
+  Macro_Sheet asSheet() { if (isSheet()) return (Macro_Sheet)val; else return null; }
+  
   void save_to_bloc(Save_Bloc svb) { super.save_to_bloc(svb); }
   void load_from_bloc(Save_Bloc svb) { super.load_from_bloc(svb); }
 }
@@ -453,6 +506,8 @@ class sValueBloc {
   sRun newRun(String n, String s, Runnable v)  { return new sRun(this, n, s, v); }
   //sBlc newBlc(String n, String s) { return new sBlc(this, n, s); }
   sObj newObj(String n, Object v) { return new sObj(this, n, v); }
+  
+  Macro_Packet asPacket() { return new Macro_Packet("bloc").setBloc(this); }
   
   DataHolder data; sValueBloc parent = null, last_created_bloc = null; 
   sValue last_created_value = null;
