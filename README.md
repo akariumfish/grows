@@ -1,3 +1,12 @@
+
+
+FUTURE UPDATES WILL NOW BE AT https://github.com/akariumfish/miniSim 
+
+The project is too big for the processing IDE, it has become buggy and unstable. 
+Eclipse need new folder hierarchy so its easier to start anew.
+
+
+
 # grows
 GROWS 
 
